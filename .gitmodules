@@ -1,0 +1,3 @@
+[submodule "QtVlc"]
+	path = QtVlc
+	url = https://github.com/Orochimarufan/QtVlc.git
