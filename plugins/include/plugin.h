@@ -1,5 +1,5 @@
 /*****************************************************************************
- * VLYC - VideoLan Youtube Client - A Video-Site Desktop App
+ * vlyc2 - A Desktop YouTube client
  * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
