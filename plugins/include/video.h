@@ -21,9 +21,10 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
+#include <QtCore/QUrl>
 
 class SitePlugin;
-class VlcMedia;
+class Video;
 
 /**
  * @brief The VideoQualityLevel enum
@@ -49,6 +50,10 @@ struct VideoQuality
 {
     VideoQualityLevel q;
     QString description;
+    inline VideoQuality() : q(VideoQualityLevel::QA_INVALID) {}
+    inline VideoQuality(VideoQualityLevel q, QString description) : q(q), description(description) {}
+    inline VideoQuality(const VideoQuality &q) : q(q.q), description(q.description) {}
+    inline VideoQuality &operator =(const VideoQuality &q) { this->q = q.q; description = q.description; }
 };
 
 /**
@@ -63,6 +68,21 @@ struct VideoSubtitle
     QString language;
     QString format;
     QString data;
+};
+
+/**
+ * @brief The Media struct
+ * Describes a phaysical video
+ */
+struct Media
+{
+    Video *video;
+    VideoQuality q;
+    QUrl url;
+    inline Media() : video(NULL) {}
+    inline Media(Video *vid, VideoQuality q, const QUrl &url) : video(vid), q(q), url(url) {}
+    inline Media(const Media &m) : video(m.video), q(m.q), url(m.url) {}
+    inline Media &operator =(const Media &m) { video = m.video; q = m.q; url = m.url; }
 };
 
 /**
@@ -90,18 +110,20 @@ public:
     virtual QList<VideoQuality> available() const = 0;
     virtual QStringList availableSubtitles() const { return QStringList(); }
 
-    virtual VlcMedia media(VideoQuality q) = 0;
+    virtual Media media(VideoQualityLevel q) = 0;
     virtual VideoSubtitle subtitles(QString language) { return VideoSubtitle(); }
 
     virtual bool isDone() const = 0;
+    virtual QString getError() const = 0;
 
     virtual ~Video() {}
 
-public slots:
+public Q_SLOTS:
     virtual void load() = 0;
 
-signals:
-    void loaded(Video *);
+Q_SIGNALS:
+    void done();
+    void error(const QString &message);
 };
 
 
@@ -109,46 +131,52 @@ class StandardVideo : public Video
 {
     Q_OBJECT
 protected:
-    QString m_video_id;
+    QString ms_video_id;
     SitePlugin* mp_site;
 
-    QString m_title;
-    QString m_author;
-    QString m_description;
+    QString ms_title;
+    QString ms_author;
+    QString ms_description;
 
-    int m_likes;
-    int m_dislikes;
-    int m_favorites;
+    int mi_likes;
+    int mi_dislikes;
+    int mi_favorites;
 
     QList<VideoQuality> ml_available;
 
 public:
-    virtual QString videoId() const { return m_video_id; }
+    virtual QString videoId() const { return ms_video_id; }
     virtual SitePlugin *site() const { return mp_site; }
 
-    virtual QString title() const { return m_title; }
-    virtual QString author() const { return m_author; }
-    virtual QString description() const { return m_description; }
+    virtual QString title() const { return ms_title; }
+    virtual QString author() const { return ms_author; }
+    virtual QString description() const { return ms_description; }
 
-    virtual int likes() const { return m_likes; }
-    virtual int dislikes() const { return m_dislikes; }
-    virtual int favorites() const { return m_favorites; }
+    virtual int likes() const { return mi_likes; }
+    virtual int dislikes() const { return mi_dislikes; }
+    virtual int favorites() const { return mi_favorites; }
 
     virtual QList<VideoQuality> available() const { return ml_available; }
 
     virtual bool isDone() const { return mb_done; }
+    virtual QString getError() const { return ms_error; }
 
     virtual ~StandardVideo() {}
 
 // done magic
 private:
     bool mb_done;
+    QString ms_error;
 
-private slots:
-    void _loaded() { mb_done = true; }
+private Q_SLOTS:
+    void _done() { mb_done = true; }
+    void _error(const QString &m) { mb_done = true; ms_error = m; }
 
 public:
-    StandardVideo() : Video(), mb_done(false) { connect(this, SIGNAL(loaded(Video*)), SLOT(_loaded())); }
+    StandardVideo() : Video(), mb_done(false) {
+        connect(this, SIGNAL(done()), SLOT(_done()));
+        connect(this, SIGNAL(error(QString)), SLOT(_error(QString)));
+    }
 };
 
 #endif // VIDEO_H

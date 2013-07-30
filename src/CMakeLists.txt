@@ -34,7 +34,7 @@ include_directories(${Qt5Widgets_INCLUDE_DIRS})
 ######## Headers ########
 SET(VLYC_HEADERS
 cmdparser.h
-sitemanager.h
+pluginmanager.h
 mainwindow.h
 vlyc.h
 vlycbrowser.h
@@ -47,7 +47,7 @@ vlycbrowser.h
 ######## Sources ########
 SET(VLYC_SOURCES
 cmdparser.cpp
-sitemanager.cpp
+pluginmanager.cpp
 main.cpp
 mainwindow.cpp
 vlyc.cpp

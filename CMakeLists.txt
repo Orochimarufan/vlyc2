@@ -22,10 +22,11 @@ cmake_minimum_required(VERSION 2.8.10)
 SET(BUILD_DEMO OFF)
 SET(BUILD_VLC ON)
 add_subdirectory(QtVlc)
+include_directories(QtVlc/include)
 
 ######## VLYC ########
 project(VLYC)
-include_directories(QtVlc/include)
+SET(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # Output all executables and shared libs in the main build folder, not in subfolders.
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})

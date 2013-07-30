@@ -16,52 +16,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef PLUGINMANAGER_H
+#define PLUGINMANAGER_H
 
-#include <QMainWindow>
+#include <QObject>
 
-#include <QtVlc/VlcMediaPlayer.h>
-#include <QtVlc/VlcMedia.h>
-#include <QtVlc/VlcMediaPlayerAudio.h>
+class VlycBasePlugin;
+class VlycForeignPlugin;
 
-namespace Ui {
-class MainWindow;
-}
-
-class VlcInstance;
-class VlcMedia;
-class VlcMediaPlayer;
+class SitePlugin;
 class Video;
-class Vlyc;
 
-class MainWindow : public QMainWindow
+class PluginManager : public QObject
 {
     Q_OBJECT
-    
 public:
-    explicit MainWindow(Vlyc *self);
-    ~MainWindow();
+    explicit PluginManager(QObject *parent = 0);
+    virtual ~PluginManager();
 
-public slots:
-    void playVideo(Video *);
+    int loadPlugins(QString pluginDir);
+    QList<VlycBasePlugin *> plugins();
 
-private slots:
-    void _playVideo();
-    void openUrl();
-    void browser();
-    void updatePosition(float);
-    void updateState(const VlcState::Type &);
-    
+    // SiteManager functionality
+    Video *sites_video(QUrl url);
+    bool sites_getSiteId(QUrl url, SitePlugin *&site_out, QString &id_out);
+
+signals:
+    void pluginLoaded(VlycBasePlugin *plugin);
+
 private:
-    Vlyc *mp_self;
-    Ui::MainWindow *ui;
+    QList<QObject *> ml_pluginObjects;
+    QList<VlycBasePlugin *> ml_plugins;
+    QList<SitePlugin *> ml_sites;
+    QList<VlycForeignPlugin *> ml_foreign;
 
-    VlcMedia m_media;
-    VlcMediaPlayer m_player;
-    VlcMediaPlayerAudio m_audio;
-
-    Video* mp_video;
+    bool _initPlugin(QObject *o, QString f=QString::null);
 };
 
-#endif // MAINWINDOW_H
+#endif // PLUGINMANAGER_H

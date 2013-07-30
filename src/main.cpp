@@ -28,6 +28,5 @@ int main(int argc, char** argv)
     Vlyc vlyc;
     vlyc.window()->show();
 
-    app.exec();
-    return 0;
+    return app.exec();
 }

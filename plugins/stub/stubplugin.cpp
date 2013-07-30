@@ -18,8 +18,6 @@
 
 #include "stubplugin.h"
 
-#include <QtVlc/VlcMedia.h>
-
 #include <QtCore/QUrl>
 
 struct StubVideo : StandardVideo
@@ -27,29 +25,30 @@ struct StubVideo : StandardVideo
     StubVideo(StubPlugin* site, QString video_id)
     {
         mp_site = site;
-        m_video_id = video_id;
+        ms_video_id = video_id;
     }
 
-    virtual VlcMedia media(VideoQuality q)
+    virtual Media media(VideoQualityLevel q)
     {
-        return VlcMedia("file:///media/hinata/youtube/kogarashi/Project_Diva_Extend__Tsugai_Kogarashi_-_Meiko__Kaito.mkv");
+        return Media(this, VideoQuality(q, "lol"),
+                     QUrl("file:///media/hinata/youtube/kogarashi/Project_Diva_Extend__Tsugai_Kogarashi_-_Meiko__Kaito.mkv"));
     }
 
     virtual void load()
     {
-        m_title = "Stub Video";
-        m_author = "Stub Author";
-        m_description = "A Stub Video";
-        m_likes = 0;
-        m_dislikes = 10000;
-        m_favorites = 0;
+        ms_title = "Stub Video";
+        ms_author = "Stub Author";
+        ms_description = "A Stub Video";
+        mi_likes = 0;
+        mi_dislikes = 10000;
+        mi_favorites = 0;
 
         VideoQuality url;
         url.q = (VideoQualityLevel)1;
         url.description = "MKV";
         ml_available.append(url);
 
-        emit this->loaded(this);
+        emit done();
     }
 };
 

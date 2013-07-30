@@ -16,26 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef SITEMANAGER_H
-#define SITEMANAGER_H
+#ifndef FOREIGNPLUGIN_H
+#define FOREIGNPLUGIN_H
 
-#include <QObject>
-#include "siteplugin.h"
+#include <plugin.h>
+#include <functional>
 
-class SiteManager : public QObject
+typedef std::function<bool(QObject*)> VlycForeignPluginRegistrar;
+
+class VlycForeignPlugin : public VlycBasePlugin
 {
-    Q_OBJECT
-
 public:
-    explicit SiteManager(QString pluginDir=QString::null, QObject *parent = 0);
-    void loadPlugins(QString pluginDir);
+    virtual ~VlycForeignPlugin() {}
 
-    SitePlugin* findSite(QUrl url);
-    Video* video(QUrl url);
+    // you may not "try and see if it works" here.
+    virtual bool canHandle(QString path) = 0;
 
-private:
-    QList<SitePlugin*> plugins;
-    void loadPlugin(QObject*);
+    // may fail, but that will stop further tries on that file.
+    virtual bool loadPlugin(QString path, VlycForeignPluginRegistrar registrar) = 0;
 };
 
-#endif // SITEMANAGER_H
+QT_BEGIN_NAMESPACE
+Q_DECLARE_INTERFACE(VlycForeignPlugin, "me.sodimm.oro.vlyc.ForeignPlugin/1.0")
+QT_END_NAMESPACE
+
+#endif // FOREIGNPLUGIN_H

@@ -19,7 +19,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "vlyc.h"
-#include "sitemanager.h"
+#include "pluginmanager.h"
 #include "vlycbrowser.h"
 
 #include <QtCore>
@@ -72,7 +72,7 @@ void MainWindow::openUrl()
 
     if (mp_video != nullptr)
         delete mp_video;
-    mp_video = mp_self->sites()->video(url);
+    mp_video = mp_self->plugins()->sites_video(url);
 
     if (mp_video == nullptr)
     {
@@ -80,13 +80,27 @@ void MainWindow::openUrl()
         return;
     }
 
-    connect(mp_video, SIGNAL(loaded(Video*)), SLOT(playVideo(Video*)));
+    connect(mp_video, SIGNAL(done()), SLOT(_playVideo()));
     mp_video->load();
+}
+
+void MainWindow::_playVideo()
+{
+    playVideo(qobject_cast<Video *>(sender()));
 }
 
 void MainWindow::playVideo(Video *v)
 {
-    m_media = v->media(v->available()[0]);
+    auto a = v->available();
+    if (!a.length())
+        return;
+    setWindowTitle(QStringLiteral("%1 - %2").arg(v->title()).arg(v->author()));
+    VideoQualityLevel best = VideoQualityLevel::QA_INVALID;
+    foreach (VideoQuality q, a)
+        best = best < q.q ? q.q : best;
+
+    Media m = v->media(best);
+    m_media = VlcMedia(m.url);
 
     m_player.open(m_media);
 }

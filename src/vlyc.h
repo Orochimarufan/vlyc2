@@ -25,7 +25,7 @@
 
 class VlycBrowser;
 class MainWindow;
-class SiteManager;
+class PluginManager;
 
 class Vlyc : public QObject
 {
@@ -35,14 +35,14 @@ public:
 
     VlycBrowser *browser() const;
     MainWindow *window() const;
-    SiteManager *sites() const;
+    PluginManager *plugins() const;
 
     virtual ~Vlyc();
 
 private:
     VlycBrowser *mp_browser;
     MainWindow *mp_window;
-    SiteManager *mp_sites;
+    PluginManager *mp_plugins;
 };
 
 #endif // VLYC_H

@@ -16,9 +16,22 @@
 # * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # *****************************************************************************/
 
-project(StubPlugin)
+# plugin name
+SET(PLUGIN_NAME python)
 
-######## Set compiler flags ########
+######## Prepare ########
+# Plugin stuff
+STRING(SUBSTRING "${PLUGIN_NAME}" 0 1 _FIRST)
+STRING(TOUPPER "${_FIRST}" _FIRST)
+STRING(REGEX REPLACE "^.(.*)" "${_FIRST}\\1Plugin" PLUGIN_PROJECT "${PLUGIN_NAME}")
+project(${PLUGIN_PROJECT})
+SET(PLUGIN vlyc2-${PLUGIN_NAME})
+SET(PLUGIN_QT Core)
+SET(PLUGIN_LIBS)
+SET(PLUGIN_SOURCES)
+SET(PLUGIN_HEADERS)
+
+# Set compiler flags
 IF(APPLE)
 	# assume clang 4.1.0+, add C++0x/C++11 stuff
 	message(STATUS "Using APPLE CMAKE_CXX_FLAGS")
@@ -32,22 +45,46 @@ ELSEIF(MINGW)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
 ENDIF()
 
+######## Plugin ########
+## this is where custom stuff goes!
+# Find PythonQt
+if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL Release)
+	find_package(PythonQt5_3_d)
+	if(NOT PythonQt5_3_d_FOUND)
+		find_package(PythonQt5_3 REQUIRED)
+	endif()
+else()
+	find_package(PythonQt5_3 REQUIRED)
+endif()
 
-# Find Qt
-find_package(Qt5Core REQUIRED)
+include_directories(${PythonQt_INCLUDE_DIRS})
+LIST(APPEND PLUGIN_LIBS ${PythonQt_LIBRARIES})
 
-# Plugin
-SET(PLUGIN_NAME stub)
+LIST(APPEND PLUGIN_QT Widgets)
 
-SET(PLUGIN_HEADERS
-stubplugin.h
+# Find Python
+find_package(Python ${PythonQt_Python} REQUIRED EXACT)
+include_directories(${PYTHON_INCLUDE_DIRS})
+LIST(APPEND PLUGIN_LIBS ${PYTHON_LIBRARIES})
+
+# Sources
+LIST(APPEND PLUGIN_HEADERS
+pythonplugin.h
+pythonsites.h
 )
 
-SET(PLUGIN_SOURCES
-stubplugin.cpp
+LIST(APPEND PLUGIN_SOURCES
+pythonplugin.cpp
+pythonsites.cpp
 )
 
+######## Build ########
+# Qt
+FOREACH(module ${PLUGIN_QT})
+	find_package(Qt5${module} REQUIRED)
+ENDFOREACH(module)
 
-add_library(vlyc2-${PLUGIN_NAME} SHARED ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
-qt5_use_modules(vlyc2-${PLUGIN_NAME} Core)
-target_link_libraries(vlyc2-${PLUGIN_NAME})
+# Build
+add_library(${PLUGIN} SHARED ${PLUGIN_HEADERS} ${PLUGIN_SOURCES})
+qt5_use_modules(${PLUGIN} ${PLUGIN_QT})
+target_link_libraries(${PLUGIN} ${PLUGIN_LIBS})

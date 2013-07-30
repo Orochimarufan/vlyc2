@@ -16,25 +16,45 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef STUBPLUGIN_H
-#define STUBPLUGIN_H
+#ifndef PYTHONPLUGIN_H
+#define PYTHONPLUGIN_H
 
-#include "siteplugin.h"
-#include <QObject>
-#include <QString>
+#include <PythonQt/PythonQt.h>
 
-class StubPlugin : public QObject, public SitePlugin
+#include <QtCore/QObject>
+#include <foreignplugin.h>
+
+class PythonPluginRegistrar : public QObject
 {
     Q_OBJECT
-    Q_INTERFACES(VlycBasePlugin SitePlugin)
+    friend class PythonPlugin;
+    friend class RegScope;
+    PythonPluginRegistrar();
+    VlycForeignPluginRegistrar reg;
+public Q_SLOTS:
+    void registerSite(QString name, QString author, int rev, PyObject *fn_forUrl, PyObject *fn_video);
+};
+
+class PythonPlugin : public QObject, public VlycForeignPlugin
+{
+    Q_OBJECT
+    Q_INTERFACES(VlycBasePlugin VlycForeignPlugin)
     Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/1.0")
+    PythonPluginRegistrar reg;
 public:
-    virtual QString name() { return "Stub"; }
+    PythonPlugin(QObject *parent=0);
+    virtual ~PythonPlugin();
+
+    virtual QString name() { return "Python Interface"; }
     virtual QString author() { return "Orochimarufan"; }
     virtual int rev() { return 1; }
 
-    virtual QString forUrl(QUrl url);
-    virtual Video* video(QString video_id);
+    virtual bool canHandle(QString path);
+    virtual bool loadPlugin(QString path, VlycForeignPluginRegistrar registrar);
+
+public Q_SLOTS:
+    void write_out(QString s);
+    void write_err(QString s);
 };
 
-#endif // STUBPLUGIN_H
+#endif // PYTHONPLUGIN_H

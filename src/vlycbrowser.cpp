@@ -17,7 +17,7 @@
  *****************************************************************************/
 
 #include "vlycbrowser.h"
-#include "sitemanager.h"
+#include "pluginmanager.h"
 #include "vlyc.h"
 #include "video.h"
 #include "mainwindow.h"
@@ -32,7 +32,7 @@ VlycBrowser::VlycBrowser(Vlyc *self) :
 
 bool VlycBrowser::navigationRequest(QUrl url)
 {
-    Video *v = mp_self->sites()->video(url);
+    Video *v = mp_self->plugins()->sites_video(url);
     if (v != nullptr)
     {
         v->load();

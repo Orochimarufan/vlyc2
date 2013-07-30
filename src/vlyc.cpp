@@ -19,22 +19,23 @@
 #include "vlyc.h"
 #include "mainwindow.h"
 #include "vlycbrowser.h"
-#include "sitemanager.h"
+#include "pluginmanager.h"
 
 #include <QtWidgets/QApplication>
 
 Vlyc::Vlyc(QObject *parent) :
     QObject(parent),
     mp_window(new MainWindow(this)),
-    mp_sites(new SiteManager(qApp->applicationDirPath())),
+    mp_plugins(new PluginManager()),
     mp_browser(new VlycBrowser(this))
 {
+    mp_plugins->loadPlugins(qApp->applicationDirPath());
 }
 
 Vlyc::~Vlyc()
 {
     delete mp_window;
-    delete mp_sites;
+    delete mp_plugins;
     delete mp_browser;
 }
 
@@ -48,7 +49,7 @@ MainWindow *Vlyc::window() const
     return mp_window;
 }
 
-SiteManager *Vlyc::sites() const
+PluginManager *Vlyc::plugins() const
 {
-    return mp_sites;
+    return mp_plugins;
 }
