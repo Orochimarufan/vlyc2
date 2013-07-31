@@ -23,6 +23,8 @@
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QStringList>
+#include <QtCore/QFileInfo>
+#include <QtCore/QDir>
 
 static PyModuleDef VlycModuleDef = {
     PyModuleDef_HEAD_INIT,
@@ -39,7 +41,6 @@ static PyModuleDef VlycModuleDef = {
 PythonPlugin::PythonPlugin(QObject *parent) :
     QObject(parent)
 {
-    qDebug("init python");
     PythonQt::init(PythonQt::RedirectStdOut);
     PythonQt *py = PythonQt::self();
 
@@ -72,8 +73,12 @@ PythonPlugin::~PythonPlugin()
 
 bool PythonPlugin::canHandle(QString path)
 {
-    qDebug("Testing path %s", qPrintable(path));
-    return path.endsWith(".py");
+    QFileInfo f(path);
+    if (f.isFile() && f.isReadable())
+        return path.endsWith(".py");
+    else if (f.isDir())
+        return QDir(path).exists("__init__.py");
+    return false;
 }
 
 // PythonPluginRegistrar
@@ -98,11 +103,31 @@ struct RegScope
 
 bool PythonPlugin::loadPlugin(QString path, VlycForeignPluginRegistrar registrar)
 {
-    qDebug("loading python file %s", qPrintable(path));
+    static long pluginCnt = 0;
+    static QString modfmt("VLYCPLUGIN%1_%2");
+    QFileInfo f(path);
     RegScope r(&reg, registrar);
-    PythonQt::self()->createModuleFromFile(path.replace("/", "_"), path);
+    if (f.isFile())
+    {
+        QStringList modParts = path.split("/").last().split(".");
+        modParts.removeLast();
+        QString mod = modfmt.arg(pluginCnt++).arg(modParts.join("_"));
+        PythonQtObjectPtr module = PythonQt::self()->createModuleFromScript(mod);
+        PythonQt::self()->evalFile(module.object(), path);
+    }
+    else
+    {
+        QString mod = modfmt.arg(pluginCnt++).arg(path.split("/").last().replace('/', '_').replace('.', '_'));
+        QDir folder(path);
+        PythonQtObjectPtr package = PythonQt::self()->createModuleFromScript(mod);
+        QVariantList __path__;
+        __path__ << path;
+        package.addVariable("__path__", QVariant::fromValue(__path__));
+        PythonQt::self()->evalFile(package, folder.absoluteFilePath("__init__.py"));
+    }
     if(PythonQt::self()->hadError())
     {
+        PyErr_Print();
         PyErr_Clear();
         return false;
     }
@@ -119,7 +144,7 @@ void PythonPluginRegistrar::registerSite(QString name, QString author, int rev, 
     }
     if(!PyCallable_Check(fn_forUrl) || !PyCallable_Check(fn_video))
     {
-        PyErr_SetString(PyExc_TypeError, "registerSite() needs 2 callable arguments!");
+        PyErr_SetString(PyExc_TypeError, "Signature: registerSite(str name, str author, int rev, callable forUrl, callable loadVideo)");
         return;
     }
     reg(new PythonSitePlugin(name, author, rev, fn_forUrl, fn_video));

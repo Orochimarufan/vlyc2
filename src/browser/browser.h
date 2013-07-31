@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
-/* NOTE: the browser is modeled after the "Tab Browser" example found in the Qt
+/* the browser is modeled after the "Tab Browser" example found in the Qt
  * documentation, available under GPLv3 */
 
 #ifndef BROWSER_H
@@ -54,11 +54,11 @@ public:
 protected:
     bool eventFilter(QObject *, QEvent *);
 
+    NetworkAccessManager *mp_network;
+
 private:
     QList<BrowserWindow *> ml_windows;
     BrowserWindow *mp_window;
-
-    NetworkAccessManager *mp_network;
 };
 
 #endif // BROWSER_H

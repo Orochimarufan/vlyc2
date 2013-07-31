@@ -23,13 +23,24 @@
 #include <QObject>
 #include <QString>
 
-class StubPlugin : public QObject, public SitePlugin
+#ifdef WITH_LIBMAGIC
+#include <magic.h>
+#endif
+
+class DirectAccessPlugin : public QObject, public SitePlugin
 {
     Q_OBJECT
     Q_INTERFACES(VlycBasePlugin SitePlugin)
     Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/1.0")
+
+#ifdef WITH_LIBMAGIC
+    magic_t m_cookie;
+#endif
 public:
-    virtual QString name() { return "Stub"; }
+    DirectAccessPlugin();
+    ~DirectAccessPlugin();
+
+    virtual QString name() { return "Direct Access"; }
     virtual QString author() { return "Orochimarufan"; }
     virtual int rev() { return 1; }
 

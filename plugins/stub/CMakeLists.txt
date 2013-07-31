@@ -16,7 +16,7 @@
 # * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # *****************************************************************************/
 
-project(StubPlugin)
+project(DirectAccessPlugin)
 
 ######## Set compiler flags ########
 IF(APPLE)
@@ -36,8 +36,18 @@ ENDIF()
 # Find Qt
 find_package(Qt5Core REQUIRED)
 
+# Find libmagic
+find_package(LibMagic)
+if(LIBMAGIC_FOUND)
+	include_directories(${LIBMAGIC_INCLUDE_DIR})
+	set(PLUGIN_LIBS ${LIBMAGIC_LIBRARY})
+	add_definitions(-DWITH_LIBMAGIC)
+else()
+	message(STATUS "Could not find libmagic development files. Falling back to fileext-based detection. It is recommended to use libmagic.")
+endif()
+
 # Plugin
-SET(PLUGIN_NAME stub)
+SET(PLUGIN_NAME direct)
 
 SET(PLUGIN_HEADERS
 stubplugin.h
@@ -49,5 +59,5 @@ stubplugin.cpp
 
 
 add_library(vlyc2-${PLUGIN_NAME} SHARED ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
-qt5_use_modules(vlyc2-${PLUGIN_NAME} Core)
-target_link_libraries(vlyc2-${PLUGIN_NAME})
+qt5_use_modules(vlyc2-${PLUGIN_NAME} Core Network)
+target_link_libraries(vlyc2-${PLUGIN_NAME} ${PLUGIN_LIBS})

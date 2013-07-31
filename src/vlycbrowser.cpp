@@ -22,12 +22,24 @@
 #include "video.h"
 #include "mainwindow.h"
 
+#include <browser/networkaccessmanager.h>
+
 #include <QtCore/QUrl>
+
+#include <siteplugin.h>
 
 VlycBrowser::VlycBrowser(Vlyc *self) :
     Browser((QObject *)self),
-    mp_self(self)
+    mp_self(self),
+    cookies()
 {
+    cookies.load();
+    mp_network->setCookieJar(&cookies);
+}
+
+VlycBrowser::~VlycBrowser()
+{
+    cookies.save();
 }
 
 bool VlycBrowser::navigationRequest(QUrl url)
@@ -35,6 +47,7 @@ bool VlycBrowser::navigationRequest(QUrl url)
     Video *v = mp_self->plugins()->sites_video(url);
     if (v != nullptr)
     {
+        qDebug("VlycBrowser: '%s' is a video url: %s", qPrintable(url.toString()), qPrintable(v->site()->name()));
         v->load();
         mp_self->window()->playVideo(v);
         return false;

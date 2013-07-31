@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
-/* NOTE: the browser is modeled after the "Tab Browser" example found in the Qt
+/* the browser is modeled after the "Tab Browser" example found in the Qt
  * documentation, available under GPLv3 */
 
 #include "navigationbar.h"
@@ -58,14 +58,17 @@ NavigationBar::NavigationBar(BrowserWindow *parent) :
     layout->addWidget(go);
 }
 
-void NavigationBar::urlChanged(const QString &new_url)
+void NavigationBar::urlChanged(const QUrl &new_url)
 {
-    mp_line->setText(new_url);
+    mp_line->setText(new_url.toString());
 }
 
 void NavigationBar::go()
 {
-    mp_window->currentTab()->setUrl(QUrl(mp_line->text()));
+    QUrl url(mp_line->text());
+    if (url.scheme().isEmpty())
+        url.setScheme("http");
+    mp_window->currentTab()->setUrl(url);
 }
 
 void NavigationBar::back()

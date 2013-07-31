@@ -20,6 +20,7 @@
 #define VLYCBROWSER_H
 
 #include <browser/browser.h>
+#include <browser/simplefilecookiejar.h>
 
 class Vlyc;
 
@@ -28,11 +29,13 @@ class VlycBrowser : public Browser
     Q_OBJECT
 public:
     explicit VlycBrowser(Vlyc *self);
+    virtual ~VlycBrowser();
 
     virtual bool navigationRequest(QUrl);
 
 private:
     Vlyc *mp_self;
+    SimpleFileCookieJar cookies;
 };
 
 #endif // VLYCBROWSER_H

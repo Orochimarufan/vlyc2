@@ -73,6 +73,9 @@
        </spacer>
       </item>
       <item>
+       <widget class="QComboBox" name="quality"/>
+      </item>
+      <item>
        <widget class="SoundWidget" name="volume" native="true"/>
       </item>
      </layout>
@@ -85,7 +88,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>28</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

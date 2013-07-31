@@ -25,6 +25,8 @@
 #include <QtVlc/VlcMedia.h>
 #include <QtVlc/VlcMediaPlayerAudio.h>
 
+#include <video.h>
+
 namespace Ui {
 class MainWindow;
 }
@@ -48,14 +50,24 @@ public slots:
 
 private slots:
     void _playVideo();
+    void _videoError(const QString &);
     void openUrl();
     void browser();
-    void updatePosition(float);
+    void updatePosition(const float &);
     void updateState(const VlcState::Type &);
+    void on_position_sliderDragged(const float &);
+    void on_quality_currentIndexChanged(const int &);
+    void mediaChanged(libvlc_media_t *media);
     
 private:
     Vlyc *mp_self;
     Ui::MainWindow *ui;
+
+    Video *mp_v;
+    QList<VideoQuality> ml_qa;
+
+    bool block_changed;
+    friend class BlockChanged;
 
     VlcMedia m_media;
     VlcMediaPlayer m_player;

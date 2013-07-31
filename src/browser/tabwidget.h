@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
-/* NOTE: the browser is modeled after the "Tab Browser" example found in the Qt
+/* the browser is modeled after the "Tab Browser" example found in the Qt
  * documentation, available under GPLv3 */
 
 #ifndef TABWIDGET_H
@@ -43,6 +43,8 @@ public:
 signals:
     void activeTitleChanged(const QString &new_title);
     void activeIconChanged(const QIcon &new_icon);
+    void activeUrlChanged(const QUrl &new_url);
+    void activeTabChanged(WebView *new_tab);
 
 public slots:
     WebView *newTab(bool takeFocus = true);
@@ -63,6 +65,7 @@ private slots:
 
     void webViewIconChanged();
     void webViewTitleChanged(const QString &new_title);
+    void webViewUrlChanged(const QUrl &new_url);
     void moveTab(int from, int to);
 
 private:

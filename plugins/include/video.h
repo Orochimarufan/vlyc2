@@ -54,6 +54,8 @@ struct VideoQuality
     inline VideoQuality(VideoQualityLevel q, QString description) : q(q), description(description) {}
     inline VideoQuality(const VideoQuality &q) : q(q.q), description(q.description) {}
     inline VideoQuality &operator =(const VideoQuality &q) { this->q = q.q; description = q.description; }
+    inline bool operator <(const VideoQuality &o) const { return q<o.q; }
+    inline bool operator >(const VideoQuality &o) const { return q>o.q; }
 };
 
 /**
@@ -98,6 +100,8 @@ public:
     // Data
     virtual QString videoId() const = 0;
     virtual SitePlugin *site() const = 0;
+
+    virtual bool useVlcMeta() const { return false; }
 
     virtual QString title() const = 0;
     virtual QString author() const = 0;

@@ -30,6 +30,20 @@
 #include "vlyc_xcb.h"
 #endif
 
+struct BlockChanged
+{
+    MainWindow *w;
+    BlockChanged(MainWindow *target)
+    {
+        w = target;
+        w->block_changed = true;
+    }
+    ~BlockChanged()
+    {
+        w->block_changed = false;
+    }
+};
+
 MainWindow::MainWindow(Vlyc *self) :
     QMainWindow(),
     ui(new Ui::MainWindow),
@@ -48,8 +62,13 @@ MainWindow::MainWindow(Vlyc *self) :
     connect(ui->btn_play, SIGNAL(clicked()), &m_player, SLOT(togglePause()));
     connect(ui->btn_stop, SIGNAL(clicked()), &m_player, SLOT(stop()));
     connect(ui->actionBrowser, SIGNAL(triggered()), SLOT(browser()));
-    connect(&m_player, SIGNAL(positionChanged(float)), SLOT(updatePosition(float)));
     connect(&m_player, SIGNAL(endReached()), &m_player, SLOT(stop()));
+    connect(&m_player, SIGNAL(positionChanged(float)), SLOT(updatePosition(float)));
+    connect(&m_player, SIGNAL(mediaChanged(libvlc_media_t*)), SLOT(mediaChanged(libvlc_media_t*)));
+    connect(&m_player, SIGNAL(stateChanged(VlcState::Type)), SLOT(updateState(VlcState::Type)));
+    connect(ui->volume, SIGNAL(volumeChanged(int)), &m_audio, SLOT(setVolume(int)));
+    connect(ui->volume, SIGNAL(muteChanged(bool)), &m_audio, SLOT(setMuted(bool)));
+    connect(ui->actionQuit, SIGNAL(triggered(bool)), qApp, SLOT(quit()));
 }
 
 MainWindow::~MainWindow()
@@ -81,6 +100,7 @@ void MainWindow::openUrl()
     }
 
     connect(mp_video, SIGNAL(done()), SLOT(_playVideo()));
+    connect(mp_video, SIGNAL(error(QString)), SLOT(_videoError(QString)));
     mp_video->load();
 }
 
@@ -89,23 +109,52 @@ void MainWindow::_playVideo()
     playVideo(qobject_cast<Video *>(sender()));
 }
 
-void MainWindow::playVideo(Video *v)
+void MainWindow::_videoError(const QString &message)
 {
-    auto a = v->available();
-    if (!a.length())
-        return;
-    setWindowTitle(QStringLiteral("%1 - %2").arg(v->title()).arg(v->author()));
-    VideoQualityLevel best = VideoQualityLevel::QA_INVALID;
-    foreach (VideoQuality q, a)
-        best = best < q.q ? q.q : best;
-
-    Media m = v->media(best);
-    m_media = VlcMedia(m.url);
-
-    m_player.open(m_media);
+    QMessageBox::critical(this, "Video Error", message, "Ok");
 }
 
-void MainWindow::updatePosition(float pos)
+void MainWindow::playVideo(Video *v)
+{
+    auto qa = v->available();
+    if (!qa.length())
+        return;
+
+    BlockChanged block(this);
+    ui->quality->clear();
+
+    qSort(qa.begin(), qa.end(), qGreater<VideoQuality>());
+
+    foreach (VideoQuality q, qa)
+        ui->quality->addItem(q.description);
+    ui->quality->setCurrentIndex(0);
+
+    Media m = v->media(qa.first().q);
+    m_media = VlcMedia(m.url);
+    if (v->useVlcMeta() && !m_media.isParsed())
+        m_media.parse(false);
+    else
+    {
+        m_media.setMeta(VlcMeta::Title, v->title());
+        m_media.setMeta(VlcMeta::Artist, v->author());
+        m_media.setMeta(VlcMeta::Description, v->description());
+    }
+
+    m_player.open(m_media);
+
+    ml_qa = qa;
+    //if(mp_v)
+    //    delete mp_v;
+    mp_v = v;
+}
+
+void MainWindow::mediaChanged(libvlc_media_t *media)
+{
+    VlcMedia m(media);
+    setWindowTitle(QStringLiteral("%1 - %2 [VLYC2]").arg(m.meta(VlcMeta::Title)).arg(m.meta(VlcMeta::Artist)));
+}
+
+void MainWindow::updatePosition(const float &pos)
 {
     auto time = m_player.time();
     auto length = m_player.length();
@@ -126,4 +175,19 @@ void MainWindow::updateState(const VlcState::Type &new_state)
     ui->btn_play->updateButtonIcons(new_state == VlcState::Playing ||
                                       new_state == VlcState::Buffering ||
                                       new_state == VlcState::Opening);
+}
+
+void MainWindow::on_position_sliderDragged(const float &new_position)
+{
+    m_player.setPosition(new_position);
+}
+
+void MainWindow::on_quality_currentIndexChanged(const int &index)
+{
+    if (block_changed) return;
+    float pos = m_player.position();
+    Media m = mp_v->media(ml_qa.at(index).q);
+    m_media = VlcMedia(m.url);
+    m_player.open(m_media);
+    m_player.setPosition(pos);
 }

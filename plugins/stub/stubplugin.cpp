@@ -19,48 +19,100 @@
 #include "stubplugin.h"
 
 #include <QtCore/QUrl>
+#include <QtCore/QEventLoop>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkReply>
+#include <QtNetwork/QNetworkRequest>
+
+#ifdef WITH_LIBMAGIC
+#include <QtCore/QByteArray>
+#else
+QStringList videoFileExts = QStringList() <<
+    "mkv" << "mp4" << "avi" << "webm" << "ogv" << "wmv" << "mpg" << "ts" << "3gp";
+#endif
 
 struct StubVideo : StandardVideo
 {
-    StubVideo(StubPlugin* site, QString video_id)
+    StubVideo(DirectAccessPlugin* site, QString video_id)
     {
         mp_site = site;
         ms_video_id = video_id;
     }
 
+    virtual bool useVlcMeta() const
+    {
+        return true;
+    }
+
     virtual Media media(VideoQualityLevel q)
     {
-        return Media(this, VideoQuality(q, "lol"),
-                     QUrl("file:///media/hinata/youtube/kogarashi/Project_Diva_Extend__Tsugai_Kogarashi_-_Meiko__Kaito.mkv"));
+        QUrl url(videoId());
+        QString ext = url.path().split(".").last();
+        return Media(this, VideoQuality(q, ext.toUpper()), url);
     }
 
     virtual void load()
     {
-        ms_title = "Stub Video";
-        ms_author = "Stub Author";
-        ms_description = "A Stub Video";
-        mi_likes = 0;
-        mi_dislikes = 10000;
-        mi_favorites = 0;
+        ms_title = videoId().split("/").last();
+        ms_author = "File";
+        ms_description = "";
 
         VideoQuality url;
-        url.q = (VideoQualityLevel)1;
-        url.description = "MKV";
+        url.q = VideoQualityLevel::QA_LOWEST;
+        url.description = videoId().split(".").last().toUpper();
         ml_available.append(url);
 
         emit done();
     }
 };
 
-
-QString StubPlugin::forUrl(QUrl url)
+DirectAccessPlugin::DirectAccessPlugin()
 {
-    if (url.toString() == "stub://")
-        return "stub";
+#ifdef WITH_LIBMAGIC
+    m_cookie = magic_open(MAGIC_MIME_TYPE);
+    magic_load(m_cookie, NULL);
+#endif
+}
+
+DirectAccessPlugin::~DirectAccessPlugin()
+{
+#ifdef WITH_LIBMAGIC
+    magic_close(m_cookie);
+#endif
+}
+
+
+QString DirectAccessPlugin::forUrl(QUrl url)
+{
+    if (url.scheme() == "file")
+#ifdef WITH_LIBMAGIC
+    {
+        QByteArray mime = magic_file(m_cookie, url.path().toUtf8().constData());
+        if (mime.startsWith("video") || mime.startsWith("audio"))
+            return url.toString();
+    }
+#else
+        if (videoFileExts.contains(url.path().split(".").last().toLower()))
+            return url.toString();
+#endif
+        else if (url.scheme() == "http" || url.scheme() == "https")
+        {
+            // TODO: (expensive) HEAD request, make it a config option
+            QNetworkAccessManager manager;
+            auto reply = manager.head(QNetworkRequest(url));
+            QEventLoop loop;
+            connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), &loop, SLOT(quit()));
+            connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
+            loop.exec();
+            QString h = reply->header(QNetworkRequest::ContentTypeHeader).toString();
+            reply->deleteLater();
+            if (!h.isEmpty() && (h.startsWith("video/") || h.startsWith("audio/")))
+                return url.toString();
+        }
     return QString::null;
 }
 
-Video* StubPlugin::video(QString video_id)
+Video* DirectAccessPlugin::video(QString video_id)
 {
     return new StubVideo(this, video_id);
 }

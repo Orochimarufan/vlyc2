@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
-/* NOTE: the browser is modeled after the "Tab Browser" example found in the Qt
+/* the browser is modeled after the "Tab Browser" example found in the Qt
  * documentation, available under GPLv3 */
 
 #include "tabwidget.h"
@@ -66,6 +66,7 @@ WebView *TabWidget::newTab(bool takeFocus)
     auto tab = new WebView(this);
     connect(tab, SIGNAL(titleChanged(QString)), SLOT(webViewTitleChanged(QString)));
     connect(tab, SIGNAL(iconChanged()), SLOT(webViewIconChanged()));
+    connect(tab, SIGNAL(urlChanged(QUrl)), SLOT(webViewUrlChanged(QUrl)));
     int i = addTab(tab, QStringLiteral("New Tab"));
     if (takeFocus) setCurrentIndex(i);
     return tab;
@@ -106,11 +107,20 @@ void TabWidget::webViewIconChanged()
     }
 }
 
+void TabWidget::webViewUrlChanged(const QUrl &new_url)
+{
+    if (WebView *tab = qobject_cast<WebView *>(sender()))
+        if (indexOf(tab) == currentIndex())
+            emit activeUrlChanged(new_url);
+}
+
 void TabWidget::currentChanged(int index)
 {
     auto tab = tabAt(index);
     emit activeIconChanged(tab->icon());
     emit activeTitleChanged(tab->title());
+    emit activeTabChanged(tab);
+    emit activeUrlChanged(tab->url());
 }
 
 // Tab control

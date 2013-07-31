@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
-/* NOTE: the browser is modeled after the "Tab Browser" example found in the Qt
+/* the browser is modeled after the "Tab Browser" example found in the Qt
  * documentation, available under GPLv3 */
 
 #include "webview.h"
@@ -31,6 +31,9 @@
 #include "webpage.h"
 #include "tabwidget.h"
 
+#include "browser/browser.h"
+#include "browser/networkaccessmanager.h"
+
 WebView::WebView(TabWidget *tabs) :
     QWebView(tabs),
     mp_tabs(tabs),
@@ -43,6 +46,7 @@ WebView::WebView(TabWidget *tabs) :
     //connect(this, SIGNAL(loadProgress(int)), SLOT(setProgress(int)));
     //connect(this, SIGNAL(loadFinished(bool)), SLOT(loadFinished()));
 
+    mp_page->setNetworkAccessManager(mp_tabs->browser()->network());
     mp_page->setForwardUnsupportedContent(true);
 }
 

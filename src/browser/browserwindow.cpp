@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
-/* NOTE: the browser is modeled after the "Tab Browser" example found in the Qt
+/* the browser is modeled after the "Tab Browser" example found in the Qt
  * documentation, available under GPLv3 */
 
 #include "browserwindow.h"
@@ -55,6 +55,7 @@ BrowserWindow::BrowserWindow(Browser *browser, QWidget *parent) :
 
     connect(mp_body, SIGNAL(activeIconChanged(QIcon)), SLOT(_updateWindowIcon(QIcon)));
     connect(mp_body, SIGNAL(activeTitleChanged(QString)), SLOT(_updateWindowTitle(QString)));
+    connect(mp_body, SIGNAL(activeUrlChanged(QUrl)), mp_navi, SLOT(urlChanged(QUrl)));
 }
 
 BrowserWindow::~BrowserWindow()

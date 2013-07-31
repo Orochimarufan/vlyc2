@@ -15,33 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
-/* the browser is modeled after the "Tab Browser" example found in the Qt
- * documentation, available under GPLv3 */
 
-#ifndef NETWORKACCESSMANAGER_H
-#define NETWORKACCESSMANAGER_H
+#ifndef SIMPLEFILECOOKIEJAR_H
+#define SIMPLEFILECOOKIEJAR_H
 
-#include <QtNetwork/QNetworkAccessManager>
-#include <QtNetwork/QNetworkRequest>
+#include <QNetworkCookieJar>
 
-class NetworkAccessManager : public QNetworkAccessManager
+class SimpleFileCookieJar : public QNetworkCookieJar
 {
     Q_OBJECT
 
+    QString cookieFile;
+
 public:
-    explicit NetworkAccessManager(QObject *parent = 0);
-
-private:
-    QList<QString> ml_trustedHosts;
-    qint64 mi_finished;
-    qint64 mi_fromCache;
-    qint64 mi_pipelined;
-    qint64 mi_secure;
-    qint64 mi_downloadBuffer;
-
-public slots:
-    void loadSettings();
-    void requestFinished(QNetworkReply *reply);
+    explicit SimpleFileCookieJar(QString file=QString(), QObject *parent = 0);
+    
+    void clean();
+    void save();
+    void load();
 };
 
-#endif // NETWORKACCESSMANAGER_H
+#endif // SIMPLEFILECOOKIEJAR_H

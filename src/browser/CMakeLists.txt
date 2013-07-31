@@ -22,6 +22,7 @@ SET(BROWSER_CPP
 browser/browser.cpp
 
 browser/networkaccessmanager.cpp
+browser/simplefilecookiejar.cpp
 
 browser/browserwindow.cpp
 browser/navigationbar.cpp
@@ -37,6 +38,7 @@ SET(BROWSER_HPP
 browser/browser.h
 
 browser/networkaccessmanager.h
+browser/simplefilecookiejar.h
 
 browser/browserwindow.h
 browser/navigationbar.h

@@ -109,6 +109,7 @@ Media PythonVideo::media(VideoQualityLevel q)
 
 void PythonVideo::load()
 {
+    if (isDone()) return;
     PythonVideoWrapper w(this);
     QVariantList l;
     l.append(QVariant::fromValue<QObject*>(&w));
@@ -123,7 +124,6 @@ PythonSitePlugin::PythonSitePlugin(QString name, QString author, int rev, PyObje
 {
     mof_forUrl = fn_forUrl;
     mof_video = fn_video;
-    qDebug("New site PLugin");
 }
 
 QString PythonSitePlugin::forUrl(QUrl url)

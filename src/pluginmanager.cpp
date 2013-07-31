@@ -57,7 +57,7 @@ int PluginManager::loadPlugins(QString pluginDir)
 
     QStringList other;
 
-    foreach (QString fileName, folder.entryList(QDir::Files))
+    foreach (QString fileName, folder.entryList())
     {
         if (!g_plugin_re.match(fileName).hasMatch())
         {
@@ -75,14 +75,13 @@ int PluginManager::loadPlugins(QString pluginDir)
                 loadedCnt++;
     }
 
-    qDebug() << other;
-
     auto base_fn = std::mem_fn(&PluginManager::_initPlugin);
 
     foreach (QString fileName, other)
         foreach (VlycForeignPlugin *plugin, ml_foreign)
             if(plugin->canHandle(fileName))
             {
+                qDebug("Loading '%s' using '%s'", qPrintable(fileName), qPrintable(plugin->name()));
                 // generate fn
                 auto fn = std::bind(base_fn, this, std::placeholders::_1, fileName);
                 loadedCnt += plugin->loadPlugin(fileName, fn);

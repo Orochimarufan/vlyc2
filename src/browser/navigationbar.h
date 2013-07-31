@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
-/* NOTE: the browser is modeled after the "Tab Browser" example found in the Qt
+/* the browser is modeled after the "Tab Browser" example found in the Qt
  * documentation, available under GPLv3 */
 
 #ifndef NAVIGATIONBAR_H
@@ -37,7 +37,7 @@ private:
     QLineEdit *mp_line;
 
 public slots:
-    void urlChanged(const QString &new_url);
+    void urlChanged(const QUrl &new_url);
 
 private slots:
     void go();
