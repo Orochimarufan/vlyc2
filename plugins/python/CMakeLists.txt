@@ -48,19 +48,12 @@ ENDIF()
 ######## Plugin ########
 ## this is where custom stuff goes!
 # Find PythonQt
-if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL Release)
-	find_package(PythonQt5_3_d)
-	if(NOT PythonQt5_3_d_FOUND)
-		find_package(PythonQt5_3 REQUIRED)
-	endif()
-else()
-	find_package(PythonQt5_3 REQUIRED)
-endif()
+find_package(PythonQt5_3_QtAll REQUIRED)
 
-include_directories(${PythonQt_INCLUDE_DIRS})
-LIST(APPEND PLUGIN_LIBS ${PythonQt_LIBRARIES})
+include_directories(${PythonQt_QtAll_INCLUDE_DIRS})
+LIST(APPEND PLUGIN_LIBS ${PythonQt_QtAll_LIBRARIES})
 
-LIST(APPEND PLUGIN_QT Widgets)
+LIST(APPEND PLUGIN_QT ${PythonQt_QtAll_QT})
 
 # Find Python
 find_package(Python ${PythonQt_Python} REQUIRED EXACT)
@@ -71,11 +64,17 @@ LIST(APPEND PLUGIN_LIBS ${PYTHON_LIBRARIES})
 LIST(APPEND PLUGIN_HEADERS
 pythonplugin.h
 pythonsites.h
+pythonqtdecorator.h
 )
 
 LIST(APPEND PLUGIN_SOURCES
 pythonplugin.cpp
 pythonsites.cpp
+pythonqtdecorator.cpp
+)
+
+SET(PLUGINS
+	youtube.py
 )
 
 ######## Build ########
@@ -84,7 +83,23 @@ FOREACH(module ${PLUGIN_QT})
 	find_package(Qt5${module} REQUIRED)
 ENDFOREACH(module)
 
+# Qt stuff
+qt5_add_resources(RES pythonplugin.qrc)
+LIST(APPEND PLUGIN_SOURCES ${RES})
+
 # Build
 add_library(${PLUGIN} SHARED ${PLUGIN_HEADERS} ${PLUGIN_SOURCES})
 qt5_use_modules(${PLUGIN} ${PLUGIN_QT})
 target_link_libraries(${PLUGIN} ${PLUGIN_LIBS})
+
+foreach(plugin ${PLUGINS})
+	set(INPUT ${PROJECT_SOURCE_DIR}/plugins/${plugin} )
+	set(OUTPUT ${CMAKE_BINARY_DIR}/${plugin})
+	add_custom_command(OUTPUT ${OUTPUT}
+		COMMAND ${CMAKE_COMMAND}
+		ARGS -E copy ${INPUT} ${OUTPUT}
+		MAIN_DEPENDENCY ${INPUT}
+		COMMENT "Copying Python plugin ${plugin}"
+	)
+	add_dependencies(${PLUGIN} ${OUTPUT})
+endforeach()

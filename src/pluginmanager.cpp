@@ -19,6 +19,8 @@
 #include "pluginmanager.h"
 #include <siteplugin.h>
 #include <foreignplugin.h>
+#include "vlyc.h"
+#include "vlycbrowser.h"
 
 #include <QtCore/QPluginLoader>
 #include <QtCore/QDir>
@@ -36,8 +38,8 @@
 #   define LIBRARY_EXT ".so"
 #endif
 
-PluginManager::PluginManager(QObject *parent) :
-    QObject(parent)
+PluginManager::PluginManager(Vlyc *parent) :
+    QObject(parent), mp_self(parent)
 {
 }
 
@@ -71,8 +73,12 @@ int PluginManager::loadPlugins(QString pluginDir)
         QObject *plugin = loader.instance();
 
         if (plugin)
+        {
             if (_initPlugin(plugin, fileName))
                 loadedCnt++;
+        }
+        else
+            qDebug("Could not load plugin from %s: %s", qPrintable(fileName), qPrintable(loader.errorString()));
     }
 
     auto base_fn = std::mem_fn(&PluginManager::_initPlugin);
@@ -100,6 +106,11 @@ bool PluginManager::_initPlugin(QObject *o, QString fileName)
         qDebug("Failed to load %s: Not a vlyc2 plugin.", qPrintable(fileName));
         return false;
     }
+
+    VlycPluginInitializer init;
+    init.network = (QNetworkAccessManager *)mp_self->browser()->network();
+    plugin->initialize(init);
+
     ml_pluginObjects.append(o);
     ml_plugins.append(plugin);
 

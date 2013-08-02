@@ -41,6 +41,8 @@ vlycbrowser.h
 ../plugins/include/plugin.h
 ../plugins/include/video.h
 ../plugins/include/siteplugin.h
+fullscreencontroller.h
+videowidget.h
 )
 
 
@@ -52,12 +54,19 @@ main.cpp
 mainwindow.cpp
 vlyc.cpp
 vlycbrowser.cpp
+fullscreencontroller.cpp
+videowidget.cpp
 )
 
 
 ######## UIs ########
 SET(VLYC_UIS
 mainwindow.ui
+fullscreencontroller.ui
+)
+
+SET(VLYC_RES
+../vlyc.qrc
 )
 
 add_subdirectory(browser)
@@ -65,7 +74,7 @@ add_subdirectory(browser)
 ################################ COMPILE ################################
 # Qt 5 stuff
 QT5_WRAP_UI(VLYC_UI ${VLYC_UIS})
-QT5_ADD_RESOURCES(VLYC_QRC)
+QT5_ADD_RESOURCES(VLYC_QRC ${VLYC_RES})
 
 # Qt 5.0.x WM_CLASS hackery :( (sa: vlyc_xcb.*)
 IF(UNIX AND NOT APPLE)

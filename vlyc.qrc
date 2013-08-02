@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/vlyc">
+        <file>res/vlyc.png</file>
+        <file>res/vlyc2.png</file>
+    </qresource>
+    <qresource prefix="/browser">
+        <file>res/fork.png</file>
+        <file alias="home">res/go-home.png</file>
+        <file alias="go">res/go-jump-locationbar.png</file>
+        <file alias="forward">res/go-next-view.png</file>
+        <file alias="back">res/go-previous-view.png</file>
+        <file alias="refresh">res/view-refresh.png</file>
+    </qresource>
+</RCC>

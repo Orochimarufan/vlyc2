@@ -39,7 +39,7 @@ enum class VideoQualityLevel : int {
     QA_720     = 300,
     QA_1080    = 400,
     QA_4K      = 600,
-    QA_HIGHEST = 1000
+    QA_HIGHEST = 1024
 };
 
 /**
@@ -107,6 +107,7 @@ public:
     virtual QString author() const = 0;
     virtual QString description() const = 0;
 
+    virtual int views() const = 0;
     virtual int likes() const = 0;
     virtual int dislikes() const = 0;
     virtual int favorites() const = 0;
@@ -142,6 +143,7 @@ protected:
     QString ms_author;
     QString ms_description;
 
+    int mi_views;
     int mi_likes;
     int mi_dislikes;
     int mi_favorites;
@@ -149,6 +151,12 @@ protected:
     QList<VideoQuality> ml_available;
 
 public:
+    StandardVideo(SitePlugin *site, const QString &video_id) :
+        mp_site(site), ms_video_id(video_id),
+        ms_title("Unknown Title"), ms_author("Unknown Author"),
+        mi_views(0), mi_likes(0), mi_dislikes(0), mi_favorites(0)
+    {}
+
     virtual QString videoId() const { return ms_video_id; }
     virtual SitePlugin *site() const { return mp_site; }
 
@@ -156,6 +164,7 @@ public:
     virtual QString author() const { return ms_author; }
     virtual QString description() const { return ms_description; }
 
+    virtual int views() const { return mi_views; }
     virtual int likes() const { return mi_likes; }
     virtual int dislikes() const { return mi_dislikes; }
     virtual int favorites() const { return mi_favorites; }

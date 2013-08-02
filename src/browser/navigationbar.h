@@ -44,6 +44,7 @@ private slots:
     void back();
     void fwd();
     void reload();
+    void home();
 };
 
 #endif // NAVIGATIONBAR_H

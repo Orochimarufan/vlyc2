@@ -23,18 +23,6 @@
 
 #include <siteplugin.h>
 
-class PythonVideo : public StandardVideo
-{
-    Q_OBJECT
-    friend class PythonSitePlugin;
-    friend class PythonVideoWrapper;
-public:
-    PythonVideo(SitePlugin *site, QString videoId);
-    QMap<VideoQualityLevel, Media> m_urls;
-    virtual Media media(VideoQualityLevel q);
-    virtual void load();
-};
-
 class PythonSitePlugin : public QObject, public SitePlugin
 {
     Q_OBJECT
@@ -51,35 +39,42 @@ public:
     QString ms_author;
     int mi_rev;
 
-    virtual QString name() { return ms_name; }
-    virtual QString author() { return ms_author; }
-    virtual int rev() { return mi_rev; }
+    virtual QString name() const { return ms_name; }
+    virtual QString author() const { return ms_author; }
+    virtual int rev() const { return mi_rev; }
 };
 
-class PythonVideoWrapper : public QObject
+class PythonVideo : public StandardVideo
 {
     Q_OBJECT
-    friend class PythonVideo;
-    PythonVideoWrapper(PythonVideo *v);
-    PythonVideo *mp_vid;
-
+    QMap<VideoQualityLevel, Media> m_urls;
 public:
-    PythonVideoWrapper();
-    PythonVideoWrapper(const PythonVideoWrapper &w);
-    ~PythonVideoWrapper();
+    PythonVideo(/*Python*/SitePlugin *site, const QString &video_id);
+
+    virtual Media media(VideoQualityLevel q);
+    virtual void load();
 
 public Q_SLOTS:
     QString videoId() const;
+    QString title() const;
+    QString author() const;
+    QString description() const;
+    int views() const;
+    int likes() const;
+    int dislikes() const;
+    int favorites() const;
+
     void setTitle(const QString &title);
     void setAuthor(const QString &author);
     void setDescription(const QString &description);
+    void setViews(const int &views);
     void setLikes(const int &likes);
     void setDislikes(const int &dislikes);
     void setFavorites(const int &favorites);
     void addQuality(const int &level, const QString &descr, const QString &url);
-    void error(QString message);
-    QString getError();
-    bool isDone();
+
+    void setError(QString message);
+    void setDone();
 };
 
 #endif // PYTHONSITES_H

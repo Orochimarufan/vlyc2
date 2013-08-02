@@ -29,6 +29,7 @@
 #include "tabwidget.h"
 #include "webview.h"
 #include "navigationbar.h"
+#include "browser.h"
 
 #ifdef Q_OS_LINUX
 #include "vlyc_xcb.h"
@@ -38,11 +39,14 @@ BrowserWindow::BrowserWindow(Browser *browser, QWidget *parent) :
     QMainWindow(parent), mp_browser(browser), mp_body(new TabWidget(browser))
 {
 #ifdef Q_OS_LINUX
-    XCB::setWMClass(winId(), "vlyc2", "vlyc2");
+    XCB::setWMClass(winId(), qApp->applicationName(), qApp->applicationName());
 #endif
-    setWindowTitle(BROWSER_TITLE_SFX);
+    setWindowTitle(mp_browser->titlePostfix());
+    setWindowIcon(qApp->windowIcon());
 
     setupMenu();
+
+    resize(1080, 600);
 
     mp_body->newTab("about:blank");
     mp_navi = new NavigationBar(this);
@@ -73,6 +77,10 @@ void BrowserWindow::setupMenu()
     action = menu->addAction("Close");
     connect(action, SIGNAL(triggered()), SLOT(close()));
 
+    menu = menubar->addMenu("&Page");
+    action = menu->addAction("Set as Home");
+    connect(action, SIGNAL(triggered()), SLOT(_setAsHome()));
+
     setMenuBar(menubar);
 }
 
@@ -87,12 +95,18 @@ void BrowserWindow::_updateStatusBar(const QString &)
 
 void BrowserWindow::_updateWindowTitle(const QString &title)
 {
-    setWindowTitle(title + QStringLiteral(" - ") + BROWSER_TITLE_SFX);
+    if (!mp_browser->titlePostfix().isEmpty())
+        setWindowTitle(title + QStringLiteral(" - ") + mp_browser->titlePostfix());
+    else
+        setWindowTitle(title);
 }
 
 void BrowserWindow::_updateWindowIcon(const QIcon &icon)
 {
-    setWindowIcon(icon);
+    if (!icon.isNull())
+        setWindowIcon(icon);
+    else
+        setWindowIcon(qApp->windowIcon());
 }
 
 // private ui slots
@@ -104,6 +118,11 @@ void BrowserWindow::_openUrl()
     if (url.isNull())
         return;
     currentTab()->setUrl(QUrl(url));
+}
+
+void BrowserWindow::_setAsHome()
+{
+    mp_browser->setHomeUrl(currentTab()->url());
 }
 
 // new tab
@@ -126,6 +145,11 @@ WebView *BrowserWindow::currentTab() const
 TabWidget *BrowserWindow::tabs() const
 {
     return mp_body;
+}
+
+Browser *BrowserWindow::browser() const
+{
+    return mp_browser;
 }
 
 // slots

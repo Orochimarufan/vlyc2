@@ -24,12 +24,15 @@
 #include <QtVlc/VlcMediaPlayer.h>
 #include <QtVlc/VlcMedia.h>
 #include <QtVlc/VlcMediaPlayerAudio.h>
+#include <QtWidgets/QShortcut>
 
 #include <video.h>
 
 namespace Ui {
 class MainWindow;
 }
+
+class FullScreenController;
 
 class VlcInstance;
 class VlcMedia;
@@ -40,13 +43,15 @@ class Vlyc;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-    
 public:
     explicit MainWindow(Vlyc *self);
     ~MainWindow();
 
 public slots:
     void playVideo(Video *);
+
+    void setFullScreen(bool fs);
+    bool toggleFullScreen();
 
 private slots:
     void _playVideo();
@@ -58,13 +63,22 @@ private slots:
     void on_position_sliderDragged(const float &);
     void on_quality_currentIndexChanged(const int &);
     void mediaChanged(libvlc_media_t *media);
+
+    void setFullScreenVideo(bool fs);
+
+    void saveState();
+    void loadState();
+
+protected:
+    bool eventFilter(QObject *, QEvent *);
+    void closeEvent(QCloseEvent *);
+    void resizeEvent(QResizeEvent *);
+    void moveEvent(QMoveEvent *);
     
 private:
     Vlyc *mp_self;
     Ui::MainWindow *ui;
-
-    Video *mp_v;
-    QList<VideoQuality> ml_qa;
+    FullScreenController *fsc;
 
     bool block_changed;
     friend class BlockChanged;
@@ -74,6 +88,14 @@ private:
     VlcMediaPlayerAudio m_audio;
 
     Video* mp_video;
+    QList<VideoQuality> ml_qa;
+
+    QShortcut *shortcut_Space;
+    QShortcut *shortcut_Esc;
+    QShortcut *shortcut_F11;
+    QShortcut *shortcut_AltReturn;
+
+    QRect m_geometry;
 };
 
 #endif // MAINWINDOW_H

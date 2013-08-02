@@ -31,12 +31,11 @@ QStringList videoFileExts = QStringList() <<
     "mkv" << "mp4" << "avi" << "webm" << "ogv" << "wmv" << "mpg" << "ts" << "3gp";
 #endif
 
-struct StubVideo : StandardVideo
+struct DirectAccessVideo : StandardVideo
 {
-    StubVideo(DirectAccessPlugin* site, QString video_id)
+    DirectAccessVideo(DirectAccessPlugin *site, const QString &video_id) :
+        StandardVideo(site, video_id)
     {
-        mp_site = site;
-        ms_video_id = video_id;
     }
 
     virtual bool useVlcMeta() const
@@ -74,6 +73,11 @@ DirectAccessPlugin::DirectAccessPlugin()
 #endif
 }
 
+void DirectAccessPlugin::initialize(VlycPluginInitializer init)
+{
+    mp_network = init.network;
+}
+
 DirectAccessPlugin::~DirectAccessPlugin()
 {
 #ifdef WITH_LIBMAGIC
@@ -88,18 +92,18 @@ QString DirectAccessPlugin::forUrl(QUrl url)
 #ifdef WITH_LIBMAGIC
     {
         QByteArray mime = magic_file(m_cookie, url.path().toUtf8().constData());
-        if (mime.startsWith("video") || mime.startsWith("audio"))
+        if (mime.startsWith("video/") || mime.startsWith("audio/"))
             return url.toString();
     }
 #else
         if (videoFileExts.contains(url.path().split(".").last().toLower()))
             return url.toString();
 #endif
-        else if (url.scheme() == "http" || url.scheme() == "https")
+        else if ((url.scheme() == "http" || url.scheme() == "https") &&
+                 !(url.path().endsWith(".html") || url.path().endsWith(".htm") || url.path().endsWith("/") || url.path().endsWith(".shtml")))
         {
             // TODO: (expensive) HEAD request, make it a config option
-            QNetworkAccessManager manager;
-            auto reply = manager.head(QNetworkRequest(url));
+            auto reply = mp_network->head(QNetworkRequest(url));
             QEventLoop loop;
             connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), &loop, SLOT(quit()));
             connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
@@ -114,5 +118,5 @@ QString DirectAccessPlugin::forUrl(QUrl url)
 
 Video* DirectAccessPlugin::video(QString video_id)
 {
-    return new StubVideo(this, video_id);
+    return new DirectAccessVideo(this, video_id);
 }

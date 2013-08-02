@@ -41,13 +41,16 @@ class PythonPlugin : public QObject, public VlycForeignPlugin
     Q_INTERFACES(VlycBasePlugin VlycForeignPlugin)
     Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/1.0")
     PythonPluginRegistrar reg;
+    VlycPluginInitializer initer;
 public:
     PythonPlugin(QObject *parent=0);
     virtual ~PythonPlugin();
 
-    virtual QString name() { return "Python Interface"; }
-    virtual QString author() { return "Orochimarufan"; }
-    virtual int rev() { return 1; }
+    virtual void initialize(VlycPluginInitializer init);
+
+    virtual QString name() const { return "Python Interface"; }
+    virtual QString author() const { return "Orochimarufan"; }
+    virtual int rev() const { return 1; }
 
     virtual bool canHandle(QString path);
     virtual bool loadPlugin(QString path, VlycForeignPluginRegistrar registrar);

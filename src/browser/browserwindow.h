@@ -39,6 +39,8 @@ public:
     WebView *currentTab() const;
     TabWidget *tabs() const;
 
+    Browser *browser() const;
+
 public slots:
     // work on currently active tab.
     void home();
@@ -52,6 +54,7 @@ private slots:
     void _openUrl();
     void _updateWindowTitle(const QString &title = QString());
     void _updateWindowIcon(const QIcon &icon = QIcon());
+    void _setAsHome();
 
 private:
     void setupMenu();
@@ -61,9 +64,5 @@ private:
     TabWidget *mp_body;
     NavigationBar *mp_navi;
 };
-
-#ifndef BROWSER_TITLE_SFX
-#define BROWSER_TITLE_SFX QStringLiteral("[VLYC² Browser]")
-#endif
 
 #endif // BROWSERWINDOW_H

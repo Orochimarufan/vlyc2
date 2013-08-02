@@ -22,6 +22,7 @@
 #define BROWSER_H
 
 #include <QtCore/QObject>
+#include <QtCore/QUrl>
 
 class NetworkAccessManager;
 //class HistoryManager;
@@ -46,19 +47,29 @@ public:
     NetworkAccessManager *network() const;
 
     BrowserWindow *newWindow0(QWidget *parent);
-    BrowserWindow *newWindow(bool takeFocus = true, QWidget *parent=nullptr);
+    BrowserWindow *newWindow1(bool takeFocus=true, QWidget *paret=nullptr);
+    BrowserWindow *newWindow(bool takeFocus=true, QWidget *parent=nullptr);
     BrowserWindow *newWindow(const QUrl &url, bool takeFocus = true, QWidget *parent=nullptr);
 
     virtual bool navigationRequest(QUrl);
 
+    QString titlePostfix() const;
+    void setTitlePostfix(const QString &postfix);
+
+    QUrl homeUrl() const;
+    void setHomeUrl(const QUrl &homeUrl);
+
 protected:
     bool eventFilter(QObject *, QEvent *);
 
-    NetworkAccessManager *mp_network;
+    void saveState();
+    void loadState();
 
-private:
+    NetworkAccessManager *mp_network;
     QList<BrowserWindow *> ml_windows;
     BrowserWindow *mp_window;
+    QString ms_title_postfix;
+    QUrl m_home_url;
 };
 
 #endif // BROWSER_H

@@ -26,12 +26,13 @@ class VlycForeignPlugin;
 
 class SitePlugin;
 class Video;
+class Vlyc;
 
 class PluginManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit PluginManager(QObject *parent = 0);
+    explicit PluginManager(Vlyc *parent);
     virtual ~PluginManager();
 
     int loadPlugins(QString pluginDir);
@@ -45,6 +46,7 @@ signals:
     void pluginLoaded(VlycBasePlugin *plugin);
 
 private:
+    Vlyc *mp_self;
     QList<QObject *> ml_pluginObjects;
     QList<VlycBasePlugin *> ml_plugins;
     QList<SitePlugin *> ml_sites;

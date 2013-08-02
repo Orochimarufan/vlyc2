@@ -17,9 +17,11 @@
  *****************************************************************************/
 
 #include <PythonQt/PythonQt.h>
+#include <PythonQt/PythonQt_QtAll.h>
 
 #include "pythonplugin.h"
 #include "pythonsites.h"
+#include "pythonqtdecorator.h"
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QStringList>
@@ -42,19 +44,41 @@ PythonPlugin::PythonPlugin(QObject *parent) :
     QObject(parent)
 {
     PythonQt::init(PythonQt::RedirectStdOut);
+    PythonQt_QtAll::init();
     PythonQt *py = PythonQt::self();
 
     PyObject *module = PyModule_Create(&VlycModuleDef);
     PyObject *modules = PySys_GetObject("modules");
     PyDict_SetItemString(modules, VlycModuleDef.m_name, module);
 
-    py->registerClass(&PythonVideoWrapper::staticMetaObject);
+    py->registerClass(&PythonVideo::staticMetaObject);
     py->registerClass(&PythonPluginRegistrar::staticMetaObject);
+
+    py->addDecorators(new PythonQtDecorator());
 
     connect(py, SIGNAL(pythonStdOut(QString)), SLOT(write_out(QString)));
     connect(py, SIGNAL(pythonStdErr(QString)), SLOT(write_err(QString)));
 
-    PythonQt::self()->addObject(module, "registrar", &reg);
+    py->addObject(module, "registrar", &reg);
+
+    QVariantList __path__;
+    __path__ << ":/lib/vlyc";
+    py->addVariable(module, "__path__", QVariant::fromValue(__path__));
+
+    py->installDefaultImporter();
+    //PythonQtObjectPtr importmod = py->importModule("PythonQtImport");
+    //py->addVariable(module, "__loader__", importmod.getVariable("PythonQtImporter"));
+
+    // get rid of apport on Ubuntu!
+    PyObject *excepthook = PySys_GetObject("__excepthook__");
+    PySys_SetObject("excepthook", excepthook);
+}
+
+void PythonPlugin::initialize(VlycPluginInitializer init)
+{
+    initer = init;
+    PythonQtObjectPtr module = PythonQt::self()->importModule("vlyc");
+    module.addVariable("network", QVariant::fromValue<QObject*>((QObject*)initer.network));
 }
 
 void PythonPlugin::write_out(QString s)

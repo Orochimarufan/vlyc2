@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/lib/vlyc">
+        <file alias="xml.py">lib/xml.py</file>
+        <file alias="util.py">lib/util.py</file>
+        <file alias="tree.py">lib/tree.py</file>
+        <file alias="plugin.py">lib/plugin.py</file>
+        <file alias="isodate.py">lib/isodate.py</file>
+        <file alias="html.py">lib/html.py</file>
+        <file alias="etree.py">lib/etree.py</file>
+    </qresource>
+</RCC>

@@ -25,17 +25,21 @@
 
 #include <QListIterator>
 #include <QEvent>
+#include <QSettings>
 
 // construct/destruct
 Browser::Browser(QObject *parent) :
     QObject(parent),
     mp_window(nullptr),
-    mp_network(new NetworkAccessManager(this))
+    mp_network(new NetworkAccessManager(this)),
+    ms_title_postfix("Browser")
 {
+    loadState();
 }
 
 Browser::~Browser()
 {
+    saveState();
     // delete the windows
     QListIterator<BrowserWindow *> iter(ml_windows);
     while (iter.hasNext())
@@ -64,6 +68,26 @@ NetworkAccessManager *Browser::network() const
     return mp_network;
 }
 
+QString Browser::titlePostfix() const
+{
+    return ms_title_postfix;
+}
+
+void Browser::setTitlePostfix(const QString &postfix)
+{
+    ms_title_postfix = postfix;
+}
+
+QUrl Browser::homeUrl() const
+{
+    return m_home_url;
+}
+
+void Browser::setHomeUrl(const QUrl &homeUrl)
+{
+    m_home_url = homeUrl;
+}
+
 // new Window
 BrowserWindow *Browser::newWindow0(QWidget *parent)
 {
@@ -73,7 +97,7 @@ BrowserWindow *Browser::newWindow0(QWidget *parent)
     return win;
 }
 
-BrowserWindow *Browser::newWindow(bool takeFocus, QWidget *parent)
+BrowserWindow *Browser::newWindow1(bool takeFocus, QWidget *parent)
 {
     auto win = newWindow0(parent);
 
@@ -92,9 +116,16 @@ BrowserWindow *Browser::newWindow(bool takeFocus, QWidget *parent)
     return win;
 }
 
+BrowserWindow *Browser::newWindow(bool takeFocus, QWidget *parent)
+{
+    auto win = newWindow1(takeFocus, parent);
+    win->currentTab()->setUrl(homeUrl());
+    return win;
+}
+
 BrowserWindow *Browser::newWindow(const QUrl &url, bool takeFocus, QWidget *parent)
 {
-    auto win = newWindow(parent);
+    auto win = newWindow1(takeFocus, parent);
     win->currentTab()->setUrl(url);
     return win;
 }
@@ -112,4 +143,19 @@ bool Browser::eventFilter(QObject *recv, QEvent *e)
 bool Browser::navigationRequest(QUrl url)
 {
     return true;
+}
+
+// state
+void Browser::saveState()
+{
+    QSettings config;
+    config.beginGroup("Browser");
+    config.setValue("Home", m_home_url);
+}
+
+void Browser::loadState()
+{
+    QSettings config;
+    config.beginGroup("Browser");
+    m_home_url = qvariant_cast<QUrl>(config.value("Home", QUrl("about:blank")));
 }

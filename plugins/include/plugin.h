@@ -22,14 +22,23 @@
 #include <QtPlugin>
 #include <QObject>
 
+class QNetworkAccessManager;
+
+struct VlycPluginInitializer
+{
+    QNetworkAccessManager *network;
+};
+
 class VlycBasePlugin
 {
 public:
     virtual ~VlycBasePlugin() {}
 
-    virtual QString name() = 0;
-    virtual QString author() = 0;
-    virtual int rev() = 0;
+    virtual void initialize(VlycPluginInitializer init) {}
+
+    virtual QString name() const = 0;
+    virtual QString author() const = 0;
+    virtual int rev() const = 0;
 };
 
 QT_BEGIN_NAMESPACE

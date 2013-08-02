@@ -20,86 +20,109 @@
 #include "pythonsites.h"
 
 #include <QtCore/QUrl>
+#include <PythonQt/PythonQtConversion.h>
 
-// PythonVideoWrapper
-PythonVideoWrapper::PythonVideoWrapper(PythonVideo *v) : mp_vid(v)
-{}
+// PythonVideo
 
-PythonVideoWrapper::PythonVideoWrapper() : mp_vid(NULL)
-{}
-
-PythonVideoWrapper::PythonVideoWrapper(const PythonVideoWrapper &w) : mp_vid(w.mp_vid)
-{}
-
-PythonVideoWrapper::~PythonVideoWrapper()
-{}
-
-QString PythonVideoWrapper::videoId() const
+PythonVideo::PythonVideo(/*Python*/SitePlugin *site, const QString &video_id) :
+    StandardVideo(site, video_id)
 {
-    return mp_vid->ms_video_id;
 }
 
-void PythonVideoWrapper::setTitle(const QString &title)
+QString PythonVideo::videoId() const
 {
-    mp_vid->ms_title = title;
+    return ms_video_id;
 }
 
-void PythonVideoWrapper::setAuthor(const QString &author)
+QString PythonVideo::title() const
 {
-    mp_vid->ms_author = author;
+    return ms_title;
 }
 
-void PythonVideoWrapper::setDescription(const QString &description)
+QString PythonVideo::author() const
 {
-    mp_vid->ms_description = description;
+    return ms_author;
 }
 
-void PythonVideoWrapper::setLikes(const int &likes)
+QString PythonVideo::description() const
 {
-    mp_vid->mi_likes = likes;
+    return ms_description;
 }
 
-void PythonVideoWrapper::setDislikes(const int &dislikes)
+int PythonVideo::views() const
 {
-    mp_vid->mi_dislikes = dislikes;
+    return mi_views;
 }
 
-void PythonVideoWrapper::setFavorites(const int &favorites)
+int PythonVideo::likes() const
 {
-    mp_vid->mi_favorites = favorites;
+    return mi_likes;
 }
 
-void PythonVideoWrapper::addQuality(const int &level, const QString &descr, const QString &url)
+int PythonVideo::dislikes() const
+{
+    return mi_dislikes;
+}
+
+int PythonVideo::favorites() const
+{
+    return mi_favorites;
+}
+
+void PythonVideo::setTitle(const QString &title)
+{
+    ms_title = title;
+}
+
+void PythonVideo::setAuthor(const QString &author)
+{
+    ms_author = author;
+}
+
+void PythonVideo::setDescription(const QString &description)
+{
+    ms_description = description;
+}
+
+void PythonVideo::setViews(const int &views)
+{
+    mi_views = views;
+}
+
+void PythonVideo::setLikes(const int &likes)
+{
+    mi_likes = likes;
+}
+
+void PythonVideo::setDislikes(const int &dislikes)
+{
+    mi_dislikes = dislikes;
+}
+
+void PythonVideo::setFavorites(const int &favorites)
+{
+    mi_favorites = favorites;
+}
+
+void PythonVideo::addQuality(const int &level, const QString &descr, const QString &url)
 {
     qDebug("AddQ: %i %s", level, qPrintable(descr));
     VideoQuality q;
     q.q = (VideoQualityLevel)level;
     q.description = descr;
-    Media m(mp_vid, q, QUrl(url));
-    mp_vid->ml_available.append(q);
-    mp_vid->m_urls.insert((VideoQualityLevel)level, m);
+    Media m(this, q, QUrl(url));
+    ml_available.append(q);
+    m_urls.insert((VideoQualityLevel)level, m);
 }
 
-void PythonVideoWrapper::error(QString message)
+void PythonVideo::setError(QString message)
 {
-    emit mp_vid->error(message);
+    emit error(message);
 }
 
-QString PythonVideoWrapper::getError()
+void PythonVideo::setDone()
 {
-    return mp_vid->getError();
-}
-
-bool PythonVideoWrapper::isDone()
-{
-    return mp_vid->isDone();
-}
-
-// PythonVideo
-PythonVideo::PythonVideo(SitePlugin *site, QString videoId)
-{
-    ms_video_id = videoId;
-    mp_site = site;
+    emit done();
 }
 
 Media PythonVideo::media(VideoQualityLevel q)
@@ -110,12 +133,21 @@ Media PythonVideo::media(VideoQualityLevel q)
 void PythonVideo::load()
 {
     if (isDone()) return;
-    PythonVideoWrapper w(this);
+
     QVariantList l;
-    l.append(QVariant::fromValue<QObject*>(&w));
-    PythonQt::self()->call(static_cast<PythonSitePlugin *>(mp_site)->mof_video.object(), l);
-    if (!isDone())
-        emit done();
+    l.append(QVariant::fromValue<QObject *>(this));
+
+    static_cast<PythonSitePlugin *>(mp_site)->mof_video.call(l);
+
+    if (PyErr_Occurred())
+    {
+        PyObject *a, *b, *c;
+        PyErr_Fetch(&a, &b, &c);
+        emit error(PythonQtConv::PyObjGetString(b));
+        Py_DECREF(a);
+        Py_DECREF(b);
+        Py_DECREF(c);
+    }
 }
 
 // PythonSitePlugin
@@ -130,7 +162,7 @@ QString PythonSitePlugin::forUrl(QUrl url)
 {
     QVariantList args;
     args << url.toString();
-    return PythonQt::self()->call(mof_forUrl.object(), args).toString();
+    return mof_forUrl.call(args).toString();
 }
 
 Video *PythonSitePlugin::video(QString video_id)

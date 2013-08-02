@@ -16,24 +16,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include <QApplication>
-#include <mainwindow.h>
-#include <vlyc.h>
+#ifndef VIDEOWIDGET_H
+#define VIDEOWIDGET_H
 
+#include <QWidget>
+#include <QtVlc/IVlcVideoDelegate.h>
+#include <QHBoxLayout>
 
-int main(int argc, char** argv)
+class VideoWidget : public QWidget, public IVlcVideoDelegate
 {
-    QApplication app(argc, argv);
+    Q_OBJECT
+public:
+    explicit VideoWidget(QWidget *parent = 0);
 
-    app.setApplicationName("vlyc2");
-    app.setApplicationDisplayName("VLYC²");
-    app.setApplicationVersion("1.9.0");
-    app.setOrganizationName("Orochimarufan");
-    app.setOrganizationDomain("oro.sodimm.me");
-    app.setWindowIcon(QIcon(":/vlyc/res/vlyc2.png"));
+    virtual WId request(bool b_keep_size, unsigned int i_width, unsigned int i_height);
+    virtual void release();
 
-    Vlyc vlyc;
-    vlyc.window()->show();
+    void setSizing(int w, int h);
 
-    return app.exec();
-}
+protected:
+    void mouseDoubleClickEvent(QMouseEvent *);
+    void mouseMoveEvent(QMouseEvent *);
+    bool eventFilter(QObject *, QEvent *);
+    
+signals:
+    void doubleClicked();
+    void mouseMoved(int x, int y);
+
+private:
+    QWidget *mp_stable;
+    QHBoxLayout *mp_layout;
+};
+
+#endif // VIDEOWIDGET_H

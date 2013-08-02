@@ -21,6 +21,7 @@
 #include "navigationbar.h"
 #include "browserwindow.h"
 #include "webview.h"
+#include "browser.h"
 
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QToolButton>
@@ -33,19 +34,28 @@ NavigationBar::NavigationBar(BrowserWindow *parent) :
     auto layout = new QHBoxLayout(this);
 
     auto back = new QToolButton(this);
+    back->setIcon(QIcon(":/browser/back"));
     back->setText("Back");
     connect(back, SIGNAL(clicked()), SLOT(back()));
     layout->addWidget(back);
 
     auto fwd = new QToolButton(this);
+    fwd->setIcon(QIcon(":/browser/forward"));
     fwd->setText("Forward");
     connect(fwd, SIGNAL(clicked()), SLOT(fwd()));
     layout->addWidget(fwd);
 
     auto reload = new QToolButton(this);
+    reload->setIcon(QIcon(":/browser/refresh"));
     reload->setText("Reload");
     connect(reload, SIGNAL(clicked()), SLOT(reload()));
     layout->addWidget(reload);
+
+    auto home = new QToolButton(this);
+    home->setIcon(QIcon(":/browser/home"));
+    home->setText("Home");
+    connect(home, SIGNAL(clicked()), SLOT(home()));
+    layout->addWidget(home);
 
     mp_line = new QLineEdit(this);
     mp_line->setText(parent->currentTab()->url().toString());
@@ -53,6 +63,7 @@ NavigationBar::NavigationBar(BrowserWindow *parent) :
     layout->addWidget(mp_line);
 
     auto go = new QToolButton(this);
+    go->setIcon(QIcon(":/browser/go"));
     go->setText("Go!");
     connect(go, SIGNAL(clicked()), SLOT(go()));
     layout->addWidget(go);
@@ -84,4 +95,9 @@ void NavigationBar::fwd()
 void NavigationBar::reload()
 {
     mp_window->currentTab()->triggerPageAction(QWebPage::Reload);
+}
+
+void NavigationBar::home()
+{
+    mp_window->currentTab()->setUrl(mp_window->browser()->homeUrl());
 }

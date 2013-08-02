@@ -36,13 +36,16 @@ class DirectAccessPlugin : public QObject, public SitePlugin
 #ifdef WITH_LIBMAGIC
     magic_t m_cookie;
 #endif
+    QNetworkAccessManager *mp_network;
 public:
     DirectAccessPlugin();
     ~DirectAccessPlugin();
 
-    virtual QString name() { return "Direct Access"; }
-    virtual QString author() { return "Orochimarufan"; }
-    virtual int rev() { return 1; }
+    virtual void initialize(VlycPluginInitializer init);
+
+    virtual QString name() const { return "Direct Access"; }
+    virtual QString author() const { return "Orochimarufan"; }
+    virtual int rev() const { return 1; }
 
     virtual QString forUrl(QUrl url);
     virtual Video* video(QString video_id);
