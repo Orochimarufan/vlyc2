@@ -150,12 +150,12 @@ void Browser::saveState()
 {
     QSettings config;
     config.beginGroup("Browser");
-    config.setValue("Home", m_home_url);
+    config.setValue("Home", m_home_url.toString());
 }
 
 void Browser::loadState()
 {
     QSettings config;
     config.beginGroup("Browser");
-    m_home_url = qvariant_cast<QUrl>(config.value("Home", QUrl("about:blank")));
+    m_home_url = QUrl(config.value("Home", "about:blank").toString());
 }

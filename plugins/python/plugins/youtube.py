@@ -136,7 +136,7 @@ class YoutubePlugin(vlyc.plugin.SitePlugin):
         # add qualities
         for itag, url in urlmap.items():
             if itag not in self.itags:
-                PythonQt.Qt.qWarning("Unknown ITag: %i" % itag)
+                PythonQt.Qt.qWarning(b"Unknown ITag: %i" % itag)
             else:
                 q, desc = self.itags[itag]
                 if q != vlyc.plugin.VideoQualityLevel.QA_INVALID:

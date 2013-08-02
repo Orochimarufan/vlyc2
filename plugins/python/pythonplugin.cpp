@@ -98,6 +98,7 @@ PythonPlugin::~PythonPlugin()
 bool PythonPlugin::canHandle(QString path)
 {
     QFileInfo f(path);
+    //qDebug("Python test path: '%s'' | file(%i) readable(%i) dir(%i) hasinit(%i)", qPrintable(path), f.isFile(), f.isReadable(), f.isDir(), QDir(path).exists("__init__.py"));
     if (f.isFile() && f.isReadable())
         return path.endsWith(".py");
     else if (f.isDir())

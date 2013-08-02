@@ -61,15 +61,16 @@ int PluginManager::loadPlugins(QString pluginDir)
 
     foreach (QString fileName, folder.entryList())
     {
+        QString absolute = folder.absoluteFilePath(fileName);
         if (!g_plugin_re.match(fileName).hasMatch())
         {
             //qDebug("Ignoring wrongly named file: %s", qPrintable(fileName));
-            other << fileName;
+            other << absolute;
             continue;
         }
         //qDebug("Loading %s", qPrintable(fileName));
 
-        QPluginLoader loader(folder.absoluteFilePath(fileName));
+        QPluginLoader loader(absolute);
         QObject *plugin = loader.instance();
 
         if (plugin)
@@ -83,14 +84,15 @@ int PluginManager::loadPlugins(QString pluginDir)
 
     auto base_fn = std::mem_fn(&PluginManager::_initPlugin);
 
-    foreach (QString fileName, other)
+    foreach (QString path, other)
         foreach (VlycForeignPlugin *plugin, ml_foreign)
-            if(plugin->canHandle(fileName))
+            if(plugin->canHandle(path))
             {
+                QString fileName = path.split("/").last();
                 qDebug("Loading '%s' using '%s'", qPrintable(fileName), qPrintable(plugin->name()));
                 // generate fn
                 auto fn = std::bind(base_fn, this, std::placeholders::_1, fileName);
-                loadedCnt += plugin->loadPlugin(fileName, fn);
+                loadedCnt += plugin->loadPlugin(path, fn);
                 break;
             }
 

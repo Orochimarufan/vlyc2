@@ -64,6 +64,7 @@ private slots:
     void on_quality_currentIndexChanged(const int &);
     void mediaChanged(libvlc_media_t *media);
 
+    void setFullScreenFalse();
     void setFullScreenVideo(bool fs);
 
     void saveState();

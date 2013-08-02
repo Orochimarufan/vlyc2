@@ -271,6 +271,11 @@ void MainWindow::setFullScreen(bool fs)
     }
 }
 
+void MainWindow::setFullScreenFalse()
+{
+    setFullScreen(false);
+}
+
 bool MainWindow::toggleFullScreen()
 {
     setFullScreen(!fsc->mb_fullscreen);
