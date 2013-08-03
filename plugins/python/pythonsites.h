@@ -19,7 +19,7 @@
 #ifndef PYTHONSITES_H
 #define PYTHONSITES_H
 
-#include <PythonQt/PythonQt.h>
+#include <PythonQt.h>
 
 #include <siteplugin.h>
 

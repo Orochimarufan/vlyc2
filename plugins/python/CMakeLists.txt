@@ -27,7 +27,7 @@ STRING(REGEX REPLACE "^.(.*)" "${_FIRST}\\1Plugin" PLUGIN_PROJECT "${PLUGIN_NAME
 project(${PLUGIN_PROJECT})
 SET(PLUGIN vlyc2-${PLUGIN_NAME})
 SET(PLUGIN_QT Core)
-SET(PLUGIN_LIBS)
+SET(PLUGIN_LIBS vlyc2plugin)
 SET(PLUGIN_SOURCES)
 SET(PLUGIN_HEADERS)
 
@@ -50,7 +50,7 @@ ENDIF()
 # Find PythonQt
 find_package(PythonQt5_3_QtAll REQUIRED)
 
-include_directories(${PythonQt_QtAll_INCLUDE_DIRS})
+include_directories(${PythonQt_INCLUDE_DIRS} ${PythonQt_QtAll_INCLUDE_DIRS})
 LIST(APPEND PLUGIN_LIBS ${PythonQt_QtAll_LIBRARIES})
 
 LIST(APPEND PLUGIN_QT ${PythonQt_QtAll_QT})
@@ -91,6 +91,16 @@ LIST(APPEND PLUGIN_SOURCES ${RES})
 add_library(${PLUGIN} SHARED ${PLUGIN_HEADERS} ${PLUGIN_SOURCES})
 qt5_use_modules(${PLUGIN} ${PLUGIN_QT})
 target_link_libraries(${PLUGIN} ${PLUGIN_LIBS})
+
+IF(WIN32)
+    get_target_property(COMPILE_FLAGS ${PLUGIN} COMPILE_FLAGS)
+    IF(COMPILE_FLAGS)
+        LIST(APPEND COMPILE_FLAGS "-include cmath") #fix '::hypot has not been declared
+    ELSE()
+        SET(COMPILE_FLAGS "-include cmath")
+    ENDIF()
+    set_target_properties(${PLUGIN} PROPERTIES COMPILE_FLAGS "${COMPILE_FLAGS}")
+ENDIF()
 
 foreach(plugin ${PLUGINS})
 	set(INPUT ${PROJECT_SOURCE_DIR}/plugins/${plugin} )

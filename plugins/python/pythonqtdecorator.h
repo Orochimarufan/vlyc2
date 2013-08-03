@@ -2,7 +2,7 @@
 #define PYTHONQTDECORATOR_H
 
 #include <QObject>
-#include <PythonQt/PythonQt.h>
+#include <PythonQt.h>
 
 class PythonQtDecorator : public QObject
 {

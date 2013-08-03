@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include <PythonQt/PythonQt.h>
-#include <PythonQt/PythonQt_QtAll.h>
+#include <PythonQt.h>
+#include <PythonQt_QtAll.h>
 
 #include "pythonplugin.h"
 #include "pythonsites.h"

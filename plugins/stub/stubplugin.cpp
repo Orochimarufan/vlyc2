@@ -47,7 +47,7 @@ struct DirectAccessVideo : StandardVideo
     {
         QUrl url(videoId());
         QString ext = url.path().split(".").last();
-        return Media(this, VideoQuality(q, ext.toUpper()), url);
+        return Media{this, VideoQuality{q, ext.toUpper()}, url};
     }
 
     virtual void load()

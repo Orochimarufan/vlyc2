@@ -19,7 +19,7 @@
 #ifndef PYTHONPLUGIN_H
 #define PYTHONPLUGIN_H
 
-#include <PythonQt/PythonQt.h>
+#include <PythonQt.h>
 
 #include <QtCore/QObject>
 #include <foreignplugin.h>

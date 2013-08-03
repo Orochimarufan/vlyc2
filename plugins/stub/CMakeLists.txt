@@ -60,4 +60,4 @@ stubplugin.cpp
 
 add_library(vlyc2-${PLUGIN_NAME} SHARED ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
 qt5_use_modules(vlyc2-${PLUGIN_NAME} Core Network)
-target_link_libraries(vlyc2-${PLUGIN_NAME} ${PLUGIN_LIBS})
+target_link_libraries(vlyc2-${PLUGIN_NAME} vlyc2plugin ${PLUGIN_LIBS})

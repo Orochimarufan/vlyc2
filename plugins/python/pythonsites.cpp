@@ -20,7 +20,7 @@
 #include "pythonsites.h"
 
 #include <QtCore/QUrl>
-#include <PythonQt/PythonQtConversion.h>
+#include <PythonQtConversion.h>
 
 // PythonVideo
 
@@ -107,11 +107,8 @@ void PythonVideo::setFavorites(const int &favorites)
 void PythonVideo::addQuality(const int &level, const QString &descr, const QString &url)
 {
     qDebug("AddQ: %i %s", level, qPrintable(descr));
-    VideoQuality q;
-    q.q = (VideoQualityLevel)level;
-    q.description = descr;
-    Media m(this, q, QUrl(url));
-    ml_available.append(q);
+    Media m{this, VideoQuality{(VideoQualityLevel)level, descr}, QUrl(url)};
+    ml_available.append(m.q);
     m_urls.insert((VideoQualityLevel)level, m);
 }
 

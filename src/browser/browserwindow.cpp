@@ -21,6 +21,7 @@
 #include "browserwindow.h"
 
 #include <QtCore/QUrl>
+#include <QtWidgets/QApplication>
 
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QInputDialog>
