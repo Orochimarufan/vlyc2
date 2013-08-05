@@ -51,15 +51,14 @@ PythonPlugin::PythonPlugin(QObject *parent) :
     PyObject *modules = PySys_GetObject("modules");
     PyDict_SetItemString(modules, VlycModuleDef.m_name, module);
 
-    py->registerClass(&PythonVideo::staticMetaObject);
-    py->registerClass(&PythonPluginRegistrar::staticMetaObject);
+    py->registerClass(&PythonPluginModule::staticMetaObject);
 
     py->addDecorators(new PythonQtDecorator());
 
     connect(py, SIGNAL(pythonStdOut(QString)), SLOT(write_out(QString)));
     connect(py, SIGNAL(pythonStdErr(QString)), SLOT(write_err(QString)));
 
-    py->addObject(module, "registrar", &reg);
+    py->addObject(module, "_plugin", &reg);
 
     QVariantList __path__;
     __path__ << ":/lib/vlyc";
@@ -107,15 +106,15 @@ bool PythonPlugin::canHandle(QString path)
 }
 
 // PythonPluginRegistrar
-PythonPluginRegistrar::PythonPluginRegistrar()
+PythonPluginModule::PythonPluginModule()
 {
     reg = NULL;
 }
 
 struct RegScope
 {
-    PythonPluginRegistrar *reg;
-    RegScope(PythonPluginRegistrar *reg, VlycForeignPluginRegistrar newReg)
+    PythonPluginModule *reg;
+    RegScope(PythonPluginModule *reg, VlycForeignPluginRegistrar newReg)
     {
         this->reg = reg;
         reg->reg = newReg;
@@ -159,18 +158,19 @@ bool PythonPlugin::loadPlugin(QString path, VlycForeignPluginRegistrar registrar
     return true;
 }
 
-void PythonPluginRegistrar::registerSite(QString name, QString author, int rev, PyObject *fn_forUrl, PyObject *fn_video)
+void PythonPluginModule::registerSite(PyObject *plugin)
 {
-    qDebug("Registering Python Site %s by %s", qPrintable(name), qPrintable(author));
     if(!reg)
     {
         PyErr_SetString(PyExc_RuntimeError, "the PythonPluginRegistrar instance can only be used while initializing the module!");
         return;
     }
-    if(!PyCallable_Check(fn_forUrl) || !PyCallable_Check(fn_video))
+    PythonSitePlugin *it = PythonSitePlugin::create(plugin);
+    if (!it)
     {
-        PyErr_SetString(PyExc_TypeError, "Signature: registerSite(str name, str author, int rev, callable forUrl, callable loadVideo)");
+        qDebug("Could not register a site plugin.");
         return;
     }
-    reg(new PythonSitePlugin(name, author, rev, fn_forUrl, fn_video));
+    qDebug("Registering Python Site %s by %s", qPrintable(it->name()), qPrintable(it->author()));
+    reg(it);
 }

@@ -24,6 +24,7 @@
 #include <QtVlc/VlcMediaPlayer.h>
 #include <QtVlc/VlcMedia.h>
 #include <QtVlc/VlcMediaPlayerAudio.h>
+#include <QtVlc/VlcMediaPlayerVideo.h>
 #include <QtWidgets/QShortcut>
 
 #include <video.h>
@@ -40,6 +41,28 @@ class VlcMediaPlayer;
 class Video;
 class Vlyc;
 
+class VideoCaller : public QObject
+{
+    Q_OBJECT
+public:
+    Video *video;
+    VideoCaller();
+    VideoCaller(Video *v);
+    VideoCaller &operator =(Video *v);
+    void load();
+    void getMedia(const VideoQualityLevel &level);
+    void getSubtitles(const QString &lang);
+
+signals:
+    void _load();
+    void _getMedia(const VideoQualityLevel &level);
+    void _getSubtitles(const QString &lang);
+    void error(const QString &message);
+    void done();
+    void media(const VideoMedia &media);
+    void subtitles(const VideoSubtitles &subs);
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -54,6 +77,8 @@ public slots:
     bool toggleFullScreen();
 
 private slots:
+    void _videoMedia(const VideoMedia &);
+    void _videoSubs(const VideoSubtitles &);
     void _playVideo();
     void _videoError(const QString &);
     void openUrl();
@@ -62,6 +87,7 @@ private slots:
     void updateState(const VlcState::Type &);
     void on_position_sliderDragged(const float &);
     void on_quality_currentIndexChanged(const int &);
+    void on_subtitles_currentIndexChanged(const int &);
     void mediaChanged(libvlc_media_t *media);
 
     void setFullScreenFalse();
@@ -86,10 +112,14 @@ private:
 
     VlcMedia m_media;
     VlcMediaPlayer m_player;
-    VlcMediaPlayerAudio m_audio;
+    VlcMediaPlayerAudio m_player_audio;
+    VlcMediaPlayerVideo m_player_video;
 
     Video* mp_video;
     QList<VideoQuality> ml_qa;
+    VideoCaller m_video;
+    VideoMedia m_video_media;
+    VideoSubtitles m_video_subs;
 
     QShortcut *shortcut_Space;
     QShortcut *shortcut_Esc;

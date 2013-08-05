@@ -22,6 +22,7 @@
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 #include <QtCore/QUrl>
+#include <QtCore/QVariant>
 
 #ifdef LIBVLYC2PLUGIN_LIBRARY
 #define LIBVLYC2PLUGIN_EXPORT Q_DECL_EXPORT
@@ -59,76 +60,132 @@ struct LIBVLYC2PLUGIN_EXPORT VideoQuality
 
     bool operator <(const VideoQuality &o) const;
     bool operator >(const VideoQuality &o) const;
+    bool operator ==(const VideoQuality &o) const;
+    bool operator <=(const VideoQuality &o) const;
+    bool operator >=(const VideoQuality &o) const;
 };
 
 /**
  * @brief The VideoSubtitle struct
  * Describes subtitles for a single language
- * a format of (NULL) means 'data' is an url pointing to a subtitle file
- * that VLC can understand.
  * a (NULL) language makes it invalid.
  */
-struct LIBVLYC2PLUGIN_EXPORT VideoSubtitle
+struct LIBVLYC2PLUGIN_EXPORT VideoSubtitles
 {
-    QString language;
-    QString format;
-    QString data;
+    Video *video;       ///< The Video these subtitles belong to
+    QString language;   ///< The subtitle language
+    QString type;       ///< The subtitle type/format. e.g. SRT, ASS; may be empty for external resources
+    QVariant data;      /**< The subtitles.
+                             May be
+                               QUrl: load it from an external resouce
+                               QByteArray: load it from a blob
+                               QString: load it from string data.
+                        */
 };
 
 /**
  * @brief The Media struct
  * Describes a phaysical video
  */
-struct LIBVLYC2PLUGIN_EXPORT Media
+struct LIBVLYC2PLUGIN_EXPORT VideoMedia
 {
-    Video *video;
-    VideoQuality q;
-    QUrl url;
+    Video *video; ///< The Video this URL belongs to
+    VideoQuality q; ///< The quality
+    QUrl url; ///< The URL
 };
 
 /**
- * @brief The Video class
+ * @brief The Video class [pure virtual]
  * Describes a Video.
- * call load() to populate
- * emits loaded() when done, so you can move it to another QThread
+ *
+ * call the load() slot before accessing data
+ * emit done() when load() is finished.
+ * emit error(QString) if an error occurred
+ * DO NOT DEPEND ON IT BEING DONE AFTER load() RETURNS!
+ * therefore, any implementation MUST emit either done() or error().
+ *
+ * may be moved to a QThread.
+ *
+ * getMedia() and getSubtitles() must be called after load() and work in the same fashion.
+ * getMedia() returns by emitting media(VideoMedia), or error() on error
+ * getSubtitles() return by emitting subtitles(VideoSubtitles), or error() on error
  */
 class LIBVLYC2PLUGIN_EXPORT Video : public QObject
 {
     Q_OBJECT
 public:
-    // Data
+    /// The site-specific VideoID.
     virtual QString videoId() const = 0;
+
+    /// The Site Plugin the video belongs to.
     virtual SitePlugin *site() const = 0;
 
-    virtual bool useVlcMeta() const;
 
+    /// Wether to use the file metadata for title & co.
+    virtual bool useFileMetadata() const = 0;
+
+
+    /// The video title.
     virtual QString title() const = 0;
+
+    /// The video author.
     virtual QString author() const = 0;
+
+    /// The video description
     virtual QString description() const = 0;
 
+
+    /// The number of video views.
     virtual int views() const = 0;
+
+    /// The number of likes.
     virtual int likes() const = 0;
+
+    /// The number of dislikes.
     virtual int dislikes() const = 0;
+
+    // The number of users that added this video to their favorites.
     virtual int favorites() const = 0;
 
-    virtual QList<VideoQuality> available() const = 0;
-    virtual QStringList availableSubtitles() const;
 
-    virtual Media media(VideoQualityLevel q) = 0;
-    virtual VideoSubtitle subtitles(QString language);
+    /// A list of available quality levels.
+    virtual QList<VideoQuality> availableQualities() const = 0;
 
-    virtual bool isDone() const = 0;
+    /// A list of available subtitle languages.
+    virtual QStringList availableSubtitleLanguages() const = 0;
+
+
+    /// The last error message.
     virtual QString getError() const = 0;
 
 public Q_SLOTS:
+    /// Initialize this video.
     virtual void load() = 0;
 
+    /// Get the URL for a specific quality level.
+    virtual void getMedia(const VideoQualityLevel &q) = 0;
+
+    /// Get the subtitles for a specific language.
+    virtual void getSubtitles(const QString &language) = 0;
+
 Q_SIGNALS:
+    /// emitted when load() finishes.
     void done();
+
+    /// emitted when getMedia() returns.
+    void media(const VideoMedia &media);
+
+    /// emitted when getSubtitles() returns.
+    void subtitles(const VideoSubtitles &subs);
+
+    /// emitted when either of the above slots error.
     void error(const QString &message);
 };
 
-
+/**
+ * @brief The StandardVideo class [abstract]
+ * Partial reference implementation for Video
+ */
 class LIBVLYC2PLUGIN_EXPORT StandardVideo : public Video
 {
     Q_OBJECT
@@ -145,12 +202,19 @@ protected:
     int mi_dislikes;
     int mi_favorites;
 
-    QList<VideoQuality> ml_available;
+    QList<VideoQuality> ml_availableQualities;
+    QStringList ml_availableSubtitleLanguages;
 
 public:
+    StandardVideo(SitePlugin *site, const QString &video_id);
+
     virtual QString videoId() const;
     virtual SitePlugin *site() const;
 
+    // default implementation returns false
+    virtual bool useFileMetadata() const;
+
+    // default implementations return corresponding member
     virtual QString title() const;
     virtual QString author() const;
     virtual QString description() const;
@@ -160,22 +224,20 @@ public:
     virtual int dislikes() const;
     virtual int favorites() const;
 
-    virtual QList<VideoQuality> available() const;
+    virtual QList<VideoQuality> availableQualities() const;
+    virtual QStringList availableSubtitleLanguages() const;
 
-    virtual bool isDone() const;
+    // default implementation returns invalid VideoSubtitles. should be overridden
+    virtual void getSubtitles(const QString &language);
+
+// getError() magic
     virtual QString getError() const;
 
-// done magic
 private:
-    bool mb_done;
     QString ms_error;
 
 private Q_SLOTS:
-    void _done();
     void _error(const QString &m);
-
-public:
-    StandardVideo(SitePlugin *site, const QString &video_id);
 };
 
 #endif // VIDEO_H

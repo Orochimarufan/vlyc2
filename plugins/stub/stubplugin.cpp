@@ -38,19 +38,19 @@ struct DirectAccessVideo : StandardVideo
     {
     }
 
-    virtual bool useVlcMeta() const
+    bool useFileMetadata() const
     {
         return true;
     }
 
-    virtual Media media(VideoQualityLevel q)
+    void getMedia(const VideoQualityLevel &q)
     {
         QUrl url(videoId());
         QString ext = url.path().split(".").last();
-        return Media{this, VideoQuality{q, ext.toUpper()}, url};
+        emit media(VideoMedia{this, VideoQuality{q, ext.toUpper()}, url});
     }
 
-    virtual void load()
+    void load()
     {
         ms_title = videoId().split("/").last();
         ms_author = "File";
@@ -59,7 +59,7 @@ struct DirectAccessVideo : StandardVideo
         VideoQuality url;
         url.q = VideoQualityLevel::QA_LOWEST;
         url.description = videoId().split(".").last().toUpper();
-        ml_available.append(url);
+        ml_availableQualities.append(url);
 
         emit done();
     }

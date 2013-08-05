@@ -100,6 +100,9 @@
           </widget>
          </item>
          <item>
+          <widget class="QComboBox" name="subtitles"/>
+         </item>
+         <item>
           <widget class="QComboBox" name="quality"/>
          </item>
          <item>

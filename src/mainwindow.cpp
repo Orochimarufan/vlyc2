@@ -23,16 +23,19 @@
 #include "vlyc.h"
 #include "pluginmanager.h"
 #include "vlycbrowser.h"
+#include <siteplugin.h>
 
 #include <QtCore>
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QBoxLayout>
+#include <QTemporaryFile>
 
 #ifdef Q_OS_LINUX
 #include "vlyc_xcb.h"
 #endif
 
+// BlockChanged
 struct BlockChanged
 {
     MainWindow *w;
@@ -47,10 +50,65 @@ struct BlockChanged
     }
 };
 
+// VideoCaller
+VideoCaller::VideoCaller()
+{
+    video = nullptr;
+}
+
+VideoCaller::VideoCaller(Video *v)
+{
+    video = v;
+    connect(this, SIGNAL(_load()), video, SLOT(load()));
+    connect(this, SIGNAL(_getMedia(VideoQualityLevel)), video, SLOT(getMedia(VideoQualityLevel)));
+    connect(this, SIGNAL(_getSubtitles(QString)), video, SLOT(getSubtitles(QString)));
+    connect(video, SIGNAL(error(QString)), SIGNAL(error(QString)));
+    connect(video, SIGNAL(done()), SIGNAL(done()));
+    connect(video, SIGNAL(media(VideoMedia)), SIGNAL(media(VideoMedia)));
+    connect(video, SIGNAL(subtitles(VideoSubtitles)), SIGNAL(subtitles(VideoSubtitles)));
+}
+
+VideoCaller &VideoCaller::operator =(Video *v)
+{
+    if (video)
+    {
+        disconnect(this, 0, video, 0);
+        disconnect(video, 0, this, 0);
+    }
+    video = v;
+    if (video)
+    {
+        connect(this, SIGNAL(_load()), video, SLOT(load()));
+        connect(this, SIGNAL(_getMedia(VideoQualityLevel)), video, SLOT(getMedia(VideoQualityLevel)));
+        connect(this, SIGNAL(_getSubtitles(QString)), video, SLOT(getSubtitles(QString)));
+        connect(video, SIGNAL(error(QString)), SIGNAL(error(QString)));
+        connect(video, SIGNAL(done()), SIGNAL(done()));
+        connect(video, SIGNAL(media(VideoMedia)), SIGNAL(media(VideoMedia)));
+        connect(video, SIGNAL(subtitles(VideoSubtitles)), SIGNAL(subtitles(VideoSubtitles)));
+    }
+}
+
+void VideoCaller::load()
+{
+    emit _load();
+}
+
+void VideoCaller::getMedia(const VideoQualityLevel &level)
+{
+    emit _getMedia(level);
+}
+
+void VideoCaller::getSubtitles(const QString &lang)
+{
+    emit _getSubtitles(lang);
+}
+
+// MainWindow
 MainWindow::MainWindow(Vlyc *self) :
     QMainWindow(),
     ui(new Ui::MainWindow),
-    m_audio(m_player),
+    m_player_audio(m_player),
+    m_player_video(m_player),
     mp_video(nullptr),
     mp_self(self)
 {
@@ -73,10 +131,10 @@ MainWindow::MainWindow(Vlyc *self) :
     connect(ui->btn_stop, SIGNAL(clicked()), &m_player, SLOT(stop()));
     connect(fsc->ui->btn_playpause, SIGNAL(clicked()), &m_player, SLOT(togglePause()));
     connect(fsc->ui->btn_stop, SIGNAL(clicked()), &m_player, SLOT(stop()));
-    connect(ui->volume, SIGNAL(volumeChanged(int)), &m_audio, SLOT(setVolume(int)));
-    connect(ui->volume, SIGNAL(muteChanged(bool)), &m_audio, SLOT(setMuted(bool)));
-    connect(fsc->ui->volume, SIGNAL(volumeChanged(int)), &m_audio, SLOT(setVolume(int)));
-    connect(fsc->ui->volume, SIGNAL(muteChanged(bool)), &m_audio, SLOT(setMuted(bool)));
+    connect(ui->volume, SIGNAL(volumeChanged(int)), &m_player_audio, SLOT(setVolume(int)));
+    connect(ui->volume, SIGNAL(muteChanged(bool)), &m_player_audio, SLOT(setMuted(bool)));
+    connect(fsc->ui->volume, SIGNAL(volumeChanged(int)), &m_player_audio, SLOT(setVolume(int)));
+    connect(fsc->ui->volume, SIGNAL(muteChanged(bool)), &m_player_audio, SLOT(setMuted(bool)));
     connect(fsc->ui->position, SIGNAL(sliderDragged(float)), SLOT(on_position_sliderDragged(float)));
     connect(ui->btn_fullscreen, SIGNAL(clicked()), SLOT(toggleFullScreen()));
     connect(fsc->ui->btn_defullscreen, SIGNAL(clicked()), SLOT(toggleFullScreen()));
@@ -98,6 +156,12 @@ MainWindow::MainWindow(Vlyc *self) :
     connect(shortcut_AltReturn, SIGNAL(activated()), SLOT(toggleFullScreen()));
     shortcut_Esc = new QShortcut(QKeySequence("Esc"), ui->video);
     connect(shortcut_Esc, SIGNAL(activated()), SLOT(setFullScreenFalse()));
+
+    // Videos
+    connect(&m_video, SIGNAL(error(QString)), SLOT(_videoError(QString)));
+    connect(&m_video, SIGNAL(done()), SLOT(_playVideo()));
+    connect(&m_video, SIGNAL(media(VideoMedia)), SLOT(_videoMedia(VideoMedia)));
+    connect(&m_video, SIGNAL(subtitles(VideoSubtitles)), SLOT(_videoSubs(VideoSubtitles)));
 
     loadState();
 }
@@ -123,20 +187,23 @@ void MainWindow::openUrl()
 
     Video *video = mp_self->plugins()->sites_video(url);
 
-    if (video == nullptr)
+    if (!video)
     {
         QMessageBox::critical(this, "Error", QStringLiteral("Cannot open URL %1").arg(url));
         return;
     }
 
-    connect(video, SIGNAL(done()), SLOT(_playVideo()));
-    connect(video, SIGNAL(error(QString)), SLOT(_videoError(QString)));
-    video->load();
+    video->site();
+    video->videoId();
+    qDebug("video from Plugin %s", qPrintable(video->site()->name()));
+
+    m_video = video;
+    m_video.load();
 }
 
 void MainWindow::_playVideo()
 {
-    playVideo(qobject_cast<Video *>(sender()));
+    playVideo(m_video.video);
 }
 
 void MainWindow::_videoError(const QString &message)
@@ -146,7 +213,7 @@ void MainWindow::_videoError(const QString &message)
 
 void MainWindow::playVideo(Video *v)
 {
-    auto qa = v->available();
+    auto qa = v->availableQualities();
     if (!qa.length())
         return;
 
@@ -159,23 +226,64 @@ void MainWindow::playVideo(Video *v)
         ui->quality->addItem(q.description);
     ui->quality->setCurrentIndex(0);
 
-    Media m = v->media(qa.first().q);
-    m_media = VlcMedia(m.url);
-    if (v->useVlcMeta() && !m_media.isParsed())
+    m_player.stop();
+
+    ml_qa = qa;
+    mp_video = v;
+
+    m_video = v;
+    m_video.getMedia(qa.first().q);
+
+    ui->subtitles->clear();
+    ui->subtitles->addItem("No Subtitles");
+
+    auto subs = v->availableSubtitleLanguages();
+    if (!subs.length())
+        return;
+
+    foreach(QString language, subs)
+        ui->subtitles->addItem(language);
+    ui->subtitles->setCurrentIndex(0);
+}
+
+void MainWindow::_videoMedia(const VideoMedia &media)
+{
+    m_video_media = media;
+
+    m_media = VlcMedia(media.url);
+    if (media.video->useFileMetadata() && !m_media.isParsed())
         m_media.parse(false);
     else
     {
-        m_media.setMeta(VlcMeta::Title, v->title());
-        m_media.setMeta(VlcMeta::Artist, v->author());
-        m_media.setMeta(VlcMeta::Description, v->description());
+        m_media.setMeta(VlcMeta::Title, media.video->title());
+        m_media.setMeta(VlcMeta::Artist, media.video->author());
+        m_media.setMeta(VlcMeta::Description, media.video->description());
     }
+
+    bool restore = m_player.state() == VlcState::Playing || m_player.state() == VlcState::Paused;
+    float position = m_player.position();
 
     m_player.open(m_media);
 
-    ml_qa = qa;
-    //if (mp_video != nullptr)
-    //    delete mp_video;
-    mp_video = v;
+    if (restore)
+        m_player.setPosition(position);
+}
+
+void MainWindow::_videoSubs(const VideoSubtitles &subs)
+{
+    if (subs.data.type() == QMetaType::QUrl)
+        m_player_video.setSubtitleFile(subs.data.value<QUrl>().toString());
+    else
+    {
+        QString templat ("vlyc2-XXXXXX.");
+        templat.append(subs.type);
+        QTemporaryFile file(QDir::temp().absoluteFilePath(templat));
+        file.setAutoRemove(false);
+        file.open();
+        file.write(subs.data.toByteArray());
+        file.close();
+        m_player_video.setSubtitleFile(file.fileName());
+    }
 }
 
 void MainWindow::mediaChanged(libvlc_media_t *media)
@@ -193,10 +301,10 @@ void MainWindow::updatePosition(const float &pos)
     fsc->ui->position->setPosition(pos, time, length);
     fsc->ui->timeLabel->setDisplayPosition(pos, time, length);
     // TODO: find a better way to do this
-    ui->volume->updateVolume(m_audio.volume());
-    ui->volume->setMuted(m_audio.isMuted());
-    fsc->ui->volume->updateVolume(m_audio.volume());
-    fsc->ui->volume->setMuted(m_audio.isMuted());
+    ui->volume->updateVolume(m_player_audio.volume());
+    ui->volume->setMuted(m_player_audio.isMuted());
+    fsc->ui->volume->updateVolume(m_player_audio.volume());
+    fsc->ui->volume->setMuted(m_player_audio.isMuted());
 }
 
 void MainWindow::updateState(const VlcState::Type &new_state)
@@ -220,22 +328,23 @@ void MainWindow::on_position_sliderDragged(const float &new_position)
     m_player.setPosition(new_position);
 }
 
+void MainWindow::on_subtitles_currentIndexChanged(const int &index)
+{
+    if (block_changed) return;
+    if (index == 0)
+        m_player_video.setSpu(0);
+    else
+    {
+        m_video = mp_video;
+        m_video.getSubtitles(ui->subtitles->itemText(index));
+    }
+}
+
 void MainWindow::on_quality_currentIndexChanged(const int &index)
 {
     if (block_changed) return;
-    float pos = m_player.position();
-    Media m = mp_video->media(ml_qa.at(index).q);
-    m_media = VlcMedia(m.url);
-    if (mp_video->useVlcMeta() && !m_media.isParsed())
-        m_media.parse(false);
-    else
-    {
-        m_media.setMeta(VlcMeta::Title, mp_video->title());
-        m_media.setMeta(VlcMeta::Artist, mp_video->author());
-        m_media.setMeta(VlcMeta::Description, mp_video->description());
-    }
-    m_player.open(m_media);
-    m_player.setPosition(pos);
+    m_video = mp_video;
+    m_video.getMedia(ml_qa.at(index).q);
 }
 
 void MainWindow::setFullScreenVideo(bool fs)
@@ -302,6 +411,7 @@ void MainWindow::resizeEvent(QResizeEvent *e)
     if (~windowState() & Qt::WindowMaximized)
         m_geometry = geometry();
 }
+
 void MainWindow::moveEvent(QMoveEvent *e)
 {
     QMainWindow::moveEvent(e);

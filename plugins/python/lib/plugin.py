@@ -18,42 +18,9 @@
 #- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #----------------------------------------------------------------------
 
-from . import registrar
+from . import _plugin
 import inspect
-
-class _PythonSitePluginMeta(type):
-	def __init__(self, name, bases, dict):
-		super(_PythonSitePluginMeta, self).__init__(name, bases, dict)
-		if bases == ():
-			return # the original SitePlugin class
-		for name in "name", "author", "rev":
-			if name not in self.__dict__:
-				raise TypeError("SitePlugin subclasses must define the 'name:str', 'author:str' and 'rev:int' properties")
-		if "simpleLoadVideo" in self.__dict__ and "loadVideo" not in self.__dict__:
-			def loadVideo(self, video):
-				self.simpleLoadVideo(video)
-				if not video.isDone():
-					video.setDone()
-			self.__dict__["loadVideo"] = loadVideo
-		for name in "forUrl", "loadVideo":
-			if name not in self.__dict__:
-				raise TypeError("SitePlugin subclasses must define the 'forUrl(url:str)' and 'loadVideo(video:Video)' methods")
-		obj = self()
-		for name in "forUrl", "loadVideo":
-			inspect.signature(getattr(obj, name)).bind("singleArg")
-		registrar.registerSite(obj.name, obj.author, obj.rev, obj.forUrl, obj.loadVideo)
-
-
-class SitePlugin(metaclass=_PythonSitePluginMeta):
-	"""
-	Members:
-		str name	:: the Plugin name
-		str author	:: the Plugin author
-		int rev		:: the Plugin version/revision
-
-		str forUrl(str url) :: get the videoId for url `url`. Return empty string if you cannot handle `url`
-		void loadVideo(Video video) :: populate the Video object `video`. Must call either video.setDone() or video.setError(str message)
-	"""
+import abc
 
 class VideoQualityLevel:
 	"""
@@ -75,3 +42,70 @@ class VideoQualityLevel:
 	QA_1080    = 400
 	QA_4K      = 600
 	QA_HIGHEST = 1024
+
+class _PythonSitePluginMeta(type):
+	def __init__(self, name, bases, dict):
+		super(_PythonSitePluginMeta, self).__init__(name, bases, dict)
+		if bases == ():
+			return # the original SitePlugin class
+		for name in "name", "author", "rev":
+			if name not in self.__dict__:
+				raise TypeError("SitePlugin subclasses must define the 'name:str', 'author:str' and 'rev:int' properties")
+		obj = self()
+		for name in "forUrl", "video":
+			inspect.signature(getattr(obj, name)).bind("singleArg")
+		_plugin.registerSite(obj)
+
+
+class SitePlugin(metaclass=_PythonSitePluginMeta):
+	"""
+	Members:
+		str name	:: the Plugin name
+		str author	:: the Plugin author
+		int rev		:: the Plugin version/revision
+
+		str forUrl(QUrl url) :: get the videoId for url `url`. Return empty string if you cannot handle `url`
+		Video video(str video_id) :: return a video object for video_id
+	"""
+
+
+class Video(metaclass=abc.ABCMeta):
+	def __init__(self, video_id):
+		self.videoId = video_id
+		self.useFileMetadata = False
+		self.title = "Unknown Title"
+		self.author = "Unknown Author"
+		self.description = "No description"
+		self.views = 0
+		self.likes = 0
+		self.dislikes = 0
+		self.favorites = 0
+		self.availableQualities = []
+		self.availableSubtitleLanguages = []
+
+	@abc.abstractmethod
+	def load(self, done, throw):
+		"""
+		callable done()
+		callable throw(str reason)
+		"""
+		pass
+
+	@abc.abstractmethod
+	def getMedia(self, quality, media, throw):
+		"""
+		int quality
+		callable media(str quality, str description, str url)
+		callable throw(str reason)
+		"""
+		pass
+
+	def getSubtitles(self, language, subtitles, throw):
+		"""
+		str language
+		callable subtitles(str language, str type, QUrl|str|bytes url|data)
+			url/data parameter: QUrl url -> load from external resource
+								str|bytes data -> load from utf8 blob
+		callable throw(reason)
+		"""
+		pass

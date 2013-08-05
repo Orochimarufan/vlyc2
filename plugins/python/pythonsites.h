@@ -27,54 +27,84 @@ class PythonSitePlugin : public QObject, public SitePlugin
 {
     Q_OBJECT
     Q_INTERFACES(VlycBasePlugin SitePlugin)
+
+    PythonQtObjectPtr mo_plugin;
+
+    PythonSitePlugin(PyObject *plugin);
+
 public:
-    PythonSitePlugin(QString name, QString author, int rev, PyObject *fn_forUrl, PyObject *fn_video);
+    static PythonSitePlugin *create(PyObject *plugin);
 
     virtual QString forUrl(QUrl url);
     virtual Video* video(QString video_id);
 
-    PythonQtObjectPtr mof_forUrl;
-    PythonQtObjectPtr mof_video;
-    QString ms_name;
-    QString ms_author;
-    int mi_rev;
-
-    virtual QString name() const { return ms_name; }
-    virtual QString author() const { return ms_author; }
-    virtual int rev() const { return mi_rev; }
+    virtual QString name() const;
+    virtual QString author() const;
+    virtual int rev() const;
 };
 
-class PythonVideo : public StandardVideo
+class PythonVideo : public Video
 {
     Q_OBJECT
-    QMap<VideoQualityLevel, Media> m_urls;
-public:
-    PythonVideo(/*Python*/SitePlugin *site, const QString &video_id);
 
-    virtual Media media(VideoQualityLevel q);
-    virtual void load();
+    void emitError(const QString &message);
+    QString ms_lastError;
+
+    PythonSitePlugin *mp_plugin;
+    PythonQtObjectPtr mo_video;
+
+    PythonVideo(PythonSitePlugin *site, PyObject *video);
+
+    PyObject *cb_error;
+    PyObject *cb_done;
+    PyObject *cb_media;
+    PyObject *cb_subtitles;
+    PyObject *self_capsule;
+
+    static char const * capsule_name;
+    static PyObject *capsule_create(PythonVideo *);
+    static PythonVideo *capsule_get(PyObject *);
+
+    static PyObject *f_error_func(PyObject *, PyObject *);
+    static PyMethodDef f_error;
+
+    static PyObject *f_done_func(PyObject *, PyObject *);
+    static PyMethodDef f_done;
+
+    static PyObject *f_media_func(PyObject *, PyObject *);
+    static PyMethodDef f_media;
+
+    static PyObject *f_subtitles_func(PyObject *, PyObject *);
+    static PyMethodDef f_subtitles;
+
+public:
+    static PythonVideo *create(PythonSitePlugin *site, PyObject *video);
+
+    virtual SitePlugin *site() const;
+
+    virtual bool useFileMetadata() const;
+
+    virtual QString videoId() const;
+    virtual QString title() const;
+    virtual QString author() const;
+    virtual QString description() const;
+
+    virtual int views() const;
+    virtual int likes() const;
+    virtual int dislikes() const;
+    virtual int favorites() const;
+
+    virtual QList<VideoQuality> availableQualities() const;
+    virtual QStringList availableSubtitleLanguages() const;
+
+    virtual QString getError() const;
+
+    virtual ~PythonVideo();
 
 public Q_SLOTS:
-    QString videoId() const;
-    QString title() const;
-    QString author() const;
-    QString description() const;
-    int views() const;
-    int likes() const;
-    int dislikes() const;
-    int favorites() const;
-
-    void setTitle(const QString &title);
-    void setAuthor(const QString &author);
-    void setDescription(const QString &description);
-    void setViews(const int &views);
-    void setLikes(const int &likes);
-    void setDislikes(const int &dislikes);
-    void setFavorites(const int &favorites);
-    void addQuality(const int &level, const QString &descr, const QString &url);
-
-    void setError(QString message);
-    void setDone();
+    virtual void load();
+    virtual void getMedia(const VideoQualityLevel &q);
+    virtual void getSubtitles(const QString &language);
 };
 
 #endif // PYTHONSITES_H

@@ -24,15 +24,15 @@
 #include <QtCore/QObject>
 #include <foreignplugin.h>
 
-class PythonPluginRegistrar : public QObject
+class PythonPluginModule : public QObject
 {
     Q_OBJECT
     friend class PythonPlugin;
     friend class RegScope;
-    PythonPluginRegistrar();
+    PythonPluginModule();
     VlycForeignPluginRegistrar reg;
 public Q_SLOTS:
-    void registerSite(QString name, QString author, int rev, PyObject *fn_forUrl, PyObject *fn_video);
+    void registerSite(PyObject *plugin);
 };
 
 class PythonPlugin : public QObject, public VlycForeignPlugin
@@ -40,7 +40,7 @@ class PythonPlugin : public QObject, public VlycForeignPlugin
     Q_OBJECT
     Q_INTERFACES(VlycBasePlugin VlycForeignPlugin)
     Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/1.0")
-    PythonPluginRegistrar reg;
+    PythonPluginModule reg;
     VlycPluginInitializer initer;
 public:
     PythonPlugin(QObject *parent=0);

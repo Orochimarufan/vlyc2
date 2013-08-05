@@ -30,24 +30,27 @@ bool VideoQuality::operator >(const VideoQuality &o) const
     return q > o.q;
 }
 
-// Video
-bool Video::useVlcMeta() const
+bool VideoQuality::operator ==(const VideoQuality &o) const
+{
+    return q == o.q;
+}
+
+bool VideoQuality::operator <=(const VideoQuality &o) const
+{
+    return q <= o.q;
+}
+
+bool VideoQuality::operator >=(const VideoQuality &o) const
+{
+    return q >= o.q;
+}
+
+// StandardVideo
+bool StandardVideo::useFileMetadata() const
 {
     return false;
 }
 
-QStringList Video::availableSubtitles() const
-{
-    return QStringList();
-}
-
-VideoSubtitle Video::subtitles(QString language)
-{
-    Q_UNUSED(language)
-    return VideoSubtitle{};
-}
-
-// StandardVideo
 QString StandardVideo::videoId() const
 {
     return ms_video_id;
@@ -93,25 +96,27 @@ int StandardVideo::favorites() const
     return mi_favorites;
 }
 
-QList<VideoQuality> StandardVideo::available() const
+QList<VideoQuality> StandardVideo::availableQualities() const
 {
-    return ml_available;
+    return ml_availableQualities;
 }
 
-bool StandardVideo::isDone() const
+QStringList StandardVideo::availableSubtitleLanguages() const
 {
-    return mb_done;
+    return ml_availableSubtitleLanguages;
 }
+
+void StandardVideo::getSubtitles(const QString &language)
+{
+    Q_UNUSED(language)
+    emit subtitles(VideoSubtitles());
+}
+
+//done stuff
 
 QString StandardVideo::getError() const
 {
     return ms_error;
-}
-
-//slots
-void StandardVideo::_done()
-{
-    mb_done = true;
 }
 
 void StandardVideo::_error(const QString &m)
@@ -121,10 +126,9 @@ void StandardVideo::_error(const QString &m)
 
 //constructor
 StandardVideo::StandardVideo(SitePlugin *site, const QString &video_id) :
-    mp_site(site), ms_video_id(video_id), mb_done(false),
+    mp_site(site), ms_video_id(video_id),
     ms_title("Unknown Title"), ms_author("Unknown Author"),
     mi_views(0), mi_likes(0), mi_dislikes(0), mi_favorites(0)
 {
-    connect(this, SIGNAL(done()), SLOT(_done()));
     connect(this, SIGNAL(error(QString)), SLOT(_error(QString)));
 }
