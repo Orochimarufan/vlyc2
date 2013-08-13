@@ -86,4 +86,4 @@ ADD_EXECUTABLE(vlyc2 ${VLYC_SOURCES} ${VLYC_HEADERS} ${VLYC_UI} ${VLYC_QRC} ${VL
 
 # Link
 QT5_USE_MODULES(vlyc2 Core Gui Widgets Network WebKit WebKitWidgets)
-TARGET_LINK_LIBRARIES(vlyc2 vlyc2plugin ${QtVlc_LIBRARY} ${QtVlcWidgets_LIBRARY} ${VLYC_EXTRA_LIBS}) # get set when building the submodule
+TARGET_LINK_LIBRARIES(vlyc2 libvlyc2 ${QtVlc_LIBRARY} ${QtVlcWidgets_LIBRARY} ${VLYC_EXTRA_LIBS}) # get set when building the submodule

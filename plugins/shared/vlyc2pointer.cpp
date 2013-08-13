@@ -16,40 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include "vlycbrowser.h"
-#include "pluginmanager.h"
-#include "vlyc.h"
-#include "mainwindow.h"
+#include <vlyc2pointer.h>
 
-#include <browser/networkaccessmanager.h>
-
-#include <QtCore/QUrl>
-
-#include <siteplugin.h>
-
-VlycBrowser::VlycBrowser(Vlyc *self) :
-    Browser((QObject *)self),
-    mp_self(self),
-    cookies()
+Vlyc2Object::~Vlyc2Object()
 {
-    cookies.load();
-    mp_network->setCookieJar(&cookies);
 }
 
-VlycBrowser::~VlycBrowser()
+void Vlyc2Pointer_incref(Vlyc2Object *o)
 {
-    cookies.save();
+    o->ref.ref();
 }
 
-bool VlycBrowser::navigationRequest(QUrl url)
+void Vlyc2Pointer_decref(Vlyc2Object *o)
 {
-    VideoPtr v = mp_self->plugins()->sites_video(url);
-    if (v != nullptr)
-    {
-        qDebug("VlycBrowser: '%s' is a video url: %s", qPrintable(url.toString()), qPrintable(v->site()->name()));
-        v->load();
-        mp_self->window()->playVideo(v);
-        return false;
-    }
-    return true;
+    if (!o->ref.deref())
+        delete o;
 }

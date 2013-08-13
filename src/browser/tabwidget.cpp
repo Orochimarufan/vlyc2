@@ -37,6 +37,7 @@ TabWidget::TabWidget(Browser *browser, QWidget *parent) :
     connect(mp_tabbar, SIGNAL(reloadTab(int)), SLOT(reloadTab(int)));
     connect(mp_tabbar, SIGNAL(reloadAllTabs()), SLOT(reloadAllTabs()));
     connect(mp_tabbar, SIGNAL(tabMoved(int,int)), SLOT(moveTab(int,int)));
+    connect(this, &QTabWidget::currentChanged, this, &TabWidget::onCurrentChanged);
     setTabBar(mp_tabbar);
     setDocumentMode(true);
 }
@@ -114,7 +115,7 @@ void TabWidget::webViewUrlChanged(const QUrl &new_url)
             emit activeUrlChanged(new_url);
 }
 
-void TabWidget::currentChanged(int index)
+void TabWidget::onCurrentChanged(int index)
 {
     auto tab = tabAt(index);
     emit activeIconChanged(tab->icon());
@@ -177,4 +178,10 @@ void TabWidget::nextTabRight()
 
 void TabWidget::moveTab(int from, int to)
 {
+    auto tab = tabAt(from);
+    auto caption = tabText(from);
+    auto icon = tabIcon(from);
+    removeTab(from);
+    insertTab(to, tab, icon, caption);
+    setCurrentIndex(to);
 }

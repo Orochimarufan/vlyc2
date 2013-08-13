@@ -50,7 +50,7 @@ public:
 
     virtual QString name() const { return "Python Interface"; }
     virtual QString author() const { return "Orochimarufan"; }
-    virtual int rev() const { return 1; }
+    virtual int rev() const { return 2; }
 
     virtual bool canHandle(QString path);
     virtual bool loadPlugin(QString path, VlycForeignPluginRegistrar registrar);

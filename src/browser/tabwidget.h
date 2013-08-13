@@ -61,7 +61,7 @@ public slots:
     void nextTabRight();
 
 private slots:
-    void currentChanged(int index);
+    void onCurrentChanged(int index);
 
     void webViewIconChanged();
     void webViewTitleChanged(const QString &new_title);

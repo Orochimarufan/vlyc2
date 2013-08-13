@@ -17,6 +17,7 @@
  *****************************************************************************/
 
 #include "stubplugin.h"
+#include "videoimpl.h"
 
 #include <QtCore/QUrl>
 #include <QtCore/QEventLoop>
@@ -47,7 +48,7 @@ struct DirectAccessVideo : StandardVideo
     {
         QUrl url(videoId());
         QString ext = url.path().split(".").last();
-        emit media(VideoMedia{this, VideoQuality{q, ext.toUpper()}, url});
+        emit media(VideoMedia{VideoPtr(this), VideoQuality{q, ext.toUpper()}, url});
     }
 
     void load()
@@ -116,7 +117,7 @@ QString DirectAccessPlugin::forUrl(QUrl url)
     return QString::null;
 }
 
-Video* DirectAccessPlugin::video(QString video_id)
+VideoPtr DirectAccessPlugin::video(QString video_id)
 {
-    return new DirectAccessVideo(this, video_id);
+    return VideoPtr(new DirectAccessVideo(this, video_id));
 }

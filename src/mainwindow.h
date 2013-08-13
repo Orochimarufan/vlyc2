@@ -45,10 +45,10 @@ class VideoCaller : public QObject
 {
     Q_OBJECT
 public:
-    Video *video;
+    VideoPtr video;
     VideoCaller();
-    VideoCaller(Video *v);
-    VideoCaller &operator =(Video *v);
+    VideoCaller(VideoPtr v);
+    VideoCaller &operator =(VideoPtr v);
     void load();
     void getMedia(const VideoQualityLevel &level);
     void getSubtitles(const QString &lang);
@@ -71,7 +71,7 @@ public:
     ~MainWindow();
 
 public slots:
-    void playVideo(Video *);
+    void playVideo(VideoPtr);
 
     void setFullScreen(bool fs);
     bool toggleFullScreen();
@@ -115,7 +115,7 @@ private:
     VlcMediaPlayerAudio m_player_audio;
     VlcMediaPlayerVideo m_player_video;
 
-    Video* mp_video;
+    VideoPtr mp_video;
     QList<VideoQuality> ml_qa;
     VideoCaller m_video;
     VideoMedia m_video_media;

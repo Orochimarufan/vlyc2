@@ -132,7 +132,7 @@ bool PluginManager::_initPlugin(QObject *o, QString fileName)
 }
 
 // SiteManager duties
-Video *PluginManager::sites_video(QUrl url)
+VideoPtr PluginManager::sites_video(QUrl url)
 {
     QString id;
     foreach (SitePlugin *site, ml_sites)

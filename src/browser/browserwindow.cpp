@@ -97,7 +97,7 @@ void BrowserWindow::_updateStatusBar(const QString &)
 void BrowserWindow::_updateWindowTitle(const QString &title)
 {
     if (!mp_browser->titlePostfix().isEmpty())
-        setWindowTitle(title + QStringLiteral(" - ") + mp_browser->titlePostfix());
+        setWindowTitle(title + QStringLiteral(" – ") + mp_browser->titlePostfix());
     else
         setWindowTitle(title);
 }

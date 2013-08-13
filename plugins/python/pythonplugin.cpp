@@ -43,51 +43,59 @@ static PyModuleDef VlycModuleDef = {
 PythonPlugin::PythonPlugin(QObject *parent) :
     QObject(parent)
 {
+    // initialize
     PythonQt::init(PythonQt::RedirectStdOut);
     PythonQt_QtAll::init();
     PythonQt *py = PythonQt::self();
 
-    PyObject *module = PyModule_Create(&VlycModuleDef);
-    PyObject *modules = PySys_GetObject("modules");
-    PyDict_SetItemString(modules, VlycModuleDef.m_name, module);
-
     py->registerClass(&PythonPluginModule::staticMetaObject);
-
     py->addDecorators(new PythonQtDecorator());
 
     connect(py, SIGNAL(pythonStdOut(QString)), SLOT(write_out(QString)));
     connect(py, SIGNAL(pythonStdErr(QString)), SLOT(write_err(QString)));
 
+    // create vlyc module
+    PyObject *module = PyModule_Create(&VlycModuleDef);
+
+    // install module
+    PyObject *modules = PySys_GetObject("modules");
+    PyDict_SetItemString(modules, VlycModuleDef.m_name, module);
+    Py_DECREF(modules);
+
+    // install vlyc._plugin module
     py->addObject(module, "_plugin", &reg);
 
+    // install modules from resources
     QVariantList __path__;
     __path__ << ":/lib/vlyc";
     py->addVariable(module, "__path__", QVariant::fromValue(__path__));
-
     py->installDefaultImporter();
-    //PythonQtObjectPtr importmod = py->importModule("PythonQtImport");
-    //py->addVariable(module, "__loader__", importmod.getVariable("PythonQtImporter"));
+
+    Py_DECREF(module);
 
     // get rid of apport on Ubuntu!
     PyObject *excepthook = PySys_GetObject("__excepthook__");
     PySys_SetObject("excepthook", excepthook);
+    Py_DECREF(excepthook);
 }
 
 void PythonPlugin::initialize(VlycPluginInitializer init)
 {
     initer = init;
     PythonQtObjectPtr module = PythonQt::self()->importModule("vlyc");
-    module.addVariable("network", QVariant::fromValue<QObject*>((QObject*)initer.network));
+    module.addObject("network", (QObject*)initer.network);
 }
 
 void PythonPlugin::write_out(QString s)
 {
     puts(qPrintable(s));
+    fflush(stdout);
 }
 
 void PythonPlugin::write_err(QString s)
 {
     fputs(qPrintable(s), stderr);
+    fflush(stderr);
 }
 
 PythonPlugin::~PythonPlugin()
@@ -105,7 +113,7 @@ bool PythonPlugin::canHandle(QString path)
     return false;
 }
 
-// PythonPluginRegistrar
+// PythonPluginModule
 PythonPluginModule::PythonPluginModule()
 {
     reg = NULL;

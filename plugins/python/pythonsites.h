@@ -36,7 +36,7 @@ public:
     static PythonSitePlugin *create(PyObject *plugin);
 
     virtual QString forUrl(QUrl url);
-    virtual Video* video(QString video_id);
+    virtual VideoPtr video(QString video_id);
 
     virtual QString name() const;
     virtual QString author() const;
@@ -96,6 +96,8 @@ public:
 
     virtual QList<VideoQuality> availableQualities() const;
     virtual QStringList availableSubtitleLanguages() const;
+
+    virtual bool mayBeDownloaded() const;
 
     virtual QString getError() const;
 

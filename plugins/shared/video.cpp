@@ -16,8 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include <video.h>
-
+#include <videoimpl.h>
 
 // VideoQuality
 bool VideoQuality::operator <(const VideoQuality &o) const
@@ -104,6 +103,11 @@ QList<VideoQuality> StandardVideo::availableQualities() const
 QStringList StandardVideo::availableSubtitleLanguages() const
 {
     return ml_availableSubtitleLanguages;
+}
+
+bool StandardVideo::mayBeDownloaded() const
+{
+    return false;
 }
 
 void StandardVideo::getSubtitles(const QString &language)

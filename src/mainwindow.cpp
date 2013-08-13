@@ -53,38 +53,37 @@ struct BlockChanged
 // VideoCaller
 VideoCaller::VideoCaller()
 {
-    video = nullptr;
 }
 
-VideoCaller::VideoCaller(Video *v)
+VideoCaller::VideoCaller(VideoPtr v)
 {
     video = v;
-    connect(this, SIGNAL(_load()), video, SLOT(load()));
-    connect(this, SIGNAL(_getMedia(VideoQualityLevel)), video, SLOT(getMedia(VideoQualityLevel)));
-    connect(this, SIGNAL(_getSubtitles(QString)), video, SLOT(getSubtitles(QString)));
-    connect(video, SIGNAL(error(QString)), SIGNAL(error(QString)));
-    connect(video, SIGNAL(done()), SIGNAL(done()));
-    connect(video, SIGNAL(media(VideoMedia)), SIGNAL(media(VideoMedia)));
-    connect(video, SIGNAL(subtitles(VideoSubtitles)), SIGNAL(subtitles(VideoSubtitles)));
+    connect(this, SIGNAL(_load()), &video, SLOT(load()));
+    connect(this, SIGNAL(_getMedia(VideoQualityLevel)), &video, SLOT(getMedia(VideoQualityLevel)));
+    connect(this, SIGNAL(_getSubtitles(QString)), &video, SLOT(getSubtitles(QString)));
+    connect(&video, SIGNAL(error(QString)), SIGNAL(error(QString)));
+    connect(&video, SIGNAL(done()), SIGNAL(done()));
+    connect(&video, SIGNAL(media(VideoMedia)), SIGNAL(media(VideoMedia)));
+    connect(&video, SIGNAL(subtitles(VideoSubtitles)), SIGNAL(subtitles(VideoSubtitles)));
 }
 
-VideoCaller &VideoCaller::operator =(Video *v)
+VideoCaller &VideoCaller::operator =(VideoPtr v)
 {
-    if (video)
+    if (&video)
     {
-        disconnect(this, 0, video, 0);
-        disconnect(video, 0, this, 0);
+        disconnect(this, 0, &video, 0);
+        disconnect(&video, 0, this, 0);
     }
     video = v;
-    if (video)
+    if (&video)
     {
-        connect(this, SIGNAL(_load()), video, SLOT(load()));
-        connect(this, SIGNAL(_getMedia(VideoQualityLevel)), video, SLOT(getMedia(VideoQualityLevel)));
-        connect(this, SIGNAL(_getSubtitles(QString)), video, SLOT(getSubtitles(QString)));
-        connect(video, SIGNAL(error(QString)), SIGNAL(error(QString)));
-        connect(video, SIGNAL(done()), SIGNAL(done()));
-        connect(video, SIGNAL(media(VideoMedia)), SIGNAL(media(VideoMedia)));
-        connect(video, SIGNAL(subtitles(VideoSubtitles)), SIGNAL(subtitles(VideoSubtitles)));
+        connect(this, SIGNAL(_load()), &video, SLOT(load()));
+        connect(this, SIGNAL(_getMedia(VideoQualityLevel)), &video, SLOT(getMedia(VideoQualityLevel)));
+        connect(this, SIGNAL(_getSubtitles(QString)), &video, SLOT(getSubtitles(QString)));
+        connect(&video, SIGNAL(error(QString)), SIGNAL(error(QString)));
+        connect(&video, SIGNAL(done()), SIGNAL(done()));
+        connect(&video, SIGNAL(media(VideoMedia)), SIGNAL(media(VideoMedia)));
+        connect(&video, SIGNAL(subtitles(VideoSubtitles)), SIGNAL(subtitles(VideoSubtitles)));
     }
 }
 
@@ -168,7 +167,6 @@ MainWindow::MainWindow(Vlyc *self) :
 
 MainWindow::~MainWindow()
 {
-    delete mp_video;
     delete fsc;
     delete ui;
 }
@@ -185,9 +183,9 @@ void MainWindow::openUrl()
     if (url.isEmpty())
         return;
 
-    Video *video = mp_self->plugins()->sites_video(url);
+    VideoPtr video = mp_self->plugins()->sites_video(url);
 
-    if (!video)
+    if (!&video)
     {
         QMessageBox::critical(this, "Error", QStringLiteral("Cannot open URL %1").arg(url));
         return;
@@ -211,7 +209,7 @@ void MainWindow::_videoError(const QString &message)
     QMessageBox::critical(this, "Video Error", message, "Ok");
 }
 
-void MainWindow::playVideo(Video *v)
+void MainWindow::playVideo(VideoPtr v)
 {
     auto qa = v->availableQualities();
     if (!qa.length())
@@ -271,7 +269,7 @@ void MainWindow::_videoMedia(const VideoMedia &media)
 
 void MainWindow::_videoSubs(const VideoSubtitles &subs)
 {
-    if (subs.data.type() == QMetaType::QUrl)
+    if ((QMetaType::Type)subs.data.type() == QMetaType::QUrl)
         m_player_video.setSubtitleFile(subs.data.value<QUrl>().toString());
     else
     {

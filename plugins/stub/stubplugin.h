@@ -48,7 +48,7 @@ public:
     virtual int rev() const { return 1; }
 
     virtual QString forUrl(QUrl url);
-    virtual Video* video(QString video_id);
+    virtual VideoPtr video(QString video_id);
 };
 
 #endif // STUBPLUGIN_H

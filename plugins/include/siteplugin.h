@@ -39,7 +39,7 @@ public:
      * @param video_id
      * @return the Video instance
      */
-    virtual Video* video(QString video_id) = 0;
+    virtual VideoPtr video(QString video_id) = 0;
 };
 
 QT_BEGIN_NAMESPACE

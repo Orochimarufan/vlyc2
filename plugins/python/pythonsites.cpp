@@ -120,7 +120,7 @@ QString PythonSitePlugin::forUrl(QUrl url)
         return PythonQtConv::PyObjGetString(v);
 }
 
-Video *PythonSitePlugin::video(QString video_id)
+VideoPtr PythonSitePlugin::video(QString video_id)
 {
     PyObject *func = PyObject_GetAttrString(mo_plugin.object(), "video");
     PyObject *vidobj = PythonQtConv::QVariantToPyObject(video_id);
@@ -141,7 +141,7 @@ Video *PythonSitePlugin::video(QString video_id)
     }
     PythonVideo *r = PythonVideo::create(this, video);
     Py_DECREF(video);
-    return r;
+    return VideoPtr(r);
 }
 
 QString PythonSitePlugin::name() const
@@ -220,6 +220,11 @@ int PythonVideo::favorites() const
 bool PythonVideo::useFileMetadata() const
 {
     return nonconst(mo_video).getVariable("useFileMetadata").toBool();
+}
+
+bool PythonVideo::mayBeDownloaded() const
+{
+    return false; // TODO implement
 }
 
 QString PythonVideo::getError() const
@@ -319,7 +324,7 @@ PyObject *PythonVideo::f_media_func(PyObject *_self, PyObject *args)
     QString desc(PythonQtConv::PyObjGetString(descobj));
     QUrl url(PythonQtConv::PyObjGetString(urlobj));
 
-    emit self->media(VideoMedia{self, VideoQuality{(VideoQualityLevel)q, desc}, url});
+    emit self->media(VideoMedia{VideoPtr(self), VideoQuality{(VideoQualityLevel)q, desc}, url});
 
     Py_RETURN_NONE;
 }
@@ -346,7 +351,7 @@ PyObject *PythonVideo::f_subtitles_func(PyObject *_self, PyObject *args)
         return NULL;
     }
 
-    emit self->subtitles(VideoSubtitles{self, QString(language), QString(type), PythonQtConv::PyObjToQVariant(data)});
+    emit self->subtitles(VideoSubtitles{VideoPtr(self), QString(language), QString(type), PythonQtConv::PyObjToQVariant(data)});
 
     PyMem_Free(data);
 

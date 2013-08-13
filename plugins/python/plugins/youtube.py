@@ -86,7 +86,9 @@ class YoutubePlugin(vlyc.plugin.SitePlugin):
         def load(self, done, throw):
             # TODO: PythonQt QtNetwork fix
             # QtNetwork seems to be a bit broken right now, use lxml/urllib for now.
-            document = html.parse("http://youtube.com/watch?v=%s&gl=US&hl=en&has_verified=1" % self.videoId)
+            url = "http://youtube.com/watch?v=%s&gl=US&hl=en&has_verified=1" % self.videoId
+            data = vlyc.network.retrieve(url)
+            document = html.parse(io.BytesIO(data))
             page = document.getroot()
 
             # ------ Info ------

@@ -20,12 +20,12 @@
 #define PLUGINMANAGER_H
 
 #include <QObject>
+#include <video.h>
 
 class VlycBasePlugin;
 class VlycForeignPlugin;
 
 class SitePlugin;
-class Video;
 class Vlyc;
 
 class PluginManager : public QObject
@@ -39,7 +39,7 @@ public:
     QList<VlycBasePlugin *> plugins();
 
     // SiteManager functionality
-    Video *sites_video(QUrl url);
+    VideoPtr sites_video(QUrl url);
     bool sites_getSiteId(QUrl url, SitePlugin *&site_out, QString &id_out);
 
 signals:

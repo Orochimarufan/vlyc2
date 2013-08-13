@@ -16,22 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef VIDEO_H
-#define VIDEO_H
+#ifndef VLYC2PLUGIN_VIDEO_H
+#define VLYC2PLUGIN_VIDEO_H
+
+#ifdef LIBVLYC2_LIBRARY
+#define LIBVLYC2_EXPORT Q_DECL_EXPORT
+#else
+#define LIBVLYC2_EXPORT Q_DECL_IMPORT
+#endif
 
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 #include <QtCore/QUrl>
 #include <QtCore/QVariant>
+#include <QtCore/QAtomicInt>
 
-#ifdef LIBVLYC2PLUGIN_LIBRARY
-#define LIBVLYC2PLUGIN_EXPORT Q_DECL_EXPORT
-#else
-#define LIBVLYC2PLUGIN_EXPORT Q_DECL_IMPORT
-#endif
+#include <vlyc2pointer.h>
 
 class SitePlugin;
 class Video;
+
+/// Smart pointer to a video instance. for weak refs use QWeakPointer(QObject *)
+typedef Vlyc2Pointer<Video> VideoPtr;
 
 /**
  * @brief The VideoQualityLevel enum
@@ -53,7 +59,7 @@ enum class VideoQualityLevel : int {
  * @brief The VideoQuality struct
  * Describes a single quality level for a video
  */
-struct LIBVLYC2PLUGIN_EXPORT VideoQuality
+struct LIBVLYC2_EXPORT VideoQuality
 {
     VideoQualityLevel q;
     QString description;
@@ -70,9 +76,9 @@ struct LIBVLYC2PLUGIN_EXPORT VideoQuality
  * Describes subtitles for a single language
  * a (NULL) language makes it invalid.
  */
-struct LIBVLYC2PLUGIN_EXPORT VideoSubtitles
+struct LIBVLYC2_EXPORT VideoSubtitles
 {
-    Video *video;       ///< The Video these subtitles belong to
+    VideoPtr video;       ///< The Video these subtitles belong to
     QString language;   ///< The subtitle language
     QString type;       ///< The subtitle type/format. e.g. SRT, ASS; may be empty for external resources
     QVariant data;      /**< The subtitles.
@@ -87,9 +93,9 @@ struct LIBVLYC2PLUGIN_EXPORT VideoSubtitles
  * @brief The Media struct
  * Describes a phaysical video
  */
-struct LIBVLYC2PLUGIN_EXPORT VideoMedia
+struct LIBVLYC2_EXPORT VideoMedia
 {
-    Video *video; ///< The Video this URL belongs to
+    VideoPtr video; ///< The Video this URL belongs to
     VideoQuality q; ///< The quality
     QUrl url; ///< The URL
 };
@@ -110,9 +116,10 @@ struct LIBVLYC2PLUGIN_EXPORT VideoMedia
  * getMedia() returns by emitting media(VideoMedia), or error() on error
  * getSubtitles() return by emitting subtitles(VideoSubtitles), or error() on error
  */
-class LIBVLYC2PLUGIN_EXPORT Video : public QObject
+class LIBVLYC2_EXPORT Video : public QObject, public Vlyc2Object
 {
     Q_OBJECT
+
 public:
     /// The site-specific VideoID.
     virtual QString videoId() const = 0;
@@ -154,6 +161,9 @@ public:
     /// A list of available subtitle languages.
     virtual QStringList availableSubtitleLanguages() const = 0;
 
+    /// Wether users may download this video.
+    virtual bool mayBeDownloaded() const = 0;
+
 
     /// The last error message.
     virtual QString getError() const = 0;
@@ -182,62 +192,8 @@ Q_SIGNALS:
     void error(const QString &message);
 };
 
-/**
- * @brief The StandardVideo class [abstract]
- * Partial reference implementation for Video
- */
-class LIBVLYC2PLUGIN_EXPORT StandardVideo : public Video
-{
-    Q_OBJECT
-protected:
-    QString ms_video_id;
-    SitePlugin* mp_site;
+QT_BEGIN_NAMESPACE
+Q_DECLARE_INTERFACE(Video, "me.sodimm.oro.vlyc2.Video/1.0")
+QT_END_NAMESPACE
 
-    QString ms_title;
-    QString ms_author;
-    QString ms_description;
-
-    int mi_views;
-    int mi_likes;
-    int mi_dislikes;
-    int mi_favorites;
-
-    QList<VideoQuality> ml_availableQualities;
-    QStringList ml_availableSubtitleLanguages;
-
-public:
-    StandardVideo(SitePlugin *site, const QString &video_id);
-
-    virtual QString videoId() const;
-    virtual SitePlugin *site() const;
-
-    // default implementation returns false
-    virtual bool useFileMetadata() const;
-
-    // default implementations return corresponding member
-    virtual QString title() const;
-    virtual QString author() const;
-    virtual QString description() const;
-
-    virtual int views() const;
-    virtual int likes() const;
-    virtual int dislikes() const;
-    virtual int favorites() const;
-
-    virtual QList<VideoQuality> availableQualities() const;
-    virtual QStringList availableSubtitleLanguages() const;
-
-    // default implementation returns invalid VideoSubtitles. should be overridden
-    virtual void getSubtitles(const QString &language);
-
-// getError() magic
-    virtual QString getError() const;
-
-private:
-    QString ms_error;
-
-private Q_SLOTS:
-    void _error(const QString &m);
-};
-
-#endif // VIDEO_H
+#endif // VLYC2PLUGIN_VIDEO_H
