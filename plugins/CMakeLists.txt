@@ -16,6 +16,5 @@
 # * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # *****************************************************************************/
 
-add_subdirectory(shared)
-add_subdirectory(stub)
+add_subdirectory(direct)
 add_subdirectory(python)

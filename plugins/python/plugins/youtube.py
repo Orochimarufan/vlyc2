@@ -87,8 +87,9 @@ class YoutubePlugin(vlyc.plugin.SitePlugin):
             # TODO: PythonQt QtNetwork fix
             # QtNetwork seems to be a bit broken right now, use lxml/urllib for now.
             url = "http://youtube.com/watch?v=%s&gl=US&hl=en&has_verified=1" % self.videoId
-            data = vlyc.network.retrieve(url)
-            document = html.parse(io.BytesIO(data))
+            #data = vlyc.network.retrieve(url)
+            #document = html.parse(io.BytesIO(data))
+            document = html.parse(url)
             page = document.getroot()
 
             # ------ Info ------
@@ -110,7 +111,7 @@ class YoutubePlugin(vlyc.plugin.SitePlugin):
                 self.dislikes = 0
 
             # ------ Video URLs ------
-            div = page.get_element_by_id("player")
+            div = page.get_element_by_id("page")
 
             # check for error message
             try:

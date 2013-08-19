@@ -30,7 +30,7 @@ ENDIF()
 SET(BUILD_DEMO OFF)
 SET(BUILD_VLC ON)
 add_subdirectory(QtVlc)
-include_directories(QtVlc/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/QtVlc/include)
 
 ######## VLYC ########
 project(VLYC)
@@ -59,7 +59,10 @@ ELSEIF(MINGW)
 ENDIF()
 
 ### include plugin defs ###
-include_directories(plugins/include)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+######## Shared library ########
+add_subdirectory(shared)
 
 ######## Main App ########
 add_subdirectory(src)
