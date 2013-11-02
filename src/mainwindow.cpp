@@ -280,6 +280,7 @@ void MainWindow::_videoSubs(const VideoSubtitles &subs)
         file.open();
         file.write(subs.data.toByteArray());
         file.close();
+
         m_player_video.setSubtitleFile(file.fileName());
     }
 }

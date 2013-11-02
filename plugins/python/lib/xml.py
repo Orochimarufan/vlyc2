@@ -110,7 +110,7 @@ class XMLParser(object):
 
     def _fixname(self, name):
         if "}" in name:
-            return "".join("{", name)
+            return "".join(("{", name))
         return name
 
     def _start(self, tag, attrib_in):

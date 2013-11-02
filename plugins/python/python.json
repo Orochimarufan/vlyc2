@@ -1,0 +1,3 @@
+{
+    "LinkerFlags": "LD_NOW|LD_GLOBAL"
+}

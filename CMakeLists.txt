@@ -26,11 +26,10 @@ IF(NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
-######## QtVlc ########
-SET(BUILD_DEMO OFF)
-SET(BUILD_VLC ON)
-add_subdirectory(QtVlc)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/QtVlc/include)
+SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
+
+######## Qt ########
+find_package(Qt5Core REQUIRED)
 
 ######## VLYC ########
 project(VLYC)
@@ -53,6 +52,8 @@ ELSEIF(UNIX)
 	# assume GCC, add C++0x/C++11 stuff
 	MESSAGE(STATUS "Using UNIX CMAKE_CXX_FLAGS")
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+	# Need extra -Xlinker -export-dynamic for python C extensions.
+	SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic")
 ELSEIF(MINGW)
 	MESSAGE(STATUS "Using MINGW CMAKE_CXX_FLAGS")
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")

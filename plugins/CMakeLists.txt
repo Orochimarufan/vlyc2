@@ -18,3 +18,7 @@
 
 add_subdirectory(direct)
 add_subdirectory(python)
+
+#IF(IS_DIRECTORY test)
+	add_subdirectory(test)
+#ENDIF()

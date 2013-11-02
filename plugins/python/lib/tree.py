@@ -204,8 +204,7 @@ class Element(object):
 
         As opposed to using normal iteration on this element, the returned elements can be reversed with the 'reversed' keyword and restricted to find only elements with a specific tag
         """
-        if tags is None:
-            tags = list()
+        tags = list(tags)
         if tag is not None:
             tags.insert(0, tag)
         x = _reversed(self._children) if reversed else iter(self._children)
@@ -241,8 +240,7 @@ class Element(object):
 
         Can be restricted to find only elements with a specific tag
         """
-        if tags is None:
-            tags = list()
+        tags = list(tags)
         if tag is not None:
             tags.insert(0, tag)
         x = reversed(self._parent[:self._index]) if preceding else iter(self._parent[self._index + 1:])

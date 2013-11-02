@@ -154,7 +154,7 @@ class YoutubePlugin(vlyc.plugin.SitePlugin):
 
             # ------ subtitles ------
             # same problem as above. use urllib for now.
-            document = xml.parse("http://video.google.com/timedtext?type=list&v=%s" % self.videoId)
+            document = xml.parse(io.BytesIO(vlyc.network.retrieve("http://video.google.com/timedtext?type=list&v=%s" % self.videoId)))
             transcript_list = document.getroot()
             self.sub_tracks = list()
             for track in transcript_list:

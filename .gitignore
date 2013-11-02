@@ -1,5 +1,7 @@
 /build*
+/build
 /*.user
 *.autosave
 *.swp
 *~
+/plugins/test

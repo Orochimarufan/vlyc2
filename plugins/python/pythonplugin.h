@@ -39,7 +39,7 @@ class PythonPlugin : public QObject, public VlycForeignPlugin
 {
     Q_OBJECT
     Q_INTERFACES(VlycBasePlugin VlycForeignPlugin)
-    Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/1.0")
+    Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/1.0" FILE "python.json")
     PythonPluginModule reg;
     VlycPluginInitializer initer;
 public:

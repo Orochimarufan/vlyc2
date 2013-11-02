@@ -27,6 +27,8 @@
 #include <QtCore/QRegularExpression>
 #include <QtCore/QUrl>
 #include <QtCore/QDebug>
+#include <QtCore/QJsonObject>
+#include <QtCore/QJsonArray>
 
 #include <functional>
 
@@ -47,6 +49,29 @@ PluginManager::~PluginManager()
 {
     foreach (VlycBasePlugin *plugin, ml_plugins)
         delete plugin;
+}
+
+static const char *QJsonValue_typeName(const QJsonValue &v)
+{
+    switch (v.type())
+    {
+    case QJsonValue::Array:
+        return "Array";
+    case QJsonValue::Bool:
+        return "Bool";
+    case QJsonValue::Double:
+        return "Double";
+    case QJsonValue::Null:
+        return "null";
+    case QJsonValue::Object:
+        return "Object";
+    case QJsonValue::String:
+        return "String";
+    case QJsonValue::Undefined:
+        return "undefined";
+    default:
+        return "Unknown";
+    }
 }
 
 // Loading mechanisms
@@ -71,15 +96,51 @@ int PluginManager::loadPlugins(QString pluginDir)
         //qDebug("Loading %s", qPrintable(fileName));
 
         QPluginLoader loader(absolute);
+
+        // Plugin Metadata | Linker Flags
+        QJsonValue linkerFlags(loader.metaData()["MetaData"].toObject()["LinkerFlags"]);
+        if (!linkerFlags.isUndefined() && !linkerFlags.isNull())
+        {
+            QStringList flags;
+            if (linkerFlags.isString())
+                flags = linkerFlags.toString().split("|");
+            else if (linkerFlags.isArray())
+                for (QJsonValue flag : linkerFlags.toArray())
+                    if (flag.isString())
+                        flags.append(flag.toString());
+                    else
+                        qWarning() << "Plugin Metadata | Ignoring LinkerFlag: Not String but " << QJsonValue_typeName(flag);
+            else
+                qWarning() << "Plugin Metadata | Ignoring LinkerFlags: Not String nor Array but " << QJsonValue_typeName(linkerFlags);
+
+            qDebug() << flags;
+
+            QLibrary::LoadHints hints = loader.loadHints();
+            for (QString flag : flags)
+                if (flag == "LD_LAZY")
+                    hints = hints & ~QLibrary::ResolveAllSymbolsHint;
+                else if (flag == "LD_NOW")
+                    hints = hints | QLibrary::ResolveAllSymbolsHint;
+                else if (flag == "LD_LOCAL")
+                    hints = hints & ~QLibrary::ExportExternalSymbolsHint;
+                else if (flag == "LD_GLOBAL")
+                    hints = hints | QLibrary::ExportExternalSymbolsHint;
+                else
+                    qWarning() << "Plugin Metadata | Ignoring LinkerFlag: Unknown flag " << flag;
+            loader.setLoadHints(hints);
+        }
+
+        // Load plugin
         QObject *plugin = loader.instance();
 
+        // Initialize Plugin
         if (plugin)
         {
             if (_initPlugin(plugin, fileName))
                 loadedCnt++;
         }
         else
-            qDebug("Could not load plugin from %s: %s", qPrintable(fileName), qPrintable(loader.errorString()));
+            qWarning() << "Could not load plugin from " << fileName << ": " << loader.errorString();
     }
 
     auto base_fn = std::mem_fn(&PluginManager::_initPlugin);
@@ -89,7 +150,7 @@ int PluginManager::loadPlugins(QString pluginDir)
             if(plugin->canHandle(path))
             {
                 QString fileName = path.split("/").last();
-                qDebug("Loading '%s' using '%s'", qPrintable(fileName), qPrintable(plugin->name()));
+                qDebug() << "Loading " << fileName << " using " << plugin->name();
                 // generate fn
                 auto fn = std::bind(base_fn, this, std::placeholders::_1, fileName);
                 loadedCnt += plugin->loadPlugin(path, fn);
@@ -105,7 +166,7 @@ bool PluginManager::_initPlugin(QObject *o, QString fileName)
     VlycBasePlugin *plugin = qobject_cast<VlycBasePlugin *>(o);
     if (!plugin)
     {
-        qDebug("Failed to load %s: Not a vlyc2 plugin.", qPrintable(fileName));
+        qWarning() << "Failed to load " << fileName << ": Not a vlyc2 plugin.";
         return false;
     }
 
@@ -126,7 +187,7 @@ bool PluginManager::_initPlugin(QObject *o, QString fileName)
     if (foreign)
         ml_foreign.append(foreign);
 
-    qDebug("Loaded %s r%i by %s from %s", qPrintable(plugin->name()), plugin->rev(), qPrintable(plugin->author()), qPrintable(fileName));
+    qDebug() << "Loaded " << plugin->name() << " r" << plugin->rev() << " by " << plugin->author() << ".";
     emit pluginLoaded(plugin);
     return true;
 }
