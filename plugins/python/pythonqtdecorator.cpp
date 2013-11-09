@@ -21,6 +21,7 @@ PyObject *PythonQtDecorator::retrieve(QNetworkAccessManager *self, QString url)
     request.setUrl(QUrl(url));
     QNetworkReply *reply;
     QEventLoop loop;
+    request.setRawHeader("Connection", "keep-alive");
     while (true)
     {
         // Request
@@ -31,6 +32,7 @@ PyObject *PythonQtDecorator::retrieve(QNetworkAccessManager *self, QString url)
         if (reply->error() != QNetworkReply::NoError)
         {
             //TODO: PyErr_*, PythonQt seems to PyErr_Clear() it right away and return None?
+            qWarning("QNAM Error: %s", qPrintable(reply->errorString()));
             PyErr_SetString(PyExc_IOError, qPrintable(reply->errorString()));
             reply->deleteLater();
             return NULL;
@@ -42,6 +44,7 @@ PyObject *PythonQtDecorator::retrieve(QNetworkAccessManager *self, QString url)
             break;
         //qDebug("QNAM %p redirect %s", self, qPrintable(redirLocation.toString()));
         request.setUrl(redirLocation.toUrl());
+        reply->close();
         reply->deleteLater();
     }
     // Reply

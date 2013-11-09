@@ -70,11 +70,15 @@ public:
     explicit MainWindow(Vlyc *self);
     ~MainWindow();
 
+signals:
+    void playMrlSignal(const QString &mrl); // for delayed playback
+
 public slots:
     void playVideo(VideoPtr);
 
     void setFullScreen(bool fs);
     bool toggleFullScreen();
+    void playMrl(const QString &mrl);
 
 private slots:
     void _videoMedia(const VideoMedia &);

@@ -162,6 +162,8 @@ MainWindow::MainWindow(Vlyc *self) :
     connect(&m_video, SIGNAL(media(VideoMedia)), SLOT(_videoMedia(VideoMedia)));
     connect(&m_video, SIGNAL(subtitles(VideoSubtitles)), SLOT(_videoSubs(VideoSubtitles)));
 
+    connect(this, &MainWindow::playMrlSignal, this, &MainWindow::playMrl, Qt::QueuedConnection);
+
     loadState();
 }
 
@@ -183,11 +185,16 @@ void MainWindow::openUrl()
     if (url.isEmpty())
         return;
 
-    VideoPtr video = mp_self->plugins()->sites_video(url);
+    playMrl(url);
+}
+
+void MainWindow::playMrl(const QString &mrl)
+{
+    VideoPtr video = mp_self->plugins()->sites_video(mrl);
 
     if (!&video)
     {
-        QMessageBox::critical(this, "Error", QStringLiteral("Cannot open URL %1").arg(url));
+        QMessageBox::critical(this, "Error", QStringLiteral("Cannot open URL %1").arg(mrl));
         return;
     }
 

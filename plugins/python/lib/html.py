@@ -192,7 +192,7 @@ class ProcessingInstruction(ProcessingInstruction, Mixin):
     __slots__ = ()
 
 
-class TreeBuilder(TreeBuilder):
+class StrictTreeBuilder(TreeBuilder):
     """
     The Tree Builder, HTML edition
     this does much magic to clean up (invalid) HTML trees
@@ -234,18 +234,20 @@ class TreeBuilder(TreeBuilder):
         # pop the tag
         return self.pop()
 
-    #def close(self):
-    #    if self.root is None:
-    #        raise EmptyTree("Missing root element: tree empty")
-    #    # make missing end tags non-critical
-    #    if len(self):
-    #        logger.warn("Malformed HTML: Missing %i end tags: %s, buffer: %s" % (len(self), list(reversed(self._debugtags())), self.buffer))
-    #    return self.root
-
     # We have our own Factories
     default_factory = Element
     comment_factory = Comment
     pi_factory = ProcessingInstruction
+
+
+class TreeBuilder(StrictTreeBuilder):
+    def close(self):
+        if self.root is None:
+            raise EmptyTree("Missing root element: tree empty")
+        # make missing end tags non-critical
+        if len(self):
+            logger.warn("Malformed HTML: Missing %i end tags: %s, buffer: %s" % (len(self), list(reversed(self._debugtags())), self.buffer))
+        return self.root
 
 
 class HTMLParser(parser.HTMLParser):
