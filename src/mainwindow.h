@@ -100,6 +100,8 @@ private slots:
     void saveState();
     void loadState();
 
+    void on_actionAbout_triggered();
+
 protected:
     bool eventFilter(QObject *, QEvent *);
     void closeEvent(QCloseEvent *);

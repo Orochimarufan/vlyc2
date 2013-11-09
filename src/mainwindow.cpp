@@ -23,6 +23,7 @@
 #include "vlyc.h"
 #include "pluginmanager.h"
 #include "vlycbrowser.h"
+#include "about.h"
 #include <siteplugin.h>
 
 #include <QtCore>
@@ -440,4 +441,10 @@ void MainWindow::loadState()
     setGeometry(config.value("geometry", geometry()).toRect());
     if (config.value("maximised", false).toBool())
         setWindowState(windowState() | Qt::WindowMaximized);
+}
+
+void MainWindow::on_actionAbout_triggered()
+{
+    About dialog(this);
+    dialog.exec();
 }
