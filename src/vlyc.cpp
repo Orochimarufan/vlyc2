@@ -29,7 +29,8 @@ Vlyc::Vlyc(QObject *parent) :
     mp_plugins(new PluginManager(this)),
     mp_browser(new VlycBrowser(this))
 {
-    mp_plugins->loadPlugins(qApp->applicationDirPath());
+    mp_plugins->loadPlugins(qApp->applicationDirPath().append("/plugins"));
+    mp_plugins->constructToolMenu(mp_window->getToolMenu());
 }
 
 Vlyc::~Vlyc()

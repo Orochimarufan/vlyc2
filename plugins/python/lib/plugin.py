@@ -18,7 +18,7 @@
 #- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #----------------------------------------------------------------------
 
-from . import _plugin
+from . import _state
 import inspect
 import abc
 
@@ -43,6 +43,7 @@ class VideoQualityLevel:
 	QA_4K      = 600
 	QA_HIGHEST = 1024
 
+
 class _PythonSitePluginMeta(type):
 	def __init__(self, name, bases, dict):
 		super(_PythonSitePluginMeta, self).__init__(name, bases, dict)
@@ -54,7 +55,7 @@ class _PythonSitePluginMeta(type):
 		obj = self()
 		for name in "forUrl", "video":
 			inspect.signature(getattr(obj, name)).bind("singleArg")
-		_plugin.registerSite(obj)
+		_state.register_site(obj)
 
 
 class SitePlugin(metaclass=_PythonSitePluginMeta):
@@ -64,6 +65,7 @@ class SitePlugin(metaclass=_PythonSitePluginMeta):
 		str author	:: the Plugin author
 		int rev		:: the Plugin version/revision
 
+        Methods:
 		str forUrl(QUrl url) :: get the videoId for url `url`. Return empty string if you cannot handle `url`
 		Video video(str video_id) :: return a video object for video_id
 	"""

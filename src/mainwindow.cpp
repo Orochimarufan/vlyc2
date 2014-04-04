@@ -448,3 +448,9 @@ void MainWindow::on_actionAbout_triggered()
     About dialog(this);
     dialog.exec();
 }
+
+
+QMenu &MainWindow::getToolMenu()
+{
+    return *ui->menuTools;
+}

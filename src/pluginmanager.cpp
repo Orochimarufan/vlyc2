@@ -19,6 +19,7 @@
 #include "pluginmanager.h"
 #include <siteplugin.h>
 #include <foreignplugin.h>
+#include <toolplugin.h>
 #include "vlyc.h"
 #include "vlycbrowser.h"
 
@@ -187,6 +188,11 @@ bool PluginManager::_initPlugin(QObject *o, QString fileName)
     if (foreign)
         ml_foreign.append(foreign);
 
+    // tool
+    VlycToolPlugin *tool = qobject_cast<VlycToolPlugin *>(o);
+    if (tool)
+        ml_tool.append(tool);
+
     qDebug() << "Loaded " << plugin->name() << " r" << plugin->rev() << " by " << plugin->author() << ".";
     emit pluginLoaded(plugin);
     return true;
@@ -213,4 +219,15 @@ bool PluginManager::sites_getSiteId(QUrl url, SitePlugin *&site_out, QString &id
             return true;
         }
     return false;
+}
+
+// Tool stuff
+void PluginManager::constructToolMenu(QMenu &toolMenu)
+{
+    foreach (VlycToolPlugin *p, ml_tool)
+    {
+        QAction *action = p->toolMenuAction();
+        qDebug("Adding action '%s' from %s", qPrintable(action->text()), qPrintable(p->name()));
+        toolMenu.addAction(action);
+    }
 }

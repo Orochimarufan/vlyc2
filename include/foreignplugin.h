@@ -24,7 +24,7 @@
 
 typedef std::function<bool(QObject*)> VlycForeignPluginRegistrar;
 
-class VlycForeignPlugin : public VlycBasePlugin
+class VlycForeignPlugin : public virtual VlycBasePlugin
 {
 public:
     virtual ~VlycForeignPlugin() {}

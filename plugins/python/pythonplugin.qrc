@@ -7,5 +7,6 @@
         <file alias="isodate.py">lib/isodate.py</file>
         <file alias="html.py">lib/html.py</file>
         <file alias="etree.py">lib/etree.py</file>
+        <file alias="network.py">lib/network.py</file>
     </qresource>
 </RCC>

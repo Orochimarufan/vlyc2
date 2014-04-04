@@ -22,7 +22,7 @@
 #include "plugin.h"
 #include "video.h"
 
-class SitePlugin : public VlycBasePlugin
+class SitePlugin : public virtual VlycBasePlugin
 {
 public:
     virtual ~SitePlugin() {}

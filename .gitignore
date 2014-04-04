@@ -1,5 +1,7 @@
 /build*
 /build
+/qcbuild
+/*.user.*.*
 /*.user
 *.autosave
 *.swp

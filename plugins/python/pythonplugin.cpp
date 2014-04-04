@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2013-2014 Orochimarufan <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,22 +16,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include <PythonQt.h>
-#include <PythonQt_QtAll.h>
+#include <PythonQt/PythonQt.h>
+#include <PythonQt/PythonQt_QtAll.h>
 
 #include "pythonplugin.h"
 #include "pythonsites.h"
 #include "pythonqtdecorator.h"
+#include "console/PythonQtScriptingConsole.h"
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QStringList>
 #include <QtCore/QFileInfo>
 #include <QtCore/QDir>
 
+// -----------------------------------------------------------------------
+// Module Definitions
+PyDoc_STRVAR(VlycModuleDoc, "Has all Vlyc options");
+
 static PyModuleDef VlycModuleDef = {
     PyModuleDef_HEAD_INIT,
     "vlyc",
-    NULL,
+    VlycModuleDoc,
     -1,
     NULL,
     NULL,
@@ -40,6 +45,26 @@ static PyModuleDef VlycModuleDef = {
     NULL,
 };
 
+PyObject *vlyc__state_register_site(PyObject *self, PyObject *site);
+static PyMethodDef VlycStateMethods[] = {
+  {"register_site", &vlyc__state_register_site, METH_O, NULL},
+  {NULL, NULL, 0, NULL},
+};
+
+static PyModuleDef VlycStateModuleDef = {
+    PyModuleDef_HEAD_INIT,
+    "_state",
+    NULL,
+    -1,
+    VlycStateMethods,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+
+// -----------------------------------------------------------------------
+// Initialization
 PythonPlugin::PythonPlugin(QObject *parent) :
     QObject(parent)
 {
@@ -47,31 +72,27 @@ PythonPlugin::PythonPlugin(QObject *parent) :
     PythonQt::init(PythonQt::RedirectStdOut);
     PythonQt_QtAll::init();
     PythonQt *py = PythonQt::self();
-
-    py->registerClass(&PythonPluginModule::staticMetaObject);
     py->addDecorators(new PythonQtDecorator());
 
-    connect(py, SIGNAL(pythonStdOut(QString)), SLOT(write_out(QString)));
-    connect(py, SIGNAL(pythonStdErr(QString)), SLOT(write_err(QString)));
+    // Standard Streams
+    connect(py, &PythonQt::pythonStdOut, this, &PythonPlugin::write_out);
+    connect(py, &PythonQt::pythonStdErr, this, &PythonPlugin::write_err);
 
-    // create vlyc module
-    PyObject *module = PyModule_Create(&VlycModuleDef);
+    // Create VLYC Module
+    module.setNewRef(PyModule_Create(&VlycModuleDef));
 
-    // install module
+    QStringList __path__;
+    __path__ << ":/lib/vlyc";
+    module.addVariable("__path__", __path__);
+    py->installDefaultImporter();
+
+    state = PyModule_Create(&VlycStateModuleDef);
+    PyModule_AddObject(module, VlycStateModuleDef.m_name, state);
+
+    // Install Module
     PyObject *modules = PySys_GetObject("modules");
     PyDict_SetItemString(modules, VlycModuleDef.m_name, module);
     Py_DECREF(modules);
-
-    // install vlyc._plugin module
-    py->addObject(module, "_plugin", &reg);
-
-    // install modules from resources
-    QVariantList __path__;
-    __path__ << ":/lib/vlyc";
-    py->addVariable(module, "__path__", QVariant::fromValue(__path__));
-    py->installDefaultImporter();
-
-    Py_DECREF(module);
 
     // get rid of apport on Ubuntu!
     PyObject *excepthook = PySys_GetObject("__excepthook__");
@@ -82,10 +103,15 @@ PythonPlugin::PythonPlugin(QObject *parent) :
 void PythonPlugin::initialize(VlycPluginInitializer init)
 {
     initer = init;
-    PythonQtObjectPtr module = PythonQt::self()->importModule("vlyc");
-    module.addObject("network", (QObject*)initer.network);
+    state.addObject("network_access_manager", (QObject*)initer.network);
 }
 
+PythonPlugin::~PythonPlugin()
+{
+}
+
+// -----------------------------------------------------------------------
+// Standard Streams
 void PythonPlugin::write_out(QString s)
 {
     puts(qPrintable(s));
@@ -98,10 +124,45 @@ void PythonPlugin::write_err(QString s)
     fflush(stderr);
 }
 
-PythonPlugin::~PythonPlugin()
+// -----------------------------------------------------------------------
+// Plugin Registering
+VlycForeignPluginRegistrar vlyc_register_plugin = nullptr;
+
+PyObject *vlyc__state_register_site(PyObject *self, PyObject *site)
 {
+    Q_UNUSED(self);
+
+    if (vlyc_register_plugin == nullptr)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot register plugin after initialization is done.");
+        return NULL;
+    }
+
+    PythonSitePlugin *plugin = PythonSitePlugin::create(site);
+    if (!plugin)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Could not register site plugin.");
+        return NULL;
+    }
+
+    vlyc_register_plugin(plugin);
+    Py_RETURN_NONE;
 }
 
+struct RegScope
+{
+    RegScope(VlycForeignPluginRegistrar reg)
+    {
+        vlyc_register_plugin = reg;
+    }
+    ~RegScope()
+    {
+        vlyc_register_plugin = nullptr;
+    }
+};
+
+// -----------------------------------------------------------------------
+// Plugin Loading
 bool PythonPlugin::canHandle(QString path)
 {
     QFileInfo f(path);
@@ -113,50 +174,35 @@ bool PythonPlugin::canHandle(QString path)
     return false;
 }
 
-// PythonPluginModule
-PythonPluginModule::PythonPluginModule()
-{
-    reg = NULL;
-}
-
-struct RegScope
-{
-    PythonPluginModule *reg;
-    RegScope(PythonPluginModule *reg, VlycForeignPluginRegistrar newReg)
-    {
-        this->reg = reg;
-        reg->reg = newReg;
-    }
-    ~RegScope()
-    {
-        reg->reg = NULL;
-    }
-};
-
 bool PythonPlugin::loadPlugin(QString path, VlycForeignPluginRegistrar registrar)
 {
-    static long pluginCnt = 0;
-    static QString modfmt("VLYCPLUGIN%1_%2");
     QFileInfo f(path);
-    RegScope r(&reg, registrar);
+
+    // Generate module name
+    static long pluginCnt = 0;
+    static QString modfmt = QStringLiteral("VLYCPLUGIN%1_%2");
+
+    QString name = path.split("/").last();
     if (f.isFile())
-    {
-        QStringList modParts = path.split("/").last().split(".");
-        modParts.removeLast();
-        QString mod = modfmt.arg(pluginCnt++).arg(modParts.join("_"));
-        PythonQtObjectPtr module = PythonQt::self()->createModuleFromScript(mod);
-        PythonQt::self()->evalFile(module.object(), path);
-    }
+        name = name.section(".", -1);
+
+    QString mod = modfmt.arg(pluginCnt++).arg(name);
+
+    // Create Module
+    PythonQtObjectPtr plugin_mod = PythonQt::self()->createModuleFromScript(mod);
+
+    // Load Plugin
+    RegScope r(registrar);
+    if (f.isFile())
+        plugin_mod.evalFile(path);
     else
     {
-        QString mod = modfmt.arg(pluginCnt++).arg(path.split("/").last().replace('/', '_').replace('.', '_'));
-        QDir folder(path);
-        PythonQtObjectPtr package = PythonQt::self()->createModuleFromScript(mod);
-        QVariantList __path__;
+        QStringList __path__;
         __path__ << path;
-        package.addVariable("__path__", QVariant::fromValue(__path__));
-        PythonQt::self()->evalFile(package, folder.absoluteFilePath("__init__.py"));
+        plugin_mod.addVariable("__path__", __path__);
+        plugin_mod.evalFile(QDir(path).absoluteFilePath("__init__.py"));
     }
+
     if(PythonQt::self()->hadError())
     {
         PyErr_Print();
@@ -166,19 +212,19 @@ bool PythonPlugin::loadPlugin(QString path, VlycForeignPluginRegistrar registrar
     return true;
 }
 
-void PythonPluginModule::registerSite(PyObject *plugin)
+// -----------------------------------------------------------------------
+// Tool Menu Action
+QAction *PythonPlugin::toolMenuAction()
 {
-    if(!reg)
-    {
-        PyErr_SetString(PyExc_RuntimeError, "the PythonPluginRegistrar instance can only be used while initializing the module!");
-        return;
-    }
-    PythonSitePlugin *it = PythonSitePlugin::create(plugin);
-    if (!it)
-    {
-        qDebug("Could not register a site plugin.");
-        return;
-    }
-    qDebug("Registering Python Site %s by %s", qPrintable(it->name()), qPrintable(it->author()));
-    reg(it);
+    QAction *tma = new QAction(tr("Python Console"), nullptr);
+    connect(tma, &QAction::triggered, this, &PythonPlugin::openConsole);
+    return tma;
+}
+
+void PythonPlugin::openConsole()
+{
+    PythonQtObjectPtr module = PythonQt::self()->createUniqueModule();
+    PythonQtScriptingConsole *con = new PythonQtScriptingConsole(nullptr, module);
+    con->setAttribute(Qt::WA_DeleteOnClose);
+    con->show();
 }

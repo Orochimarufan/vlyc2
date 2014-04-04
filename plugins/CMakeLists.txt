@@ -16,6 +16,9 @@
 # * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # *****************************************************************************/
 
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
 add_subdirectory(direct)
 add_subdirectory(python)
 

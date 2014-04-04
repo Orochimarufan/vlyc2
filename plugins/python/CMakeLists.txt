@@ -26,7 +26,7 @@ STRING(TOUPPER "${_FIRST}" _FIRST)
 STRING(REGEX REPLACE "^.(.*)" "${_FIRST}\\1Plugin" PLUGIN_PROJECT "${PLUGIN_NAME}")
 project(${PLUGIN_PROJECT})
 SET(PLUGIN vlyc2-${PLUGIN_NAME})
-SET(PLUGIN_QT Core Network)
+SET(PLUGIN_QT Core Network Widgets)
 SET(PLUGIN_LIBS libvlyc2)
 SET(PLUGIN_SOURCES)
 SET(PLUGIN_HEADERS)
@@ -52,7 +52,6 @@ find_package(PythonQt5_3_QtAll REQUIRED)
 
 include_directories(${PythonQt_INCLUDE_DIRS} ${PythonQt_QtAll_INCLUDE_DIRS})
 LIST(APPEND PLUGIN_LIBS ${PythonQt_QtAll_LIBRARIES})
-
 LIST(APPEND PLUGIN_QT ${PythonQt_QtAll_QT})
 
 # Find Python
@@ -65,17 +64,19 @@ LIST(APPEND PLUGIN_HEADERS
 pythonplugin.h
 pythonsites.h
 pythonqtdecorator.h
+console/PythonQtScriptingConsole.h
 )
 
 LIST(APPEND PLUGIN_SOURCES
 pythonplugin.cpp
 pythonsites.cpp
 pythonqtdecorator.cpp
+console/PythonQtScriptingConsole.cpp
 )
 
-SET(PLUGINS
-	youtube.py
-)
+#SET(PLUGINS
+#	youtube.py
+#)
 
 ######## Build ########
 # Qt
@@ -102,14 +103,14 @@ IF(WIN32)
     set_target_properties(${PLUGIN} PROPERTIES COMPILE_FLAGS "${COMPILE_FLAGS}")
 ENDIF()
 
-foreach(plugin ${PLUGINS})
-	set(INPUT ${PROJECT_SOURCE_DIR}/plugins/${plugin} )
-	set(OUTPUT ${CMAKE_BINARY_DIR}/${plugin})
-	add_custom_command(OUTPUT ${OUTPUT}
-		COMMAND ${CMAKE_COMMAND}
-		ARGS -E copy ${INPUT} ${OUTPUT}
-		MAIN_DEPENDENCY ${INPUT}
-		COMMENT "Copying Python plugin ${plugin}"
-	)
-	add_dependencies(${PLUGIN} ${OUTPUT})
-endforeach()
+#foreach(plugin ${PLUGINS})
+#	set(INPUT ${PROJECT_SOURCE_DIR}/plugins/${plugin} )
+#	set(OUTPUT ${CMAKE_BINARY_DIR}/${plugin})
+#	add_custom_command(OUTPUT ${OUTPUT}
+#		COMMAND ${CMAKE_COMMAND}
+#		ARGS -E copy ${INPUT} ${OUTPUT}
+#		MAIN_DEPENDENCY ${INPUT}
+#		COMMENT "Copying Python plugin ${plugin}"
+#	)
+#	add_dependencies(${PLUGIN} ${OUTPUT})
+#endforeach()

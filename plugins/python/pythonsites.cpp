@@ -260,14 +260,14 @@ PyObject *PythonVideo::f_error_func(PyObject *_self, PyObject *args)
     if (!(self = capsule_get(_self)))
         return NULL;
 
-    qDebug("error");
-
     PyObject *message;
     if (!PyArg_ParseTuple(args, "U:throw", &message))
     {
         self->emitError("Python: Wrongly called throw() callback!");
         return NULL;
     }
+
+    qWarning("error: %s", qPrintable(PythonQtConv::PyObjGetString(message)));
 
     self->emitError(PythonQtConv::PyObjGetString(message));
 

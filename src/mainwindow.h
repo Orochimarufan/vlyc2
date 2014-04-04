@@ -70,6 +70,8 @@ public:
     explicit MainWindow(Vlyc *self);
     ~MainWindow();
 
+    QMenu &getToolMenu();
+
 signals:
     void playMrlSignal(const QString &mrl); // for delayed playback
 

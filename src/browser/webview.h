@@ -45,10 +45,12 @@ protected:
 
 private slots:
     void openLinkInNewTab();
+    void openLinkInMediaPlayer();
 
 private:
     TabWidget *mp_tabs;
     WebPage *mp_page;
+    QUrl m_lastContextUrl;
 
     QString ms_statusBarText;
     int mi_progress;

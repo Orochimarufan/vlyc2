@@ -25,6 +25,7 @@
 
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMenu>
+#include <QtWidgets/QMessageBox>
 
 #include <QtWebKitWidgets/QWebHitTestResult>
 
@@ -76,6 +77,8 @@ void WebView::contextMenuEvent(QContextMenuEvent *event)
 
         menu.addAction(pageAction(QWebPage::OpenLink));
 
+        menu.addAction(tr("Open Link in Media Player"), this, SLOT(openLinkInMediaPlayer()));
+
         menu.addAction(pageAction(QWebPage::OpenLinkInNewWindow));
 
         menu.addAction(tr("Open in New Tab"), this, SLOT(openLinkInNewTab()));
@@ -90,6 +93,8 @@ void WebView::contextMenuEvent(QContextMenuEvent *event)
 
         if (page()->settings()->testAttribute(QWebSettings::DeveloperExtrasEnabled))
             menu.addAction(pageAction(QWebPage::InspectElement));
+
+        m_lastContextUrl = r.linkUrl();
 
         menu.exec(mapToGlobal(event->pos()));
 
@@ -134,4 +139,10 @@ void WebView::openLinkInNewTab()
 {
     mp_page->mb_openInTab = true;
     mp_page->triggerAction(QWebPage::OpenLinkInNewWindow);
+}
+
+void WebView::openLinkInMediaPlayer()
+{
+    if (mp_tabs->browser()->navigationRequest(m_lastContextUrl))
+        QMessageBox::information(window(), "Could not open in Media Player", "Url doesn't seem to be a media url.");
 }

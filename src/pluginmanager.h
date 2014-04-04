@@ -19,11 +19,13 @@
 #ifndef PLUGINMANAGER_H
 #define PLUGINMANAGER_H
 
-#include <QObject>
+#include <QtWidgets/QMenu>
+#include <QtCore/QObject>
 #include <video.h>
 
 class VlycBasePlugin;
 class VlycForeignPlugin;
+class VlycToolPlugin;
 
 class SitePlugin;
 class Vlyc;
@@ -42,6 +44,9 @@ public:
     VideoPtr sites_video(QUrl url);
     bool sites_getSiteId(QUrl url, SitePlugin *&site_out, QString &id_out);
 
+    // ToolPlugin functionality
+    void constructToolMenu(QMenu &toolMenu);
+
 signals:
     void pluginLoaded(VlycBasePlugin *plugin);
 
@@ -51,6 +56,7 @@ private:
     QList<VlycBasePlugin *> ml_plugins;
     QList<SitePlugin *> ml_sites;
     QList<VlycForeignPlugin *> ml_foreign;
+    QList<VlycToolPlugin *> ml_tool;
 
     bool _initPlugin(QObject *o, QString f=QString::null);
 };

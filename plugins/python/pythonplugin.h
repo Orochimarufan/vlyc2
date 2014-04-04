@@ -22,26 +22,23 @@
 #include <PythonQt.h>
 
 #include <QtCore/QObject>
+
 #include <foreignplugin.h>
+#include <toolplugin.h>
 
-class PythonPluginModule : public QObject
+class PythonPlugin : public QObject, public VlycForeignPlugin, public VlycToolPlugin
 {
     Q_OBJECT
-    friend class PythonPlugin;
-    friend class RegScope;
-    PythonPluginModule();
-    VlycForeignPluginRegistrar reg;
-public Q_SLOTS:
-    void registerSite(PyObject *plugin);
-};
-
-class PythonPlugin : public QObject, public VlycForeignPlugin
-{
-    Q_OBJECT
-    Q_INTERFACES(VlycBasePlugin VlycForeignPlugin)
+    Q_INTERFACES(VlycBasePlugin VlycForeignPlugin VlycToolPlugin)
     Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/1.0" FILE "python.json")
-    PythonPluginModule reg;
+
+    // Modules
+    PythonQtObjectPtr module;
+    PythonQtObjectPtr state;
+
+    // Stuff
     VlycPluginInitializer initer;
+
 public:
     PythonPlugin(QObject *parent=0);
     virtual ~PythonPlugin();
@@ -55,9 +52,13 @@ public:
     virtual bool canHandle(QString path);
     virtual bool loadPlugin(QString path, VlycForeignPluginRegistrar registrar);
 
+    virtual QAction *toolMenuAction();
+
 public Q_SLOTS:
     void write_out(QString s);
     void write_err(QString s);
+
+    void openConsole();
 };
 
 #endif // PYTHONPLUGIN_H
