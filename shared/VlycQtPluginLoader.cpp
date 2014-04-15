@@ -166,20 +166,6 @@ QString QtLoaderPlugin::id() const
     return ID;
 }
 
-QString QtLoaderPlugin::name() const
-{
-    return "Vlyc2 Qt C++ Plugin Loader";
-}
-
-int QtLoaderPlugin::rev() const
-{
-    return 1;
-}
-
-void QtLoaderPlugin::init(InitEvent &init)
-{
-}
-
 QList<PluginLoader *> QtLoaderPlugin::builtinPlugins()
 {
     return static_plugins;

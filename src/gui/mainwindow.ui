@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowIcon">
-   <iconset resource="../vlyc.qrc">
+   <iconset resource="../../vlyc.qrc">
     <normaloff>:/vlyc/res/vlyc2.png</normaloff>:/vlyc/res/vlyc2.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -121,7 +121,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>27</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -135,7 +135,6 @@
     <property name="title">
      <string>Tools</string>
     </property>
-    <addaction name="actionBrowser"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -194,12 +193,12 @@
   <customwidget>
    <class>VideoWidget</class>
    <extends>QWidget</extends>
-   <header location="global">videowidget.h</header>
+   <header location="global">gui/videowidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../vlyc.qrc"/>
+  <include location="../../vlyc.qrc"/>
  </resources>
  <connections/>
 </ui>

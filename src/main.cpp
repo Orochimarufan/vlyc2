@@ -21,11 +21,9 @@
 
 #include <iostream>
 
-#include "mainwindow.h"
 #include "vlyc.h"
-#include "cmdparser.h"
-#include "vlycbrowser.h"
-#include "browser/networkaccessmanager.h"
+#include "gui/mainwindow.h"
+#include "util/cmdparser.h"
 
 #include <VlcInstance.h>
 
@@ -36,21 +34,21 @@ int main(int argc, char** argv)
 
     app.setApplicationName("vlyc2");
     app.setApplicationDisplayName("VLYC²");
-    app.setApplicationVersion("1.9.0");
+    app.setApplicationVersion("0.9.1");
     app.setOrganizationName("Orochimarufan");
     app.setOrganizationDomain("oro.sodimm.me");
     app.setWindowIcon(QIcon(":/vlyc/res/vlyc2.png"));
 
-    Commandline::Parser parser(Commandline::FlagStyle::GNU, Commandline::ArgumentStyle::SpaceAndEquals);
+    CmdParser::Parser parser(CmdParser::FlagStyle::GNU, CmdParser::ArgumentStyle::SpaceAndEquals);
 
-    parser.addArgument("mrl", false, QString());
+    parser.newArgument("mrl", QString());
     parser.addDocumentation("mrl", "The MRL to play after startup");
 
-    parser.addOption("proxy", QString());
+    parser.newOption("proxy", QString());
     parser.addDocumentation("proxy", "Set the HTTP proxy", "PROXY");
 
-    parser.addSwitch("help", false);
-    parser.addShortOpt("help", 'h');
+    parser.newSwitch("help", false);
+    parser.addFlag("help", 'h');
     parser.addDocumentation("help", "Show this help");
 
     QHash<QString,QVariant> args = parser.parse(app.arguments());

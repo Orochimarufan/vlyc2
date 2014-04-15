@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,33 +15,34 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
-/* the browser is modeled after the "Tab Browser" example found in the Qt
- * documentation, available under GPLv3 */
 
-#ifndef NETWORKACCESSMANAGER_H
-#define NETWORKACCESSMANAGER_H
+#pragma once
 
-#include <QtNetwork/QNetworkAccessManager>
-#include <QtNetwork/QNetworkRequest>
+#include <VlycToolPlugin.h>
+#include "browser.h"
 
-class NetworkAccessManager : public QNetworkAccessManager
+class VlycApp;
+
+class BrowserPlugin : public Browser, public virtual Vlyc::ToolPlugin
 {
     Q_OBJECT
+    Q_INTERFACES(Vlyc::Plugin Vlyc::ToolPlugin)
+    Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/2.0" FILE "plugin.json")
 
 public:
-    explicit NetworkAccessManager(QObject *parent = 0);
+    VLYC_PLUGIN_HEAD(me.sodimm.oro.vlyc.Browser)
+
+    BrowserPlugin();
+    virtual void init(Vlyc::InitEvent &init);
+
+    /// Get the tool menu action
+    virtual QAction *toolMenuAction();
+
+    // Browser interface
+    virtual QNetworkAccessManager *network();
+    virtual bool navigationRequest(QUrl url);
 
 private:
-    QList<QString> ml_trustedHosts;
-    qint64 mi_finished;
-    qint64 mi_fromCache;
-    qint64 mi_pipelined;
-    qint64 mi_secure;
-    qint64 mi_downloadBuffer;
-
-public slots:
-    void loadSettings();
-    void requestFinished(QNetworkReply *reply);
+    VlycApp *vlyc;
 };
 
-#endif // NETWORKACCESSMANAGER_H

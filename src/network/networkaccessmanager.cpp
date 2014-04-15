@@ -33,9 +33,10 @@
 
 NetworkAccessManager::NetworkAccessManager(QObject *parent) :
     QNetworkAccessManager(parent),
-    mi_finished(0), mi_fromCache(0), mi_pipelined(0), mi_secure(0), mi_downloadBuffer(0)
+    mi_finished(0), mi_fromCache(0), mi_pipelined(0), mi_secure(0), mi_downloadBuffer(0),
+    cookies()
 {
-    connect(this, SIGNAL(finished(QNetworkReply*)), SLOT(requestFinished(QNetworkReply*)));
+    connect(this, &QNetworkAccessManager::finished, this, &NetworkAccessManager::requestFinished);
 
     loadSettings();
 
@@ -43,6 +44,14 @@ NetworkAccessManager::NetworkAccessManager(QObject *parent) :
     QString location = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
     diskCache->setCacheDirectory(location);
     setCache(diskCache);
+
+    cookies.load();
+    setCookieJar(&cookies);
+}
+
+NetworkAccessManager::~NetworkAccessManager()
+{
+    cookies.save();
 }
 
 void NetworkAccessManager::requestFinished(QNetworkReply *reply)

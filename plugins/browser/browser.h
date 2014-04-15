@@ -24,7 +24,7 @@
 #include <QtCore/QObject>
 #include <QtCore/QUrl>
 
-class NetworkAccessManager;
+class QNetworkAccessManager;
 //class HistoryManager;
 //class BookmarkManager;
 //class DownloadManager;
@@ -44,14 +44,13 @@ public:
     BrowserWindow *currentWindow() const;
     WebView *currentTab() const;
 
-    NetworkAccessManager *network() const;
-
     BrowserWindow *newWindow0(QWidget *parent);
     BrowserWindow *newWindow1(bool takeFocus=true, QWidget *paret=nullptr);
     BrowserWindow *newWindow(bool takeFocus=true, QWidget *parent=nullptr);
     BrowserWindow *newWindow(const QUrl &url, bool takeFocus = true, QWidget *parent=nullptr);
 
     virtual bool navigationRequest(QUrl);
+    virtual QNetworkAccessManager *network() = 0;
 
     QString titlePostfix() const;
     void setTitlePostfix(const QString &postfix);
@@ -65,7 +64,6 @@ protected:
     void saveState();
     void loadState();
 
-    NetworkAccessManager *mp_network;
     QList<BrowserWindow *> ml_windows;
     BrowserWindow *mp_window;
     QString ms_title_postfix;

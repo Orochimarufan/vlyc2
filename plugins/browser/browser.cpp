@@ -19,7 +19,6 @@
  * documentation, available under GPLv3 */
 
 #include "browser.h"
-#include "networkaccessmanager.h"
 #include "browserwindow.h"
 #include "webview.h"
 
@@ -31,7 +30,6 @@
 Browser::Browser(QObject *parent) :
     QObject(parent),
     mp_window(nullptr),
-    mp_network(new NetworkAccessManager(this)),
     ms_title_postfix("Browser")
 {
     loadState();
@@ -61,11 +59,6 @@ BrowserWindow *Browser::currentWindow() const
 WebView *Browser::currentTab() const
 {
     return mp_window->currentTab();
-}
-
-NetworkAccessManager *Browser::network() const
-{
-    return mp_network;
 }
 
 QString Browser::titlePostfix() const

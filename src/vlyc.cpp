@@ -17,42 +17,41 @@
  *****************************************************************************/
 
 #include "vlyc.h"
-#include "mainwindow.h"
-#include "vlycbrowser.h"
-#include "pluginmanager.h"
+#include "gui/mainwindow.h"
+#include "network/networkaccessmanager.h"
 
 #include <VlycPluginManager.h>
+#include <VlycLegacySitePlugin.h>
 
 #include <QtWidgets/QApplication>
 #include <QtCore/QDebug>
 
-#define LIBRARY_EXT ".so"
+#if   defined(Q_OS_WIN)
+#   define LIBRARY_EXT ".dll"
+#elif defined(Q_OS_MAC)
+#   define LIBRARY_EXT ".dylib"
+#else
+#   define LIBRARY_EXT ".so"
+#endif
 
 VlycApp::VlycApp(QObject *parent) :
     QObject(parent),
     mp_window(new MainWindow(this)),
-    mp_plugins(new PluginManager(this)),
-    mp_plugins2(new Vlyc::PluginManager()),
-    mp_browser(new VlycBrowser(this))
+    mp_plugins(new Vlyc::PluginManager()),
+    mp_network(new NetworkAccessManager(this))
 {
-    mp_plugins2->setPrivateInterface((void*)this);
-    mp_plugins2->bootstrap(QRegularExpression("libvlyc2-.+\\" LIBRARY_EXT "$"));
-    mp_plugins2->loadPluginsFrom(qApp->applicationDirPath() + "/plugins");
+    mp_plugins->setPrivateInterface((void*)this);
+    mp_plugins->bootstrap(QRegularExpression("libvlyc2-.+\\" LIBRARY_EXT "$"));
+    mp_plugins->loadPluginsFrom(qApp->applicationDirPath() + "/plugins");
 
-    mp_plugins->loadPlugins(qApp->applicationDirPath());
-    mp_plugins->constructToolMenu(mp_window->getToolMenu());
+    mp_window->addPluginActions();
 }
 
 VlycApp::~VlycApp()
 {
     delete mp_window;
     delete mp_plugins;
-    delete mp_browser;
-}
-
-VlycBrowser *VlycApp::browser() const
-{
-    return mp_browser;
+    delete mp_network;
 }
 
 MainWindow *VlycApp::window() const
@@ -60,12 +59,28 @@ MainWindow *VlycApp::window() const
     return mp_window;
 }
 
-PluginManager *VlycApp::plugins() const
+Vlyc::PluginManager *VlycApp::plugins2() const
 {
     return mp_plugins;
 }
 
-Vlyc::PluginManager *VlycApp::plugins2() const
+QNetworkAccessManager *VlycApp::network()
 {
-    return mp_plugins2;
+    return mp_network;
+}
+
+bool VlycApp::tryPlayUrl(QUrl url)
+{
+    for (Vlyc::LegacySitePlugin *site : mp_plugins->getPlugins<Vlyc::LegacySitePlugin>())
+    {
+        QString id = site->forUrl(url);
+        if (id.isEmpty())
+            continue;
+        VideoPtr v = site->video(id);
+        qDebug("'%s' is a video url: %s", qPrintable(url.toString()), qPrintable(v->site()->name()));
+        v->load();
+        mp_window->playVideo(v);
+        return true;
+    }
+    return false;
 }

@@ -16,7 +16,7 @@ class LegacyPluginLoader : public Vlyc::PluginLoader
     VlycPython *mp_state;
     QFileInfo m_file;
     QJsonObject m_metadata;
-    Wrap::WrapPlugin *mp_instance;
+    Plugin *mp_instance;
     QString m_errorString;
 
     friend PyObject *f_register_func(PyObject *,PyObject*);

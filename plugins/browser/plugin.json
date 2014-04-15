@@ -1,0 +1,7 @@
+{
+    "ID": "me.sodimm.oro.vlyc.Browser",
+    "Name": "QtWebKit Browser",
+    "Version": "1.0",
+    "Author": "Taeyeon Mori",
+    "Description": "Adds a simple browser"
+}

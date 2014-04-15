@@ -35,43 +35,48 @@ include_directories(${Qt5Widgets_INCLUDE_DIRS} ${QtVlc_INCLUDE_DIRS})
 
 ######## Headers ########
 SET(VLYC_HEADERS
-cmdparser.h
-pluginmanager.h
-mainwindow.h
-vlyc.h
-vlycbrowser.h
-fullscreencontroller.h
-videowidget.h
-about.h
+	vlyc.h
+
+	util/cmdparser.h
+	util/cmdparser_p.h
+
+	gui/mainwindow.h
+	gui/fullscreencontroller.h
+	gui/videowidget.h
+	gui/about.h
+
+	network/simplefilecookiejar.h
+	network/networkaccessmanager.h
 )
 
 
 ######## Sources ########
 SET(VLYC_SOURCES
-cmdparser.cpp
-pluginmanager.cpp
-main.cpp
-mainwindow.cpp
-vlyc.cpp
-vlycbrowser.cpp
-fullscreencontroller.cpp
-videowidget.cpp
-about.cpp
+	main.cpp
+	vlyc.cpp
+
+	util/cmdparser.cpp
+
+	gui/mainwindow.cpp
+	gui/fullscreencontroller.cpp
+	gui/videowidget.cpp
+	gui/about.cpp
+
+	network/simplefilecookiejar.cpp
+	network/networkaccessmanager.cpp
 )
 
 
 ######## UIs ########
 SET(VLYC_UIS
-mainwindow.ui
-fullscreencontroller.ui
-about.ui
+	gui/mainwindow.ui
+	gui/fullscreencontroller.ui
+	gui/about.ui
 )
 
 SET(VLYC_RES
-../vlyc.qrc
+	../vlyc.qrc
 )
-
-add_subdirectory(browser)
 
 ################################ COMPILE ################################
 # Qt 5 stuff

@@ -33,14 +33,15 @@
 #include "browser.h"
 
 #ifdef Q_OS_LINUX
-#include "vlyc_xcb.h"
+#include "../../src/vlyc_xcb.h"
 #endif
 
 BrowserWindow::BrowserWindow(Browser *browser, QWidget *parent) :
     QMainWindow(parent), mp_browser(browser), mp_body(new TabWidget(browser))
 {
 #ifdef Q_OS_LINUX
-    XCB::setWMClass(winId(), qApp->applicationName(), qApp->applicationName());
+    if (qApp->platformName() == "xcb")
+        XCB::setWMClass(winId(), qApp->applicationName(), qApp->applicationName());
 #endif
     setWindowTitle(mp_browser->titlePostfix());
     setWindowIcon(qApp->windowIcon());

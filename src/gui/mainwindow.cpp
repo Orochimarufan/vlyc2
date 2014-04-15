@@ -21,10 +21,11 @@
 #include "fullscreencontroller.h"
 #include "ui_fullscreencontroller.h"
 #include "vlyc.h"
-#include "pluginmanager.h"
-#include "vlycbrowser.h"
 #include "about.h"
 #include <siteplugin.h>
+
+#include <VlycPluginManager.h>
+#include <VlycToolPlugin.h>
 
 #include <QtCore>
 #include <QInputDialog>
@@ -114,7 +115,8 @@ MainWindow::MainWindow(VlycApp *self) :
     mp_self(self)
 {
 #ifdef Q_OS_LINUX
-    XCB::setWMClass(winId(), qApp->applicationName(), qApp->applicationName());
+    if (qApp->platformName() == "xcb")
+        XCB::setWMClass(winId(), qApp->applicationName(), qApp->applicationName());
 #endif
     ui->setupUi(this);
 
@@ -124,7 +126,6 @@ MainWindow::MainWindow(VlycApp *self) :
 
     // Menu
     connect(ui->actionOpen, SIGNAL(triggered()), SLOT(openUrl()));
-    connect(ui->actionBrowser, SIGNAL(triggered()), SLOT(browser()));
     connect(ui->actionQuit, SIGNAL(triggered(bool)), qApp, SLOT(quit()));
 
     // Ui
@@ -175,11 +176,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::browser()
-{
-    mp_self->browser()->newWindow(true);
-}
-
 void MainWindow::openUrl()
 {
     QString url = QInputDialog::getText(this, tr("Open Url"), tr("Enter URL"));
@@ -192,21 +188,7 @@ void MainWindow::openUrl()
 
 void MainWindow::playMrl(const QString &mrl)
 {
-    /*VideoPtr video = mp_self->plugins()->sites_video(mrl);
-
-    if (!&video)
-    {
-        QMessageBox::critical(this, "Error", QStringLiteral("Cannot open URL %1").arg(mrl));
-        return;
-    }
-
-    video->site();
-    video->videoId();
-    qDebug("video from Plugin %s", qPrintable(video->site()->name()));
-
-    m_video = video;
-    m_video.load();*/
-    if (mp_self->browser()->navigationRequest(QUrl(mrl)))
+    if (!mp_self->tryPlayUrl(QUrl(mrl)))
         QMessageBox::critical(this, "Error", QStringLiteral("Cannot open URL %1").arg(mrl));
 }
 
@@ -452,8 +434,8 @@ void MainWindow::on_actionAbout_triggered()
     dialog.exec();
 }
 
-
-QMenu &MainWindow::getToolMenu()
+void MainWindow::addPluginActions()
 {
-    return *ui->menuTools;
+    for (Vlyc::ToolPlugin *p : mp_self->plugins2()->getPlugins<Vlyc::ToolPlugin>())
+        ui->menuTools->addAction(p->toolMenuAction());
 }

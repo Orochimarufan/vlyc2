@@ -30,6 +30,8 @@ class PluginManagerPrivate
     //Q_DECLARE_PUBLIC(PluginManager)
     friend class PluginManager;
 
+    PluginManager *manager;
+
     QList<PluginLoader *> m_plugin_loaders;
     QList<Plugin *> m_plugins;
     QList<PluginLoader *> m_failed_plugins;

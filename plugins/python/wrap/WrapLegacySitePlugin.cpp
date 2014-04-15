@@ -102,9 +102,9 @@ WrapLegacySitePlugin *WrapLegacySitePlugin::create(PyObject *plugin)
     return r;
 }
 
-WrapLegacySitePlugin::WrapLegacySitePlugin(PyObject *plugin) :
-    WrapPlugin(plugin)
+WrapLegacySitePlugin::WrapLegacySitePlugin(PyObject *plugin)
 {
+    mo_plugin.setNewRef(plugin);
 }
 
 QString WrapLegacySitePlugin::forUrl(QUrl url)
@@ -177,6 +177,15 @@ QString WrapLegacySitePlugin::author() const
 QString WrapLegacySitePlugin::version() const
 {
     return QStringLiteral("r%1").arg(MO_PLUGIN.getVariable("rev").toInt());
+}
+
+void WrapLegacySitePlugin::init(InitEvent &e)
+{
+    e.metadata->insert("ID", id());
+    e.metadata->insert("Name", name());
+    e.metadata->insert("Author", author());
+    e.metadata->insert("Version", version());
+    e.metadata->insert("Description", QStringLiteral("A Legacy python plugin"));
 }
 
 

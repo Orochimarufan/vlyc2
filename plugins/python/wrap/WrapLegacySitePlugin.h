@@ -10,10 +10,13 @@ namespace Vlyc {
 namespace Python {
 namespace Wrap {
 
-class WrapLegacySitePlugin : public virtual WrapPlugin, public virtual LegacySitePlugin
+class WrapLegacySitePlugin : public virtual LegacySitePlugin
 {
+    PythonQtObjectPtr mo_plugin;
 public:
     WrapLegacySitePlugin(PyObject *plugin);
+
+    virtual void init(Vlyc::InitEvent &e);
 
     virtual QString id() const;
     virtual QString name() const;

@@ -70,7 +70,7 @@ public:
     explicit MainWindow(VlycApp *self);
     ~MainWindow();
 
-    QMenu &getToolMenu();
+    void addPluginActions();
 
 signals:
     void playMrlSignal(const QString &mrl); // for delayed playback
@@ -88,7 +88,6 @@ private slots:
     void _playVideo();
     void _videoError(const QString &);
     void openUrl();
-    void browser();
     void updatePosition(const float &);
     void updateState(const VlcState::Type &);
     void on_position_sliderDragged(const float &);

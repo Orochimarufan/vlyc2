@@ -24,6 +24,9 @@
 
 namespace Vlyc {
 
+class PluginManager;
+typedef PluginManager PluginManagerInterface;
+
 /**
  * @brief The InitEvent struct
  * Event sent to Plugin.init().
@@ -34,7 +37,8 @@ namespace Vlyc {
  */
 struct InitEvent
 {
-    QJsonObject *pluginMetaData;
+    PluginManagerInterface *plugin_manager;
+    QJsonObject *metadata;
     void *interface;
     void *private_interface;
 };
@@ -53,16 +57,20 @@ public:
     virtual QString id() const = 0;
 
     /// Initialize your plugin here.
-    /// You must call this from any derived overrides!
     virtual void init(InitEvent &init);
 
-    // By default taken from metadata
-    virtual QString name() const;
-    virtual QString author() const;
-    virtual QString version() const;
+    // Plugin metadata
+    QJsonObject *metadata() const;
+    QString name() const;
+    QString author() const;
+    QString version() const;
 
-protected:
-    QJsonObject *metaData;
+    PluginManagerInterface *plugins();
+
+private:
+    InitEvent m_initializer;
+    void _init(InitEvent &init);
+    friend class PluginManagerPrivate;
 };
 
 #define VLYC_PLUGIN_HEAD(ID) public:\

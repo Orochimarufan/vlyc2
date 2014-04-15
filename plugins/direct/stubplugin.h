@@ -43,9 +43,9 @@ public:
     DirectAccessPlugin();
     ~DirectAccessPlugin();
 
-    virtual QString id() const { return "me.sodimm.oro.vlyc.DirectAccessPlugin"; };
-    virtual QString name() const { return Vlyc::Plugin::name(); };
-    virtual QString author() const { return Vlyc::Plugin::author(); };
+    QString id() const { return "me.sodimm.oro.vlyc.DirectAccessPlugin"; }
+    QString name() const { return Vlyc::Plugin::name(); }
+    QString author() const { return Vlyc::Plugin::author(); }
 
     virtual void init(Vlyc::InitEvent &init);
 

@@ -27,3 +27,4 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(direct)
 add_subdirectory(python)
+add_subdirectory(browser)

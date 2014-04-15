@@ -20,16 +20,16 @@
 #define VLYC_H
 
 #include <QObject>
+#include <QUrl>
 
-#include <video.h>
-
-class VlycBrowser;
 class MainWindow;
-class PluginManager;
+class NetworkAccessManager;
+class QNetworkAccessManager;
 
 namespace Vlyc {
 class PluginManager;
 }
+
 
 class VlycApp : public QObject
 {
@@ -37,18 +37,18 @@ class VlycApp : public QObject
 public:
     explicit VlycApp(QObject *parent = 0);
 
-    VlycBrowser *browser() const;
     MainWindow *window() const;
-    PluginManager *plugins() const;
     Vlyc::PluginManager *plugins2() const;
 
     virtual ~VlycApp();
 
+    QNetworkAccessManager *network();
+    bool tryPlayUrl(QUrl url);
+
 private:
-    VlycBrowser *mp_browser;
     MainWindow *mp_window;
-    PluginManager *mp_plugins;
-    Vlyc::PluginManager *mp_plugins2;
+    Vlyc::PluginManager *mp_plugins;
+    NetworkAccessManager *mp_network;
 };
 
 #endif // VLYC_H

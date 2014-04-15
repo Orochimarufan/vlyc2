@@ -5,8 +5,6 @@
 
 // TODO: make it public D:
 #include "../../src/vlyc.h"
-#include "../../src/vlycbrowser.h"
-#include "../../src/browser/networkaccessmanager.h"
 
 namespace Vlyc {
 namespace Python {
@@ -21,6 +19,7 @@ namespace PyDef{
         NULL,
         NULL,
         NULL,
+        NULL,
     };
 
     static PyModuleDef StateModule = {
@@ -28,6 +27,7 @@ namespace PyDef{
         "_state",
         NULL,//PyDoc_STR("Contains the internal interface"),
         -1,
+        NULL,
         NULL,
         NULL,
         NULL,
@@ -88,7 +88,7 @@ VlycPython::~VlycPython()
 
 void VlycPython::initState(InitEvent *e)
 {
-    QNetworkAccessManager *nam = ((VlycApp*)e->private_interface)->browser()->network();
+    QNetworkAccessManager *nam = ((VlycApp*)e->private_interface)->network();
     PyModule_AddObject(mo_state, "network_access_manager", PythonQt::priv()->wrapQObject(nam));
 }
 

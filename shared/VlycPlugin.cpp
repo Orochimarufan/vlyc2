@@ -22,40 +22,55 @@
 
 namespace Vlyc {
 
-Plugin::Plugin() :
-    metaData(nullptr)
+Plugin::Plugin()
 {}
 
 Plugin::~Plugin()
 {}
 
+void Plugin::_init(InitEvent &init)
+{
+    m_initializer = init;
+    this->init(init);
+}
+
 void Plugin::init(InitEvent &init)
 {
-    metaData = init.pluginMetaData;
+    Q_UNUSED(init);
 }
 
 QString Plugin::name() const
 {
-    if (metaData && metaData->contains("Name"))
-        return metaData->value("Name").toString();
+    if (m_initializer.metadata->contains("Name"))
+        return m_initializer.metadata->value("Name").toString();
     else
         return id();
 }
 
 QString Plugin::author() const
 {
-    if (metaData && metaData->contains("Author"))
-        return metaData->value("Author").toString();
+    if (m_initializer.metadata->contains("Author"))
+        return m_initializer.metadata->value("Author").toString();
     else
-        return QStringLiteral("Anonymous");
+        return QStringLiteral("Anon");
 }
 
 QString Plugin::version() const
 {
-    if (metaData && metaData->contains("Version"))
-        return metaData->value("Version").toString();
+    if (m_initializer.metadata->contains("Version"))
+        return m_initializer.metadata->value("Version").toString();
     else
-        return QStringLiteral("r0");
+        return QStringLiteral("v0");
+}
+
+PluginManagerInterface *Plugin::plugins()
+{
+    return m_initializer.plugin_manager;
+}
+
+QJsonObject *Plugin::metadata() const
+{
+    return m_initializer.metadata;
 }
 
 }

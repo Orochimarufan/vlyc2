@@ -15,27 +15,37 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
+/* the browser is modeled after the "Tab Browser" example found in the Qt
+ * documentation, available under GPLv3 */
 
-#ifndef VLYCBROWSER_H
-#define VLYCBROWSER_H
+#ifndef NETWORKACCESSMANAGER_H
+#define NETWORKACCESSMANAGER_H
 
-#include "browser/browser.h"
-#include "browser/simplefilecookiejar.h"
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkRequest>
 
-class VlycApp;
+#include "simplefilecookiejar.h"
 
-class VlycBrowser : public Browser
+class NetworkAccessManager : public QNetworkAccessManager
 {
     Q_OBJECT
-public:
-    explicit VlycBrowser(VlycApp *self);
-    virtual ~VlycBrowser();
 
-    virtual bool navigationRequest(QUrl);
+public:
+    explicit NetworkAccessManager(QObject *parent = 0);
+    ~NetworkAccessManager();
 
 private:
-    VlycApp *mp_self;
+    QList<QString> ml_trustedHosts;
+    qint64 mi_finished;
+    qint64 mi_fromCache;
+    qint64 mi_pipelined;
+    qint64 mi_secure;
+    qint64 mi_downloadBuffer;
     SimpleFileCookieJar cookies;
+
+public slots:
+    void loadSettings();
+    void requestFinished(QNetworkReply *reply);
 };
 
-#endif // VLYCBROWSER_H
+#endif // NETWORKACCESSMANAGER_H

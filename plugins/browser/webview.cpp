@@ -32,8 +32,7 @@
 #include "webpage.h"
 #include "tabwidget.h"
 
-#include "browser/browser.h"
-#include "browser/networkaccessmanager.h"
+#include "browser.h"
 
 WebView::WebView(TabWidget *tabs) :
     QWebView(tabs),

@@ -15,7 +15,6 @@ PythonPlugin::PythonPlugin() :
 
 void PythonPlugin::init(InitEvent &init)
 {
-    Plugin::init(init);
     state.initState(&init);
 }
 

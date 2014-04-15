@@ -46,10 +46,10 @@ bool PluginManagerPrivate::initPlugin(PluginLoader *loader)
     m_plugins << plugin;
 
     InitEvent e;
-    e.pluginMetaData = meta;
-    // TODO: CLEAN THIS CRAP UP!
+    e.metadata = meta;
+    e.plugin_manager = manager;
     e.private_interface = private_interface;
-    plugin->init(e);
+    plugin->_init(e);
 
     qDebug("Loaded '%s' %s by %s (%s)", qPrintable(plugin->name()), qPrintable(plugin->version()), qPrintable(plugin->author()), qPrintable(plugin->id()));
 

@@ -31,6 +31,7 @@ namespace Vlyc {
 PluginManager::PluginManager()
 {
     d_ptr = new PluginManagerPrivate();
+    d_ptr->manager = this;
 }
 
 PluginManager::~PluginManager()

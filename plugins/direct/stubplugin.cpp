@@ -21,8 +21,6 @@
 
 // TODO: make it public D:
 #include "../../src/vlyc.h"
-#include "../../src/vlycbrowser.h"
-#include "../../src/browser/networkaccessmanager.h"
 
 #include <QtCore/QUrl>
 #include <QtCore/QEventLoop>
@@ -81,8 +79,7 @@ DirectAccessPlugin::DirectAccessPlugin()
 
 void DirectAccessPlugin::init(Vlyc::InitEvent &e)
 {
-    Plugin::init(e);
-    mp_network = ((VlycApp*)e.private_interface)->browser()->network();
+    mp_network = ((VlycApp*)e.private_interface)->network();
 }
 
 DirectAccessPlugin::~DirectAccessPlugin()

@@ -13,12 +13,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * ------------------------------------------------------------------------
+ * 2013-12-13 Commandline Parser Rewrite (Orochimarufan)
  */
 
-#ifndef CMDUTILS_H
-#define CMDUTILS_H
+#pragma once
 
 #include <exception>
+#include <stdexcept>
 
 #include <QString>
 #include <QVariant>
@@ -26,134 +29,140 @@
 #include <QStringList>
 
 /**
- * @file src/cmdparser.h
- * @brief commandline parsing utilities
+ * @file util/cmdparser.h
+ * @brief commandline parsing and processing utilities
  */
 
-namespace Commandline {
+namespace CmdParser {
 
+// ------------------ Utility Functions ------------------
+/**
+ * @brief split a string into argv items like a shell would do
+ * @param args the argument string
+ * @return a QStringList containing all arguments
+ */
+QStringList splitArgs(QString args);
+
+// ------------------ Parser Preference Enums ------------------
 /**
  * @brief The FlagStyle enum
- * Specifies how flags are decorated
+ * Defines how Flags and Options are detected
  */
-
-namespace FlagStyle
+enum class FlagStyle
 {
-enum Enum
-{
-	GNU,     /**< --option and -o (GNU Style) */
-	Unix,    /**< -option and -o  (Unix Style) */
+	GNU,	 /**< --option and -o (GNU Style) */
+	Unix,	/**< -option and -o  (Unix Style) */
 	Windows, /**< /option and /o  (Windows Style) */
+	// Defaults: Windows = Windows, Other = GNU
 #ifdef Q_OS_WIN32
 	Default = Windows
 #else
 	Default = GNU
 #endif
 };
-}
 
 /**
  * @brief The ArgumentStyle enum
+ * Defines how arguments are mapped to Options
  */
-namespace ArgumentStyle 
+enum class ArgumentStyle
 {
-enum Enum
-{
-	Space,          /**< --option=value */
-	Equals,         /**< --option value */
+	Space,		  /**< --option=value */
+	Equals,		 /**< --option value */
 	SpaceAndEquals, /**< --option[= ]value */
+	// Defaults: Windows = Equals, Other = SpaceAndEquals
 #ifdef Q_OS_WIN32
 	Default = Equals
 #else
 	Default = SpaceAndEquals
 #endif
 };
-}
 
+// ------------------ Exception class ------------------
 /**
  * @brief The ParsingError class
  */
-class ParsingError : public std::exception
+class ParsingError : public std::runtime_error
 {
 public:
 	ParsingError(const QString &what);
-	ParsingError(const ParsingError &e);
-	~ParsingError() throw() {}
-	const char *what() const throw();
-	QString qwhat() const;
-private:
-	QString m_what;
 };
+
+// ------------------ Parser class ------------------
+/**
+ * @brief Private part of the parser
+ */
+class ParserPrivate;
+
+/**
+ * @brief Constant to indicate required arguments
+ */
+extern QVariant const Required;
 
 /**
  * @brief The Parser class
  */
 class Parser
 {
+	ParserPrivate *d_ptr;
 public:
+	// ---------- Constructor ----------
 	/**
 	 * @brief Parser constructor
 	 * @param flagStyle the FlagStyle to use in this Parser
 	 * @param argStyle the ArgumentStyle to use in this Parser
 	 */
-	Parser(FlagStyle::Enum flagStyle = FlagStyle::Default, 
-		   ArgumentStyle::Enum argStyle = ArgumentStyle::Default);
-	
+	Parser(FlagStyle flagStyle = FlagStyle::Default,
+		   ArgumentStyle argStyle = ArgumentStyle::Default);
+
+	// ---------- Parameter Style ----------
 	/**
 	 * @brief set the flag style
 	 * @param style
 	 */
-	void setFlagStyle(FlagStyle::Enum style);
-	
+	void setFlagStyle(FlagStyle style);
+
 	/**
 	 * @brief get the flag style
 	 * @return
 	 */
-	FlagStyle::Enum flagStyle();
-	
+	FlagStyle flagStyle();
+
 	/**
 	 * @brief set the argument style
 	 * @param style
 	 */
-	void setArgumentStyle(ArgumentStyle::Enum style);
-	
+	void setArgumentStyle(ArgumentStyle style);
+
 	/**
 	 * @brief get the argument style
 	 * @return
 	 */
-	ArgumentStyle::Enum argumentStyle();
-	
+	ArgumentStyle argumentStyle();
+
+	// ---------- Defining parameters ----------
 	/**
 	 * @brief define a boolean switch
 	 * @param name the parameter name
-	 * @param def the default value
+	 * @param direction start off as true or false
 	 */
-	void addSwitch(QString name, bool def = false);
-	
+	void newSwitch(QString name, bool direction = false);
+
 	/**
 	 * @brief define an option that takes an additional argument
 	 * @param name the parameter name
-	 * @param def the default value
+	 * @param def the default value. May be Required.
 	 */
-	void addOption(QString name, QVariant def = QVariant());
-	
+	void newOption(QString name, QVariant def = QVariant());
+
 	/**
 	 * @brief define a positional argument
 	 * @param name the parameter name
-	 * @param required wether this argument is required
-	 * @param def the default value
+	 * @param def the default value. May be Required.
 	 */
-	void addArgument(QString name, bool required = true, QVariant def = QVariant());
-	
-	/**
-	 * @brief adds a flag to an existing parameter
-	 * @param name the (existing) parameter name
-	 * @param flag the flag character
-	 * @see addSwitch addArgument addOption
-	 * Note: any one parameter can only have one flag
-	 */
-	void addShortOpt(QString name, QChar flag);
-	
+	void newArgument(QString name, QVariant def = Required);
+
+	// ---------- Modifying Parameters ----------
 	/**
 	 * @brief adds documentation to a Parameter
 	 * @param name the parameter name
@@ -163,7 +172,24 @@ public:
 	 *       on options , metavar replaces the value placeholder
 	 */
 	void addDocumentation(QString name, QString doc, QString metavar = QString());
-	
+
+	/**
+	 * @brief adds a flag to an existing parameter
+	 * @param name the (existing) parameter name
+	 * @param flag the flag character
+	 * @see addSwitch addOption
+	 */
+	void addFlag(QString name, QChar flag);
+
+	/**
+	 * @brief adds an alias to an existing parameter
+	 * @param name the (existing) parameter name
+	 * @param alias the alias
+	 * @see addSwitch addOption
+	 */
+	void addAlias(QString name, QString alias);
+
+	// ---------- Generating Help messages ----------
 	/**
 	 * @brief generate a help message
 	 * @param progName the program name to use in the help message
@@ -172,7 +198,7 @@ public:
 	 * @return a help message
 	 */
 	QString compileHelp(QString progName, int helpIndent = 22, bool flagsInUsage = true);
-	
+
 	/**
 	 * @brief generate a short usage message
 	 * @param progName the program name to use in the usage message
@@ -180,69 +206,22 @@ public:
 	 * @return a usage message
 	 */
 	QString compileUsage(QString progName, bool useFlags = true);
-	
+
+	// ---------- Parsing ----------
 	/**
 	 * @brief parse
 	 * @param argv a QStringList containing the program ARGV
 	 * @return a QHash mapping argument names to their values
 	 */
 	QHash<QString, QVariant> parse(QStringList argv);
-	
+
+	// ---------- Destruction ----------
 	/**
 	 * @brief clear all definitions
 	 */
-	void clear();
-	
-	~Parser();
-	
-private:
-	FlagStyle::Enum m_flagStyle;
-	ArgumentStyle::Enum m_argStyle;
+	void clearDefinitions();
 
-	enum OptionType
-	{
-		otSwitch,
-		otOption
-	};
-	
-	// Important: the common part MUST BE COMMON ON ALL THREE structs
-	struct CommonDef {
-		QString name;
-		QString doc;
-		QString metavar;
-		QVariant def;
-	};
-	
-	struct OptionDef {
-		// common
-		QString name;
-		QString doc;
-		QString metavar;
-		QVariant def;
-		// option
-		OptionType type;
-		QChar flag;
-	};
-	
-	struct PositionalDef {
-		// common
-		QString name;
-		QString doc;
-		QString metavar;
-		QVariant def;
-		// positional
-		bool required;
-	};
-	
-	QHash<QString, OptionDef *> m_options;
-	QHash<QChar, OptionDef *> m_flags;
-	QHash<QString, CommonDef *> m_params;
-	QList<PositionalDef *> m_positionals;
-	QList<OptionDef *> m_optionList;
-	
-	void getPrefix(QString &opt, QString &flag);
+	~Parser();
 };
 
 }
-
-#endif // CMDUTILS_H

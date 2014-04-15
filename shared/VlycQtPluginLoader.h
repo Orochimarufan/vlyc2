@@ -58,12 +58,6 @@ public:
 
     QString id() const;
 
-    QString name() const;
-
-    int rev() const;
-
-    void init(InitEvent &init);
-
     QList<PluginLoader *> builtinPlugins();
 
     PluginLoader *loaderFor(const QString &fileName);
