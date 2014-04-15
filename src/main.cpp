@@ -61,21 +61,38 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    QStringList libvlc_args;
+
     if (!args["proxy"].toString().isNull())
     {
         QUrl proxy(args["proxy"].toString());
-        if (proxy.scheme().toLower() != "http")
+        if (proxy.scheme().toLower().startsWith("socks"))
         {
-            std::cerr << "Only HTTP proxies supported as of right now.";
-            args["proxy"] = QString();
+            libvlc_args << QStringLiteral("--socks=%1:%2").arg(proxy.host()).arg(proxy.port());
+            if (!proxy.userName().isEmpty())
+                libvlc_args << QStringLiteral("--socks-user=%1").arg(proxy.userName());
+            if (!proxy.password().isEmpty())
+                libvlc_args << QStringLiteral("--socks-pwd=%1").arg(proxy.password());
+        }
+        else if (proxy.scheme().toLower() == "http")
+        {
+            if (proxy.userName().isEmpty())
+                libvlc_args << QStringLiteral("--http-proxy=%1:%2").arg(proxy.host()).arg(proxy.port(8080));
+            else
+            {
+                libvlc_args << QStringLiteral("--http-proxy=http://%3@%1:%2").arg(proxy.host()).arg(proxy.port(8080)).arg(proxy.userName());
+                if (!proxy.password().isEmpty())
+                    libvlc_args << QStringLiteral("--http-proxy-pwd=%1").arg(proxy.password());
+            }
         }
         else
         {
-            QStringList vargs;
-            vargs << QStringLiteral("--http-proxy=%1:%2").arg(proxy.host()).arg(proxy.port(8080));
-            VlcInstance::initGlobalInstance(vargs);
+            std::cerr << "Proxy scheme " << qPrintable(proxy.scheme()) << " not supported (SOCKS and HTTP are)" << std::endl;
+            args["proxy"] = QString();
         }
     }
+
+    VlcInstance::initGlobalInstance(libvlc_args);
 
     VlycApp vlyc;
 
