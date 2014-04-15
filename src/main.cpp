@@ -45,7 +45,7 @@ int main(int argc, char** argv)
     parser.addDocumentation("mrl", "The MRL to play after startup");
 
     parser.newOption("proxy", QString());
-    parser.addDocumentation("proxy", "Set the HTTP proxy", "PROXY");
+    parser.addDocumentation("proxy", "Use a proxy (scheme://user:pwd@host:port)");
 
     parser.newSwitch("help", false);
     parser.addFlag("help", 'h');

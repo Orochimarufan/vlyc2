@@ -83,9 +83,9 @@ QStringList splitArgs(QString args)
 // ------------------ Required ------------------
 static inline bool isRequired(ParameterDefinition *param)
 {
-    // TODO: TEST !!!
-    return param->defaultValue.type() == QMetaType::VoidStar
-            && param->defaultValue.value<void*>() == NULL;
+	// TODO: TEST !!!
+	return (QMetaType::Type)param->defaultValue.type() == QMetaType::VoidStar
+			&& param->defaultValue.value<void*>() == NULL;
 }
 
 // ------------------ ParserPrivate ------------------
@@ -104,7 +104,7 @@ ParameterDefinition *ParserPrivate::addDefinition(DefinitionType type, QString n
 	ParameterDefinition *param = new ParameterDefinition;
 	param->type = type;
 	param->name = name;
-	param->meta = QStringLiteral("<%s>").arg(name);
+	param->meta = QStringLiteral("<%1>").arg(name);
 	param->defaultValue = def;
 
 	m_definitions << param;
@@ -370,7 +370,7 @@ void Parser::newOption(QString name, QVariant def)
 
 void Parser::newArgument(QString name, QVariant def)
 {
-	d_ptr->addDefinition(DefinitionType::Option, name, def);
+	d_ptr->addDefinition(DefinitionType::Positional, name, def);
 }
 
 // ---------- Modifying Parameters ----------

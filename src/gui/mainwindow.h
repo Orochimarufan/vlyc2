@@ -87,21 +87,21 @@ private slots:
     void _videoSubs(const VideoSubtitles &);
     void _playVideo();
     void _videoError(const QString &);
-    void openUrl();
     void updatePosition(const float &);
     void updateState(const VlcState::Type &);
-    void on_position_sliderDragged(const float &);
-    void on_quality_currentIndexChanged(const int &);
-    void on_subtitles_currentIndexChanged(const int &);
-    void mediaChanged(libvlc_media_t *media);
+    void updateMedia(libvlc_media_t *media);
 
-    void setFullScreenFalse();
     void setFullScreenVideo(bool fs);
 
     void saveState();
     void loadState();
 
     void on_actionAbout_triggered();
+    void on_actionOpen_triggered();
+
+    void on_btn_play_clicked();
+    void on_quality_currentIndexChanged(const int &);
+    void on_subtitles_currentIndexChanged(const int &);
 
 protected:
     bool eventFilter(QObject *, QEvent *);
@@ -110,6 +110,9 @@ protected:
     void moveEvent(QMoveEvent *);
     
 private:
+    void connectUiMisc();
+    void setupPlayer();
+
     VlycApp *mp_self;
     Ui::MainWindow *ui;
     FullScreenController *fsc;

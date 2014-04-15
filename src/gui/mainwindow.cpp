@@ -37,6 +37,9 @@
 #include "vlyc_xcb.h"
 #endif
 
+// ----------------------------------------------------------------------------
+// Legacy Video helpers
+// ----------------------------------------------------------------------------
 // BlockChanged
 struct BlockChanged
 {
@@ -105,87 +108,9 @@ void VideoCaller::getSubtitles(const QString &lang)
     emit _getSubtitles(lang);
 }
 
-// MainWindow
-MainWindow::MainWindow(VlycApp *self) :
-    QMainWindow(),
-    ui(new Ui::MainWindow),
-    m_player_audio(m_player),
-    m_player_video(m_player),
-    mp_video(nullptr),
-    mp_self(self)
-{
-#ifdef Q_OS_LINUX
-    if (qApp->platformName() == "xcb")
-        XCB::setWMClass(winId(), qApp->applicationName(), qApp->applicationName());
-#endif
-    ui->setupUi(this);
-
-    fsc = new FullScreenController(ui->video);
-
-    m_player.setVideoDelegate(ui->video);
-
-    // Menu
-    connect(ui->actionOpen, SIGNAL(triggered()), SLOT(openUrl()));
-    connect(ui->actionQuit, SIGNAL(triggered(bool)), qApp, SLOT(quit()));
-
-    // Ui
-    connect(ui->btn_play, SIGNAL(clicked()), &m_player, SLOT(togglePause()));
-    connect(ui->btn_stop, SIGNAL(clicked()), &m_player, SLOT(stop()));
-    connect(fsc->ui->btn_playpause, SIGNAL(clicked()), &m_player, SLOT(togglePause()));
-    connect(fsc->ui->btn_stop, SIGNAL(clicked()), &m_player, SLOT(stop()));
-    connect(ui->volume, SIGNAL(volumeChanged(int)), &m_player_audio, SLOT(setVolume(int)));
-    connect(ui->volume, SIGNAL(muteChanged(bool)), &m_player_audio, SLOT(setMuted(bool)));
-    connect(fsc->ui->volume, SIGNAL(volumeChanged(int)), &m_player_audio, SLOT(setVolume(int)));
-    connect(fsc->ui->volume, SIGNAL(muteChanged(bool)), &m_player_audio, SLOT(setMuted(bool)));
-    connect(fsc->ui->position, SIGNAL(sliderDragged(float)), SLOT(on_position_sliderDragged(float)));
-    connect(ui->btn_fullscreen, SIGNAL(clicked()), SLOT(toggleFullScreen()));
-    connect(fsc->ui->btn_defullscreen, SIGNAL(clicked()), SLOT(toggleFullScreen()));
-
-    // Player
-    connect(&m_player, SIGNAL(endReached()), &m_player, SLOT(stop()));
-    connect(&m_player, SIGNAL(positionChanged(float)), SLOT(updatePosition(float)));
-    connect(&m_player, SIGNAL(mediaChanged(libvlc_media_t*)), SLOT(mediaChanged(libvlc_media_t*)));
-    connect(&m_player, SIGNAL(stateChanged(VlcState::Type)), SLOT(updateState(VlcState::Type)));
-
-    ui->video->installEventFilter(this);
-
-    // Shortcuts
-    shortcut_Space = new QShortcut(QKeySequence(" "), ui->video);
-    connect(shortcut_Space, SIGNAL(activated()), &m_player, SLOT(togglePause()));
-    shortcut_F11 = new QShortcut(QKeySequence("F11"), ui->video);
-    connect(shortcut_F11, SIGNAL(activated()), SLOT(toggleFullScreen()));
-    shortcut_AltReturn = new QShortcut(QKeySequence("Alt + Return"), ui->video);
-    connect(shortcut_AltReturn, SIGNAL(activated()), SLOT(toggleFullScreen()));
-    shortcut_Esc = new QShortcut(QKeySequence("Esc"), ui->video);
-    connect(shortcut_Esc, SIGNAL(activated()), SLOT(setFullScreenFalse()));
-
-    // Videos
-    connect(&m_video, SIGNAL(error(QString)), SLOT(_videoError(QString)));
-    connect(&m_video, SIGNAL(done()), SLOT(_playVideo()));
-    connect(&m_video, SIGNAL(media(VideoMedia)), SLOT(_videoMedia(VideoMedia)));
-    connect(&m_video, SIGNAL(subtitles(VideoSubtitles)), SLOT(_videoSubs(VideoSubtitles)));
-
-    connect(this, &MainWindow::playMrlSignal, this, &MainWindow::playMrl, Qt::QueuedConnection);
-
-    loadState();
-}
-
-MainWindow::~MainWindow()
-{
-    delete fsc;
-    delete ui;
-}
-
-void MainWindow::openUrl()
-{
-    QString url = QInputDialog::getText(this, tr("Open Url"), tr("Enter URL"));
-
-    if (url.isEmpty())
-        return;
-
-    playMrl(url);
-}
-
+// ----------------------------------------------------------------------------
+// Video stuff
+// ----------------------------------------------------------------------------
 void MainWindow::playMrl(const QString &mrl)
 {
     if (!mp_self->tryPlayUrl(QUrl(mrl)))
@@ -278,7 +203,96 @@ void MainWindow::_videoSubs(const VideoSubtitles &subs)
     }
 }
 
-void MainWindow::mediaChanged(libvlc_media_t *media)
+void MainWindow::on_quality_currentIndexChanged(const int &index)
+{
+    if (block_changed) return;
+    m_video = mp_video;
+    m_video.getMedia(ml_qa.at(index).q);
+}
+
+void MainWindow::on_subtitles_currentIndexChanged(const int &index)
+{
+    if (block_changed) return;
+    if (index == 0)
+        m_player_video.setSpu(0);
+    else
+    {
+        m_video = mp_video;
+        m_video.getSubtitles(ui->subtitles->itemText(index));
+    }
+}
+
+bool MainWindow::eventFilter(QObject *o, QEvent *e)
+{
+    if (o == ui->video && e->type() == QEvent::MouseButtonDblClick)
+        toggleFullScreen();
+    return false;
+}
+
+// ----------------------------------------------------------------------------
+// MainWindow
+// ----------------------------------------------------------------------------
+MainWindow::MainWindow(VlycApp *self) :
+    QMainWindow(),
+    ui(new Ui::MainWindow),
+    m_player_audio(m_player),
+    m_player_video(m_player),
+    mp_video(nullptr),
+    mp_self(self)
+{
+#ifdef Q_OS_LINUX
+    if (qApp->platformName() == "xcb")
+        XCB::setWMClass(winId(), qApp->applicationName(), qApp->applicationName());
+#endif
+
+    // Setup UI
+    ui->setupUi(this);
+    fsc = new FullScreenController(ui->video);
+    ui->video->installEventFilter(this);
+
+    connectUiMisc();
+
+    // Setup vlc
+    setupPlayer();
+
+    // Videos
+    connect(&m_video, SIGNAL(error(QString)), SLOT(_videoError(QString)));
+    connect(&m_video, SIGNAL(done()), SLOT(_playVideo()));
+    connect(&m_video, SIGNAL(media(VideoMedia)), SLOT(_videoMedia(VideoMedia)));
+    connect(&m_video, SIGNAL(subtitles(VideoSubtitles)), SLOT(_videoSubs(VideoSubtitles)));
+
+    connect(this, &MainWindow::playMrlSignal, this, &MainWindow::playMrl, Qt::QueuedConnection);
+
+    loadState();
+}
+
+void MainWindow::addPluginActions()
+{
+    for (Vlyc::ToolPlugin *p : mp_self->plugins2()->getPlugins<Vlyc::ToolPlugin>())
+        ui->menuTools->addAction(p->toolMenuAction());
+}
+
+MainWindow::~MainWindow()
+{
+    delete fsc;
+    delete ui;
+}
+
+// ----------------------------------------------------------------------------
+// Video Player
+// ----------------------------------------------------------------------------
+void MainWindow::setupPlayer()
+{
+    m_player.setVideoDelegate(ui->video);
+
+    connect(&m_player, &VlcMediaPlayer::endReached, &m_player, &VlcMediaPlayer::stop);
+    connect(&m_player, &VlcMediaPlayer::positionChanged, this, &MainWindow::updatePosition);
+    //connect(&m_player, &VlcMediaPlayer::mediaChanged, this, &MainWindow::updateMedia);
+    connect(&m_player, SIGNAL(mediaChanged(libvlc_media_t*)), this, SLOT(updateMedia(libvlc_media_t*)));
+    connect(&m_player, &VlcMediaPlayer::stateChanged, this, &MainWindow::updateState);
+}
+
+void MainWindow::updateMedia(libvlc_media_t *media)
 {
     VlcMedia m(media);
     setWindowTitle(QStringLiteral("%1 - %2").arg(m.meta(VlcMeta::Title)).arg(m.meta(VlcMeta::Artist)));
@@ -315,30 +329,84 @@ void MainWindow::updateState(const VlcState::Type &new_state)
     fsc->ui->btn_playpause->updateButtonIcons(playing);
 }
 
-void MainWindow::on_position_sliderDragged(const float &new_position)
+
+// ----------------------------------------------------------------------------
+// Ui events
+// ----------------------------------------------------------------------------
+void MainWindow::connectUiMisc()
 {
-    m_player.setPosition(new_position);
+    // Menu
+    connect(ui->actionQuit, &QAction::triggered, qApp, &QCoreApplication::quit);
+
+    // Ui
+    connect(ui->btn_stop, &QAbstractButton::clicked, &m_player, &VlcMediaPlayer::stop);
+    connect(ui->position, &SeekSlider::sliderDragged, &m_player, &VlcMediaPlayer::setPosition);
+    connect(ui->volume, &SoundWidget::volumeChanged, &m_player_audio, &VlcMediaPlayerAudio::setVolume);
+    connect(ui->volume, &SoundWidget::muteChanged, &m_player_audio, &VlcMediaPlayerAudio::setMuted);
+    connect(ui->btn_fullscreen, &QAbstractButton::clicked, this, &MainWindow::toggleFullScreen);
+
+    // Fullscreen
+    connect(fsc->ui->btn_playpause, &QAbstractButton::clicked, this, &MainWindow::on_btn_play_clicked);
+    connect(fsc->ui->btn_stop, &QAbstractButton::clicked, &m_player, &VlcMediaPlayer::stop);
+    connect(fsc->ui->position, &SeekSlider::sliderDragged, &m_player, &VlcMediaPlayer::setPosition);
+    connect(fsc->ui->volume, &SoundWidget::volumeChanged, &m_player_audio, &VlcMediaPlayerAudio::setVolume);
+    connect(fsc->ui->volume, &SoundWidget::muteChanged, &m_player_audio, &VlcMediaPlayerAudio::setMuted);
+    connect(fsc->ui->btn_defullscreen, &QAbstractButton::clicked, [=] () {setFullScreen(false);});
+
+    // Shortcuts
+    shortcut_Space = new QShortcut(QKeySequence(" "), ui->video);
+    connect(shortcut_Space, &QShortcut::activated, &m_player, &VlcMediaPlayer::togglePause);
+
+    shortcut_F11 = new QShortcut(QKeySequence("F11"), ui->video);
+    connect(shortcut_F11, &QShortcut::activated, this, &MainWindow::toggleFullScreen);
+
+    shortcut_AltReturn = new QShortcut(QKeySequence("Alt + Return"), ui->video);
+    connect(shortcut_AltReturn, &QShortcut::activated, this, &MainWindow::toggleFullScreen);
+
+    shortcut_Esc = new QShortcut(QKeySequence("Esc"), ui->video);
+    connect(shortcut_Esc, &QShortcut::activated, [=] () {setFullScreen(false);});
 }
 
-void MainWindow::on_subtitles_currentIndexChanged(const int &index)
+void MainWindow::on_btn_play_clicked()
 {
-    if (block_changed) return;
-    if (index == 0)
-        m_player_video.setSpu(0);
-    else
-    {
-        m_video = mp_video;
-        m_video.getSubtitles(ui->subtitles->itemText(index));
+    switch(m_player.state()) {
+    case VlcState::Opening:
+    case VlcState::Buffering:
+    case VlcState::Playing:
+        m_player.pause();
+        break;
+    case VlcState::Paused:
+        m_player.resume();
+        break;
+    case VlcState::Stopped:
+    case VlcState::Ended:
+        m_player.play();
+        break;
+    case VlcState::NothingSpecial:
+    case VlcState::Error:
+        break;
     }
 }
 
-void MainWindow::on_quality_currentIndexChanged(const int &index)
+void MainWindow::on_actionOpen_triggered()
 {
-    if (block_changed) return;
-    m_video = mp_video;
-    m_video.getMedia(ml_qa.at(index).q);
+    QString url = QInputDialog::getText(this, tr("Open Url"), tr("Enter URL"));
+
+    if (url.isEmpty())
+        return;
+
+    playMrl(url);
 }
 
+void MainWindow::on_actionAbout_triggered()
+{
+    About dialog(this);
+    dialog.exec();
+}
+
+// ----------------------------------------------------------------------------
+// Fullscreen
+// ----------------------------------------------------------------------------
 void MainWindow::setFullScreenVideo(bool fs)
 {
     // Reparenting breaks stuff for some reason.
@@ -372,24 +440,15 @@ void MainWindow::setFullScreen(bool fs)
     }
 }
 
-void MainWindow::setFullScreenFalse()
-{
-    setFullScreen(false);
-}
-
 bool MainWindow::toggleFullScreen()
 {
     setFullScreen(!fsc->mb_fullscreen);
     return fsc->mb_fullscreen;
 }
 
-bool MainWindow::eventFilter(QObject *o, QEvent *e)
-{
-    if (o == ui->video && e->type() == QEvent::MouseButtonDblClick)
-        toggleFullScreen();
-    return false;
-}
-
+// ----------------------------------------------------------------------------
+// Preserve window state
+// ----------------------------------------------------------------------------
 void MainWindow::closeEvent(QCloseEvent *e)
 {
     QMainWindow::closeEvent(e);
@@ -400,7 +459,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
     QMainWindow::resizeEvent(e);
-    if (~windowState() & Qt::WindowMaximized)
+    if (~windowState() & Qt::WindowMaximized && !fsc->mb_fullscreen)
         m_geometry = geometry();
 }
 
@@ -426,16 +485,4 @@ void MainWindow::loadState()
     setGeometry(config.value("geometry", geometry()).toRect());
     if (config.value("maximised", false).toBool())
         setWindowState(windowState() | Qt::WindowMaximized);
-}
-
-void MainWindow::on_actionAbout_triggered()
-{
-    About dialog(this);
-    dialog.exec();
-}
-
-void MainWindow::addPluginActions()
-{
-    for (Vlyc::ToolPlugin *p : mp_self->plugins2()->getPlugins<Vlyc::ToolPlugin>())
-        ui->menuTools->addAction(p->toolMenuAction());
 }
