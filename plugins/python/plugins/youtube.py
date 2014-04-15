@@ -92,20 +92,27 @@ class YoutubePlugin(vlyc.plugin.SitePlugin):
             # ------ Info ------
             self.title = element_text(page, "eow-title")
             self.author = element_text(page, "watch7-user-header", lambda it: it[1])
-            self.description = element_text(page, "eow-description")
-            views = page.get_element_by_id("watch7-views-info")
             try:
-                self.views = int(views[0].text.strip().replace(",", ""))
+                self.description = element_text(page, "eow-description")
             except:
-                self.views = 0
+                self.description = "Couldn't get description"
             try:
-                self.likes = int(views.find_class("likes-count")[0].text.strip().replace(",", ""))
+                views = page.get_element_by_id("watch7-views-info")
             except:
-                self.likes = 0
-            try:
-                self.dislikes = int(views.find_class("dislikes-count")[0].text.strip().replace(",", ""))
-            except:
-                self.dislikes = 0
+                self.views = self.likes = self.dislikes = 0
+            else:
+                try:
+                    self.views = int(views[0].text.strip().replace(",", ""))
+                except:
+                    self.views = 0
+                try:
+                    self.likes = int(views.find_class("likes-count")[0].text.strip().replace(",", ""))
+                except:
+                    self.likes = 0
+                try:
+                    self.dislikes = int(views.find_class("dislikes-count")[0].text.strip().replace(",", ""))
+                except:
+                    self.dislikes = 0
 
             # ------ Video URLs ------
             div = page.get_element_by_id("page")
@@ -137,11 +144,22 @@ class YoutubePlugin(vlyc.plugin.SitePlugin):
 
             # get url map
             args = data["args"]
-            self.urlmap = {
-                    int(i["itag"]): "&signature=".join((i["url"], i["sig"]))
-                        for i in (vlyc.util.sdict_parser(i, unq=2)
-                            for i in args["url_encoded_fmt_stream_map"].split(","))
-                    }
+            if "url_encoded_fmt_stream_map" not in args:
+                return error("url_encoded_fmt_stream_map not in ytplayer.config")
+
+            self.urlmap = dict()
+
+            for stream_ in args["url_encoded_fmt_stream_map"].split(","):
+                stream = vlyc.util.sdict_parser(stream_, unq=2)
+
+                if "sig" in stream:
+                    signature = stream["sig"]
+                elif "s" in stream:
+                    signature = stream["s"]
+                else:
+                    return error("Could not construct video signature")
+
+                self.urlmap[int(stream["itag"])] = "&signature=".join((stream["url"], signature))
 
             # add qualities
             for itag in self.urlmap.keys():

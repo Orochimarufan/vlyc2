@@ -27,7 +27,10 @@
 
 #include <siteplugin.h>
 
-VlycBrowser::VlycBrowser(Vlyc *self) :
+#include <VlycLegacySitePlugin.h>
+#include <VlycPluginManager.h>
+
+VlycBrowser::VlycBrowser(VlycApp *self) :
     Browser((QObject *)self),
     mp_self(self),
     cookies()
@@ -43,9 +46,13 @@ VlycBrowser::~VlycBrowser()
 
 bool VlycBrowser::navigationRequest(QUrl url)
 {
-    VideoPtr v = mp_self->plugins()->sites_video(url);
-    if (v != nullptr)
+    QList<Vlyc::LegacySitePlugin *> sites = mp_self->plugins2()->getPlugins<Vlyc::LegacySitePlugin>();
+    for (Vlyc::LegacySitePlugin *site : sites)
     {
+        QString id = site->forUrl(url);
+        if (id.isEmpty())
+            continue;
+        VideoPtr v = site->video(id);
         qDebug("VlycBrowser: '%s' is a video url: %s", qPrintable(url.toString()), qPrintable(v->site()->name()));
         v->load();
         mp_self->window()->playVideo(v);

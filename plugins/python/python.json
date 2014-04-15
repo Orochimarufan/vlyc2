@@ -1,3 +1,8 @@
 {
+    "ID": "me.sodimm.oro.vlyc.Python",
+    "Name": "Python Interface",
+    "Version": "1.0",
+    "Author": "Taeyeon Mori",
+    "Description": "Allows for plugins written in Python",
     "LinkerFlags": "LD_NOW|LD_GLOBAL"
 }

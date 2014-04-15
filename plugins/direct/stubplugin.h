@@ -19,19 +19,21 @@
 #ifndef STUBPLUGIN_H
 #define STUBPLUGIN_H
 
-#include "siteplugin.h"
 #include <QObject>
 #include <QString>
+
+#include <VlycPlugin.h>
+#include <VlycLegacySitePlugin.h>
 
 #ifdef WITH_LIBMAGIC
 #include <magic.h>
 #endif
 
-class DirectAccessPlugin : public QObject, public SitePlugin
+class DirectAccessPlugin : public QObject, public Vlyc::LegacySitePlugin
 {
     Q_OBJECT
-    Q_INTERFACES(VlycBasePlugin SitePlugin)
-    Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/1.0")
+    Q_INTERFACES(Vlyc::Plugin SitePlugin)
+    Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/2.0" FILE "plugin.json")
 
 #ifdef WITH_LIBMAGIC
     magic_t m_cookie;
@@ -41,11 +43,11 @@ public:
     DirectAccessPlugin();
     ~DirectAccessPlugin();
 
-    virtual void initialize(VlycPluginInitializer init);
+    virtual QString id() const { return "me.sodimm.oro.vlyc.DirectAccessPlugin"; };
+    virtual QString name() const { return Vlyc::Plugin::name(); };
+    virtual QString author() const { return Vlyc::Plugin::author(); };
 
-    virtual QString name() const { return "Direct Access"; }
-    virtual QString author() const { return "Orochimarufan"; }
-    virtual int rev() const { return 1; }
+    virtual void init(Vlyc::InitEvent &init);
 
     virtual QString forUrl(QUrl url);
     virtual VideoPtr video(QString video_id);

@@ -27,22 +27,28 @@ class VlycBrowser;
 class MainWindow;
 class PluginManager;
 
-class Vlyc : public QObject
+namespace Vlyc {
+class PluginManager;
+}
+
+class VlycApp : public QObject
 {
     Q_OBJECT
 public:
-    explicit Vlyc(QObject *parent = 0);
+    explicit VlycApp(QObject *parent = 0);
 
     VlycBrowser *browser() const;
     MainWindow *window() const;
     PluginManager *plugins() const;
+    Vlyc::PluginManager *plugins2() const;
 
-    virtual ~Vlyc();
+    virtual ~VlycApp();
 
 private:
     VlycBrowser *mp_browser;
     MainWindow *mp_window;
     PluginManager *mp_plugins;
+    Vlyc::PluginManager *mp_plugins2;
 };
 
 #endif // VLYC_H

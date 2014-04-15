@@ -23,6 +23,9 @@
 #include "vlyc.h"
 #include "vlycbrowser.h"
 
+#include <VlycToolPlugin.h>
+#include <VlycPluginManager.h>
+
 #include <QtCore/QPluginLoader>
 #include <QtCore/QDir>
 #include <QtCore/QRegularExpression>
@@ -41,7 +44,7 @@
 #   define LIBRARY_EXT ".so"
 #endif
 
-PluginManager::PluginManager(Vlyc *parent) :
+PluginManager::PluginManager(VlycApp *parent) :
     QObject(parent), mp_self(parent)
 {
 }
@@ -224,6 +227,12 @@ bool PluginManager::sites_getSiteId(QUrl url, SitePlugin *&site_out, QString &id
 // Tool stuff
 void PluginManager::constructToolMenu(QMenu &toolMenu)
 {
+    for (Vlyc::ToolPlugin *p : mp_self->plugins2()->getPlugins<Vlyc::ToolPlugin>())
+    {
+        QAction *action = p->toolMenuAction();
+        qDebug("Adding action '%s' from %s", qPrintable(action->text()), qPrintable(p->name()));
+        toolMenu.addAction(action);
+    }
     foreach (VlycToolPlugin *p, ml_tool)
     {
         QAction *action = p->toolMenuAction();

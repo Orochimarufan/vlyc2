@@ -86,6 +86,7 @@ VideoCaller &VideoCaller::operator =(VideoPtr v)
         connect(&video, SIGNAL(media(VideoMedia)), SIGNAL(media(VideoMedia)));
         connect(&video, SIGNAL(subtitles(VideoSubtitles)), SIGNAL(subtitles(VideoSubtitles)));
     }
+    return *this;
 }
 
 void VideoCaller::load()
@@ -104,7 +105,7 @@ void VideoCaller::getSubtitles(const QString &lang)
 }
 
 // MainWindow
-MainWindow::MainWindow(Vlyc *self) :
+MainWindow::MainWindow(VlycApp *self) :
     QMainWindow(),
     ui(new Ui::MainWindow),
     m_player_audio(m_player),
@@ -191,7 +192,7 @@ void MainWindow::openUrl()
 
 void MainWindow::playMrl(const QString &mrl)
 {
-    VideoPtr video = mp_self->plugins()->sites_video(mrl);
+    /*VideoPtr video = mp_self->plugins()->sites_video(mrl);
 
     if (!&video)
     {
@@ -204,7 +205,9 @@ void MainWindow::playMrl(const QString &mrl)
     qDebug("video from Plugin %s", qPrintable(video->site()->name()));
 
     m_video = video;
-    m_video.load();
+    m_video.load();*/
+    if (mp_self->browser()->navigationRequest(QUrl(mrl)))
+        QMessageBox::critical(this, "Error", QStringLiteral("Cannot open URL %1").arg(mrl));
 }
 
 void MainWindow::_playVideo()

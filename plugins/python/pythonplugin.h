@@ -1,64 +1,45 @@
-/*****************************************************************************
- * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *****************************************************************************/
-
 #ifndef PYTHONPLUGIN_H
 #define PYTHONPLUGIN_H
 
-#include <PythonQt.h>
+#include <VlycLoaderPlugin.h>
+#include <VlycToolPlugin.h>
 
-#include <QtCore/QObject>
+#include "VlycPython.h"
 
-#include <foreignplugin.h>
-#include <toolplugin.h>
+namespace Vlyc {
+namespace Python {
 
-class PythonPlugin : public QObject, public VlycForeignPlugin, public VlycToolPlugin
+class PythonPlugin : public QObject, public LoaderPlugin, public ToolPlugin
 {
     Q_OBJECT
-    Q_INTERFACES(VlycBasePlugin VlycForeignPlugin VlycToolPlugin)
-    Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/1.0" FILE "python.json")
+    Q_INTERFACES(Vlyc::Plugin Vlyc::LoaderPlugin Vlyc::ToolPlugin)
+    Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/2.0" FILE "python.json")
+    VLYC_PLUGIN_HEAD(me.sodimm.oro.vlyc.Python)
 
-    // Modules
-    PythonQtObjectPtr module;
-    PythonQtObjectPtr state;
+    PythonPlugin();
+    virtual void init(InitEvent &init);
 
-    // Stuff
-    VlycPluginInitializer initer;
+    // ----------------------------------------------------------------------------
+    // LoaderPlugin
+    /// Get the PluginLoader instance for fileName. Return nullptr if unapplicable.
+    virtual PluginLoader *loaderFor(const QString &fileName);
 
-public:
-    PythonPlugin(QObject *parent=0);
-    virtual ~PythonPlugin();
+    /// A LoaderPlugin may bring builtin plugins.
+    virtual QList<PluginLoader *> builtinPlugins();
 
-    virtual void initialize(VlycPluginInitializer init);
-
-    virtual QString name() const { return "Python Interface"; }
-    virtual QString author() const { return "Orochimarufan"; }
-    virtual int rev() const { return 2; }
-
-    virtual bool canHandle(QString path);
-    virtual bool loadPlugin(QString path, VlycForeignPluginRegistrar registrar);
-
+    // ----------------------------------------------------------------------------
+    // ToolPlugin
+    /// Get the tool menu entry
     virtual QAction *toolMenuAction();
 
-public Q_SLOTS:
-    void write_out(QString s);
-    void write_err(QString s);
+private:
+    VlycPython state;
 
-    void openConsole();
+private Q_SLOTS:
+    void openPythonConsole();
 };
+
+}
+}
 
 #endif // PYTHONPLUGIN_H

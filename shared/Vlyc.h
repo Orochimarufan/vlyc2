@@ -16,26 +16,44 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef VLYCBROWSER_H
-#define VLYCBROWSER_H
+#ifndef VLYC_H
+#define VLYC_H
 
-#include "browser/browser.h"
-#include "browser/simplefilecookiejar.h"
+#include <QtCore/QString>
 
-class VlycApp;
+namespace Vlyc {
 
-class VlycBrowser : public Browser
-{
-    Q_OBJECT
-public:
-    explicit VlycBrowser(VlycApp *self);
-    virtual ~VlycBrowser();
+// Compile time constants.
+// XXX: They might vanish!
+#define VLYC_VERSION "2.0.0 Yoona"
+#define VLYC_HEXVERSION 0x20000
+//#define VLYC_REVISION "@VLYC_EXPORTED@"
 
-    virtual bool navigationRequest(QUrl);
+/**
+ * @brief Retrieve vlyc version
+ * @return a string containing the vlyc version
+ */
+QString version(void);
 
-private:
-    VlycApp *mp_self;
-    SimpleFileCookieJar cookies;
-};
+/**
+ * @brief Retrieve vlyc changeset
+ * @return a string containing the changeset
+ */
+//QString changeset(void);
 
-#endif // VLYCBROWSER_H
+/**
+ * @brief Retrieve vlyc compiler version
+ * @return a string containing the used compiler
+ */
+//QString compiler(void);
+
+/**
+ * @brief Retrieve vlyc integral version
+ * @return an integer containing the vlyc version number
+ * major minor patch, 2 bytes for each
+ */
+quint32 hexversion(void);
+
+}
+
+#endif // VLYC_H

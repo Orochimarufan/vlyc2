@@ -21,36 +21,51 @@
 #include "vlycbrowser.h"
 #include "pluginmanager.h"
 
-#include <QtWidgets/QApplication>
+#include <VlycPluginManager.h>
 
-Vlyc::Vlyc(QObject *parent) :
+#include <QtWidgets/QApplication>
+#include <QtCore/QDebug>
+
+#define LIBRARY_EXT ".so"
+
+VlycApp::VlycApp(QObject *parent) :
     QObject(parent),
     mp_window(new MainWindow(this)),
     mp_plugins(new PluginManager(this)),
+    mp_plugins2(new Vlyc::PluginManager()),
     mp_browser(new VlycBrowser(this))
 {
-    mp_plugins->loadPlugins(qApp->applicationDirPath().append("/plugins"));
+    mp_plugins2->setPrivateInterface((void*)this);
+    mp_plugins2->bootstrap(QRegularExpression("libvlyc2-.+\\" LIBRARY_EXT "$"));
+    mp_plugins2->loadPluginsFrom(qApp->applicationDirPath() + "/plugins");
+
+    mp_plugins->loadPlugins(qApp->applicationDirPath());
     mp_plugins->constructToolMenu(mp_window->getToolMenu());
 }
 
-Vlyc::~Vlyc()
+VlycApp::~VlycApp()
 {
     delete mp_window;
     delete mp_plugins;
     delete mp_browser;
 }
 
-VlycBrowser *Vlyc::browser() const
+VlycBrowser *VlycApp::browser() const
 {
     return mp_browser;
 }
 
-MainWindow *Vlyc::window() const
+MainWindow *VlycApp::window() const
 {
     return mp_window;
 }
 
-PluginManager *Vlyc::plugins() const
+PluginManager *VlycApp::plugins() const
 {
     return mp_plugins;
+}
+
+Vlyc::PluginManager *VlycApp::plugins2() const
+{
+    return mp_plugins2;
 }

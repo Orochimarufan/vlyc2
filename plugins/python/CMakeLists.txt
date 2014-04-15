@@ -52,6 +52,7 @@ find_package(PythonQt5_3_QtAll REQUIRED)
 
 include_directories(${PythonQt_INCLUDE_DIRS} ${PythonQt_QtAll_INCLUDE_DIRS})
 LIST(APPEND PLUGIN_LIBS ${PythonQt_QtAll_LIBRARIES})
+
 LIST(APPEND PLUGIN_QT ${PythonQt_QtAll_QT})
 
 # Find Python
@@ -62,21 +63,25 @@ LIST(APPEND PLUGIN_LIBS ${PYTHON_LIBRARIES})
 # Sources
 LIST(APPEND PLUGIN_HEADERS
 pythonplugin.h
-pythonsites.h
 pythonqtdecorator.h
+VlycPython.h
+PluginLoader.h
+LegacyPluginLoader.h
+wrap/WrapPlugin.h
+wrap/WrapLegacySitePlugin.h
 console/PythonQtScriptingConsole.h
 )
 
 LIST(APPEND PLUGIN_SOURCES
 pythonplugin.cpp
-pythonsites.cpp
 pythonqtdecorator.cpp
+VlycPython.cpp
+PluginLoader.cpp
+LegacyPluginLoader.cpp
+wrap/WrapPlugin.cpp
+wrap/WrapLegacySitePlugin.cpp
 console/PythonQtScriptingConsole.cpp
 )
-
-#SET(PLUGINS
-#	youtube.py
-#)
 
 ######## Build ########
 # Qt
@@ -94,23 +99,11 @@ qt5_use_modules(${PLUGIN} ${PLUGIN_QT})
 target_link_libraries(${PLUGIN} ${PLUGIN_LIBS})
 
 IF(WIN32)
-    get_target_property(COMPILE_FLAGS ${PLUGIN} COMPILE_FLAGS)
-    IF(COMPILE_FLAGS)
-        LIST(APPEND COMPILE_FLAGS "-include cmath") #fix '::hypot has not been declared
-    ELSE()
-        SET(COMPILE_FLAGS "-include cmath")
-    ENDIF()
-    set_target_properties(${PLUGIN} PROPERTIES COMPILE_FLAGS "${COMPILE_FLAGS}")
+	get_target_property(COMPILE_FLAGS ${PLUGIN} COMPILE_FLAGS)
+	IF(COMPILE_FLAGS)
+		LIST(APPEND COMPILE_FLAGS "-include cmath") #fix '::hypot has not been declared
+	ELSE()
+		SET(COMPILE_FLAGS "-include cmath")
+	ENDIF()
+	set_target_properties(${PLUGIN} PROPERTIES COMPILE_FLAGS "${COMPILE_FLAGS}")
 ENDIF()
-
-#foreach(plugin ${PLUGINS})
-#	set(INPUT ${PROJECT_SOURCE_DIR}/plugins/${plugin} )
-#	set(OUTPUT ${CMAKE_BINARY_DIR}/${plugin})
-#	add_custom_command(OUTPUT ${OUTPUT}
-#		COMMAND ${CMAKE_COMMAND}
-#		ARGS -E copy ${INPUT} ${OUTPUT}
-#		MAIN_DEPENDENCY ${INPUT}
-#		COMMENT "Copying Python plugin ${plugin}"
-#	)
-#	add_dependencies(${PLUGIN} ${OUTPUT})
-#endforeach()

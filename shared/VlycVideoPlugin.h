@@ -16,26 +16,38 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef VLYCBROWSER_H
-#define VLYCBROWSER_H
+#ifndef VLYCVIDEOPLUGIN_H
+#define VLYCVIDEOPLUGIN_H
 
-#include "browser/browser.h"
-#include "browser/simplefilecookiejar.h"
+#include "VlycPlugin.h"
 
-class VlycApp;
+#include <QString>
+#include <QVector>
 
-class VlycBrowser : public Browser
+namespace Vlyc {
+
+struct VideoFormat
 {
-    Q_OBJECT
-public:
-    explicit VlycBrowser(VlycApp *self);
-    virtual ~VlycBrowser();
+    unsigned level;
+    QString name;
+    QString resource;
 
-    virtual bool navigationRequest(QUrl);
-
-private:
-    VlycApp *mp_self;
-    SimpleFileCookieJar cookies;
+    // Compare by level.
+    bool operator <(const VideoFormat &other) const;
 };
 
-#endif // VLYCBROWSER_H
+class Video
+{
+public:
+    virtual QVector<VideoFormat> formats();
+};
+
+class VideoPlugin : public virtual Plugin
+{
+public:
+    VideoPlugin();
+};
+
+}
+
+#endif // VLYCVIDEOPLUGIN_H

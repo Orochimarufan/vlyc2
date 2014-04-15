@@ -39,7 +39,7 @@ class VlcInstance;
 class VlcMedia;
 class VlcMediaPlayer;
 class Video;
-class Vlyc;
+class VlycApp;
 
 class VideoCaller : public QObject
 {
@@ -67,7 +67,7 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit MainWindow(Vlyc *self);
+    explicit MainWindow(VlycApp *self);
     ~MainWindow();
 
     QMenu &getToolMenu();
@@ -111,7 +111,7 @@ protected:
     void moveEvent(QMoveEvent *);
     
 private:
-    Vlyc *mp_self;
+    VlycApp *mp_self;
     Ui::MainWindow *ui;
     FullScreenController *fsc;
 

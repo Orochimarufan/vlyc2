@@ -16,26 +16,46 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef VLYCBROWSER_H
-#define VLYCBROWSER_H
+#include "VlycPlugin.h"
 
-#include "browser/browser.h"
-#include "browser/simplefilecookiejar.h"
+#include <QJsonDocument>
 
-class VlycApp;
+namespace Vlyc {
 
-class VlycBrowser : public Browser
+Plugin::Plugin() :
+    metaData(nullptr)
+{}
+
+Plugin::~Plugin()
+{}
+
+void Plugin::init(InitEvent &init)
 {
-    Q_OBJECT
-public:
-    explicit VlycBrowser(VlycApp *self);
-    virtual ~VlycBrowser();
+    metaData = init.pluginMetaData;
+}
 
-    virtual bool navigationRequest(QUrl);
+QString Plugin::name() const
+{
+    if (metaData && metaData->contains("Name"))
+        return metaData->value("Name").toString();
+    else
+        return id();
+}
 
-private:
-    VlycApp *mp_self;
-    SimpleFileCookieJar cookies;
-};
+QString Plugin::author() const
+{
+    if (metaData && metaData->contains("Author"))
+        return metaData->value("Author").toString();
+    else
+        return QStringLiteral("Anonymous");
+}
 
-#endif // VLYCBROWSER_H
+QString Plugin::version() const
+{
+    if (metaData && metaData->contains("Version"))
+        return metaData->value("Version").toString();
+    else
+        return QStringLiteral("r0");
+}
+
+}

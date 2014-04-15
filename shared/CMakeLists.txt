@@ -1,5 +1,11 @@
 
 set(HEADERS
+VlycPlugin.h
+VlycToolPlugin.h
+VlycLegacySitePlugin.h
+VlycLoaderPlugin.h
+VlycQtPluginLoader.h
+VlycPluginManager.h
 ../include/plugin.h
 ../include/foreignplugin.h
 ../include/siteplugin.h
@@ -9,9 +15,19 @@ set(HEADERS
 ../include/vlyc2pointer.h
 )
 
+set(PRIVATE_HEADERS
+VlycPluginManagerPrivate.h
+)
+
 set(SOURCES
 video.cpp
 vlyc2pointer.cpp
+VlycPlugin.cpp
+VlycLegacySitePlugin.cpp
+VlycLoaderPlugin.cpp
+VlycQtPluginLoader.cpp
+VlycPluginManager.cpp
+VlycPluginManagerPrivate.cpp
 )
 
 add_definitions(-DLIBVLYC2_LIBRARY)

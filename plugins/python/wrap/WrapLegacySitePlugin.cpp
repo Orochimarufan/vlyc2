@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2013-2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,26 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include "pythonplugin.h"
-#include "pythonsites.h"
+#include "WrapLegacySitePlugin.h"
 
 #include <QtCore/QUrl>
-#include <PythonQtConversion.h>
+#include <PythonQt/PythonQt.h>
+#include <PythonQt/PythonQtConversion.h>
 
-// Utilities
-
-// escape const
-template <class T>
-inline T &nonconst(const T &in)
-{
-    return *((T *)&in);
-}
+namespace Vlyc {
+namespace Python {
+namespace Wrap {
 
 static inline bool checkattr(PyObject *plugin, const char *attr)
 {
     if (!PyObject_HasAttrString(plugin, attr))
     {
-        PyErr_Format(PyExc_TypeError, "Plugin %R does not define member '%s'", plugin, attr);
+        qWarning("Plugin %s does not define member '%s'",
+                 qPrintable(PythonQtConv::PyObjGetRepresentation(plugin)),
+                 attr);
+        //PyErr_Format(PyExc_TypeError, "Plugin %R does not define member '%s'", plugin, attr);
         return false;
     }
     return true;
@@ -50,7 +48,12 @@ static inline bool checkattrtype(PyObject *plugin, const char *attr, PyTypeObjec
     if (!PyObject_TypeCheck(it, type))
     {
         PyObject *tp = PyObject_Type(it);
-        PyErr_Format(PyExc_TypeError, "Member '%s' of plugin %R has wrong type %R (should be %R)", attr, plugin, tp, type);
+        qWarning("Member '%s' of plugin %s has wrong type %s (expected %s)",
+                 attr,
+                 qPrintable(PythonQtConv::PyObjGetRepresentation(plugin)),
+                 qPrintable(PythonQtConv::PyObjGetRepresentation(tp)),
+                 type->tp_name);
+        //PyErr_Format(PyExc_TypeError, "Member '%s' of plugin %R has wrong type %R (should be %R)", attr, plugin, tp, type);
         Py_DECREF(tp);
         Py_DECREF(it);
         return false;
@@ -68,7 +71,10 @@ static inline bool checkattrcallable(PyObject *plugin, const char *attr)
     PyObject *it = PyObject_GetAttrString(plugin, attr);
     if (!PyCallable_Check(it))
     {
-        PyErr_Format(PyExc_TypeError, "Member '%s' of plugin %R is not callable.", attr, plugin);
+        qWarning("Member '%s' of plugin %s is not callable",
+                 attr,
+                 qPrintable(PythonQtConv::PyObjGetRepresentation(plugin)));
+        //PyErr_Format(PyExc_TypeError, "Member '%s' of plugin %R is not callable.", attr, plugin);
         Py_DECREF(it);
         return false;
     }
@@ -77,8 +83,9 @@ static inline bool checkattrcallable(PyObject *plugin, const char *attr)
     return true;
 }
 
-// PythonSitePlugin
-PythonSitePlugin *PythonSitePlugin::create(PyObject *plugin)
+// ----------------------------------------------------------------------------
+// Plugin Wrapper
+WrapLegacySitePlugin *WrapLegacySitePlugin::create(PyObject *plugin)
 {
     Py_INCREF(plugin);
 #define CHECKATTR(ATTR, TYPE) if (!checkattrtype(plugin, #ATTR, &TYPE)) return nullptr
@@ -90,19 +97,20 @@ PythonSitePlugin *PythonSitePlugin::create(PyObject *plugin)
     CHECKATTR(forUrl);
     CHECKATTR(video);
 #undef CHECKATTR
-    PythonSitePlugin *r = new PythonSitePlugin(plugin);
-    Py_DECREF(plugin);
+    WrapLegacySitePlugin *r = new WrapLegacySitePlugin(plugin);
+    //Py_DECREF(plugin);
     return r;
 }
 
-PythonSitePlugin::PythonSitePlugin(PyObject *plugin) :
-    mo_plugin(plugin)
+WrapLegacySitePlugin::WrapLegacySitePlugin(PyObject *plugin) :
+    WrapPlugin(plugin)
 {
 }
 
-QString PythonSitePlugin::forUrl(QUrl url)
+QString WrapLegacySitePlugin::forUrl(QUrl url)
 {
     PyObject *func = PyObject_GetAttrString(mo_plugin, "forUrl");
+
     PyObject *urlobj = PythonQtConv::QVariantToPyObject(url);
     PyObject *args = PyTuple_Pack(1, urlobj);
     PyObject *v = PyObject_CallObject(func, args);
@@ -120,10 +128,10 @@ QString PythonSitePlugin::forUrl(QUrl url)
         return PythonQtConv::PyObjGetString(v);
 }
 
-VideoPtr PythonSitePlugin::video(QString video_id)
+VideoPtr WrapLegacySitePlugin::video(QString video_id)
 {
     PyObject *func = PyObject_GetAttrString(mo_plugin.object(), "video");
-    PyObject *vidobj = PythonQtConv::QVariantToPyObject(video_id);
+    PyObject *vidobj = PythonQtConv::QStringToPyObject(video_id);
     PyObject *args = PyTuple_Pack(1, vidobj);
     Py_DECREF(vidobj);
     PyObject *video = PyObject_CallObject(func, args);
@@ -139,29 +147,42 @@ VideoPtr PythonSitePlugin::video(QString video_id)
         Py_DECREF(Py_None);
         return nullptr;
     }
-    PythonVideo *r = PythonVideo::create(this, video);
+    WrapLegacyVideo *r = WrapLegacyVideo::create(this, video);
     Py_DECREF(video);
     return VideoPtr(r);
 }
 
-QString PythonSitePlugin::name() const
+#define MO_PLUGIN (const_cast<PythonQtObjectPtr&>(this->mo_plugin))
+
+QString WrapLegacySitePlugin::id() const
 {
-    return nonconst(mo_plugin).getVariable("name").toString();
+    PythonQtObjectPtr &p = MO_PLUGIN;
+    QString id = p.getVariable("id").toString();
+    if (!id.isEmpty())
+        return id;
+    else
+        return p.getVariable("name").toString().prepend("me.sodimm.oro.vlyc.Python.LEGACY:");
 }
 
-QString PythonSitePlugin::author() const
+QString WrapLegacySitePlugin::name() const
 {
-    return nonconst(mo_plugin).getVariable("author").toString();
+    return MO_PLUGIN.getVariable("name").toString();
 }
 
-int PythonSitePlugin::rev() const
+QString WrapLegacySitePlugin::author() const
 {
-    return nonconst(mo_plugin).getVariable("rev").toInt();
+    return MO_PLUGIN.getVariable("author").toString();
+}
+
+QString WrapLegacySitePlugin::version() const
+{
+    return QStringLiteral("r%1").arg(MO_PLUGIN.getVariable("rev").toInt());
 }
 
 
-// PythonVideo
-PythonVideo *PythonVideo::create(PythonSitePlugin *site, PyObject *video)
+// ----------------------------------------------------------------------------
+// Video Object Wrapper
+WrapLegacyVideo *WrapLegacyVideo::create(WrapLegacySitePlugin *site, PyObject *video)
 {
     Py_INCREF(video);
 #define CHECKATTR(ATTR, TYPE) if (!checkattrtype(video, #ATTR, &TYPE)) return nullptr
@@ -172,93 +193,97 @@ PythonVideo *PythonVideo::create(PythonSitePlugin *site, PyObject *video)
     CHECKATTR(getMedia);
     CHECKATTR(getSubtitles);
 #undef CHECKATTR
-    PythonVideo *r = new PythonVideo(site, video);
+    WrapLegacyVideo *r = new WrapLegacyVideo(site, video);
     Py_DECREF(video);
     return r;
 }
 
-QString PythonVideo::videoId() const
+#define MO_VIDEO (const_cast<PythonQtObjectPtr&>(this->mo_video))
+
+QString WrapLegacyVideo::videoId() const
 {
-    return nonconst(mo_video).getVariable("videoId").toString();
+    return MO_VIDEO.getVariable("videoId").toString();
 }
 
-QString PythonVideo::title() const
+QString WrapLegacyVideo::title() const
 {
-    return nonconst(mo_video).getVariable("title").toString();
+    return MO_VIDEO.getVariable("title").toString();
 }
 
-QString PythonVideo::author() const
+QString WrapLegacyVideo::author() const
 {
-    return nonconst(mo_video).getVariable("author").toString();
+    return MO_VIDEO.getVariable("author").toString();
 }
 
-QString PythonVideo::description() const
+QString WrapLegacyVideo::description() const
 {
-    return nonconst(mo_video).getVariable("description").toString();
+    return MO_VIDEO.getVariable("description").toString();
 }
 
-int PythonVideo::views() const
+int WrapLegacyVideo::views() const
 {
-    return nonconst(mo_video).getVariable("views").toInt();
+    return MO_VIDEO.getVariable("views").toInt();
 }
 
-int PythonVideo::likes() const
+int WrapLegacyVideo::likes() const
 {
-    return nonconst(mo_video).getVariable("likes").toInt();
+    return MO_VIDEO.getVariable("likes").toInt();
 }
 
-int PythonVideo::dislikes() const
+int WrapLegacyVideo::dislikes() const
 {
-    return nonconst(mo_video).getVariable("dislikes").toInt();
+    return MO_VIDEO.getVariable("dislikes").toInt();
 }
 
-int PythonVideo::favorites() const
+int WrapLegacyVideo::favorites() const
 {
-    return nonconst(mo_video).getVariable("favorited").toInt();
+    return MO_VIDEO.getVariable("favorited").toInt();
 }
 
-bool PythonVideo::useFileMetadata() const
+bool WrapLegacyVideo::useFileMetadata() const
 {
-    return nonconst(mo_video).getVariable("useFileMetadata").toBool();
+    return MO_VIDEO.getVariable("useFileMetadata").toBool();
 }
 
-bool PythonVideo::mayBeDownloaded() const
+bool WrapLegacyVideo::mayBeDownloaded() const
 {
     return false; // TODO implement
 }
 
-QString PythonVideo::getError() const
+QString WrapLegacyVideo::getError() const
 {
     return ms_lastError;
 }
 
-void PythonVideo::emitError(const QString &message)
+void WrapLegacyVideo::emitError(const QString &message)
 {
     ms_lastError = message;
     emit error(message);
 }
 
 // PyCFunction stuffs
-char const *PythonVideo::capsule_name = "vlyc2_PythonVideo_function_self";
-inline PyObject *PythonVideo::capsule_create(PythonVideo *self)
+char const *WrapLegacyVideo::capsule_name = "vlyc2_WrapLegacyVideo_function_self";
+inline PyObject *WrapLegacyVideo::capsule_create(WrapLegacyVideo *self)
 {
     return PyCapsule_New(self, capsule_name, NULL);
 }
-inline PythonVideo *PythonVideo::capsule_get(PyObject *self)
+inline WrapLegacyVideo *WrapLegacyVideo::capsule_get(PyObject *self)
 {
     if (!PyCapsule_IsValid(self, capsule_name))
     {
-        PyErr_SetString(PyExc_RuntimeError, "Invalid PythonVideo capsule");
+        PyErr_SetString(PyExc_RuntimeError, "Invalid WrapLegacyVideo capsule");
         return NULL;
     }
-    return (PythonVideo*)PyCapsule_GetPointer(self, capsule_name);
+    return (WrapLegacyVideo*)PyCapsule_GetPointer(self, capsule_name);
 }
 
-PyObject *PythonVideo::f_error_func(PyObject *_self, PyObject *args)
+PyObject *WrapLegacyVideo::f_error_func(PyObject *_self, PyObject *args)
 {
-    PythonVideo *self;
+    WrapLegacyVideo *self;
     if (!(self = capsule_get(_self)))
         return NULL;
+
+    qDebug("error");
 
     PyObject *message;
     if (!PyArg_ParseTuple(args, "U:throw", &message))
@@ -267,22 +292,20 @@ PyObject *PythonVideo::f_error_func(PyObject *_self, PyObject *args)
         return NULL;
     }
 
-    qWarning("error: %s", qPrintable(PythonQtConv::PyObjGetString(message)));
-
     self->emitError(PythonQtConv::PyObjGetString(message));
 
     Py_RETURN_NONE;
 }
-PyMethodDef PythonVideo::f_error {
+PyMethodDef WrapLegacyVideo::f_error {
     "throw",
-    (PyCFunction) &PythonVideo::f_error_func,
+    (PyCFunction) &WrapLegacyVideo::f_error_func,
     METH_VARARGS,
     "The Video method throw(str) callback"
 };
 
-PyObject *PythonVideo::f_done_func(PyObject *_self, PyObject *args)
+PyObject *WrapLegacyVideo::f_done_func(PyObject *_self, PyObject *args)
 {
-    PythonVideo *self;
+    WrapLegacyVideo *self;
     if (!(self = capsule_get(_self)))
         return NULL;
 
@@ -298,16 +321,16 @@ PyObject *PythonVideo::f_done_func(PyObject *_self, PyObject *args)
 
     Py_RETURN_NONE;
 }
-PyMethodDef PythonVideo::f_done {
+PyMethodDef WrapLegacyVideo::f_done {
     "done",
-    (PyCFunction) &PythonVideo::f_done_func,
+    (PyCFunction) &WrapLegacyVideo::f_done_func,
     METH_VARARGS,
     "The Video method done() callback"
 };
 
-PyObject *PythonVideo::f_media_func(PyObject *_self, PyObject *args)
+PyObject *WrapLegacyVideo::f_media_func(PyObject *_self, PyObject *args)
 {
-    PythonVideo *self;
+    WrapLegacyVideo *self;
     if (!(self = capsule_get(_self)))
         return NULL;
 
@@ -328,16 +351,16 @@ PyObject *PythonVideo::f_media_func(PyObject *_self, PyObject *args)
 
     Py_RETURN_NONE;
 }
-PyMethodDef PythonVideo::f_media {
+PyMethodDef WrapLegacyVideo::f_media {
     "media",
-    (PyCFunction) & PythonVideo::f_media_func,
+    (PyCFunction) & WrapLegacyVideo::f_media_func,
     METH_VARARGS,
     "The Video method media(int quality, str description, str url) callback."
 };
 
-PyObject *PythonVideo::f_subtitles_func(PyObject *_self, PyObject *args)
+PyObject *WrapLegacyVideo::f_subtitles_func(PyObject *_self, PyObject *args)
 {
-    PythonVideo *self;
+    WrapLegacyVideo *self;
     if (!(self = capsule_get(_self)))
         return NULL;
 
@@ -357,15 +380,15 @@ PyObject *PythonVideo::f_subtitles_func(PyObject *_self, PyObject *args)
 
     Py_RETURN_NONE;
 }
-PyMethodDef PythonVideo::f_subtitles {
+PyMethodDef WrapLegacyVideo::f_subtitles {
     "subtitles",
-    (PyCFunction) &PythonVideo::f_subtitles_func,
+    (PyCFunction) &WrapLegacyVideo::f_subtitles_func,
     METH_VARARGS,
     "The Video method subtitles subtitles(str language, str type, bool isUrl, str|bytes data) callback."
 };
 
 // use of the PyCFunction stuff
-PythonVideo::PythonVideo(PythonSitePlugin *site, PyObject *video) :
+WrapLegacyVideo::WrapLegacyVideo(WrapLegacySitePlugin *site, PyObject *video) :
     mo_video(video), mp_plugin(site)
 {
     self_capsule = capsule_create(this);
@@ -375,12 +398,12 @@ PythonVideo::PythonVideo(PythonSitePlugin *site, PyObject *video) :
     cb_subtitles = PyCFunction_New(&f_subtitles, self_capsule);
 }
 
-SitePlugin *PythonVideo::site() const
+SitePlugin *WrapLegacyVideo::site() const
 {
     return (SitePlugin*)mp_plugin;
 }
 
-PythonVideo::~PythonVideo()
+WrapLegacyVideo::~WrapLegacyVideo()
 {
     Py_DECREF(cb_error);
     Py_DECREF(cb_done);
@@ -389,7 +412,7 @@ PythonVideo::~PythonVideo()
     Py_DECREF(self_capsule);
 }
 
-void PythonVideo::load()
+void WrapLegacyVideo::load()
 {
     QVariantList args;
     args << PythonQtConv::PyObjToQVariant(cb_done);
@@ -408,7 +431,7 @@ void PythonVideo::load()
     }
 }
 
-void PythonVideo::getMedia(const VideoQualityLevel &q)
+void WrapLegacyVideo::getMedia(const VideoQualityLevel &q)
 {
     QVariantList args;
     args << QVariant::fromValue<int>((int)q);
@@ -428,7 +451,7 @@ void PythonVideo::getMedia(const VideoQualityLevel &q)
     }
 }
 
-void PythonVideo::getSubtitles(const QString &language)
+void WrapLegacyVideo::getSubtitles(const QString &language)
 {
     QVariantList args;
     args << language;
@@ -448,12 +471,12 @@ void PythonVideo::getSubtitles(const QString &language)
     }
 }
 
-QStringList PythonVideo::availableSubtitleLanguages() const
+QStringList WrapLegacyVideo::availableSubtitleLanguages() const
 {
-    return nonconst(mo_video).getVariable("availableSubtitleLanguages").toStringList();
+    return MO_VIDEO.getVariable("availableSubtitleLanguages").toStringList();
 }
 
-QList<VideoQuality> PythonVideo::availableQualities() const
+QList<VideoQuality> WrapLegacyVideo::availableQualities() const
 {
     QList<VideoQuality> list;
     PyObject *o = PyObject_GetAttrString(mo_video, "availableQualities");
@@ -503,3 +526,8 @@ QList<VideoQuality> PythonVideo::availableQualities() const
     Py_DECREF(o);
     return list;
 }
+
+
+} // namespace Wrap
+} // namespace Python
+} // namespace Vlyc

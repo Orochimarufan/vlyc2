@@ -89,9 +89,11 @@ void VideoWidget::mouseMoveEvent(QMouseEvent *e)
 bool VideoWidget::eventFilter(QObject *o, QEvent *e)
 {
     if (o == mp_stable)
+    {
         if(e->type() == QEvent::MouseButtonDblClick)
             emit doubleClicked();
         else if (e->type() == QEvent::MouseMove)
             emit mouseMoved(((QMouseEvent*)e)->globalX(), ((QMouseEvent*)e)->globalY());
+    }
     return false;
 }

@@ -19,6 +19,11 @@
 #include "stubplugin.h"
 #include "videoimpl.h"
 
+// TODO: make it public D:
+#include "../../src/vlyc.h"
+#include "../../src/vlycbrowser.h"
+#include "../../src/browser/networkaccessmanager.h"
+
 #include <QtCore/QUrl>
 #include <QtCore/QEventLoop>
 #include <QtNetwork/QNetworkAccessManager>
@@ -74,9 +79,10 @@ DirectAccessPlugin::DirectAccessPlugin()
 #endif
 }
 
-void DirectAccessPlugin::initialize(VlycPluginInitializer init)
+void DirectAccessPlugin::init(Vlyc::InitEvent &e)
 {
-    mp_network = init.network;
+    Plugin::init(e);
+    mp_network = ((VlycApp*)e.private_interface)->browser()->network();
 }
 
 DirectAccessPlugin::~DirectAccessPlugin()

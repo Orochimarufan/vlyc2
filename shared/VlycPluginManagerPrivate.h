@@ -16,26 +16,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef VLYCBROWSER_H
-#define VLYCBROWSER_H
+#ifndef VLYCPLUGINMANAGERPRIVATE_H
+#define VLYCPLUGINMANAGERPRIVATE_H
 
-#include "browser/browser.h"
-#include "browser/simplefilecookiejar.h"
+#include "VlycPluginManager.h"
+#include "VlycLoaderPlugin.h"
 
-class VlycApp;
+namespace Vlyc {
 
-class VlycBrowser : public Browser
+class PluginManagerPrivate
 {
-    Q_OBJECT
-public:
-    explicit VlycBrowser(VlycApp *self);
-    virtual ~VlycBrowser();
+    //PluginManager *q_ptr;
+    //Q_DECLARE_PUBLIC(PluginManager)
+    friend class PluginManager;
 
-    virtual bool navigationRequest(QUrl);
+    QList<PluginLoader *> m_plugin_loaders;
+    QList<Plugin *> m_plugins;
+    QList<PluginLoader *> m_failed_plugins;
 
-private:
-    VlycApp *mp_self;
-    SimpleFileCookieJar cookies;
+    void *private_interface;
+
+    PluginManagerPrivate();
+
+    bool initPlugin(PluginLoader *loader);
 };
 
-#endif // VLYCBROWSER_H
+}
+
+#endif // VLYCPLUGINMANAGERPRIVATE_H

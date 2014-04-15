@@ -16,12 +16,14 @@
 # * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # *****************************************************************************/
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+#IF(IS_DIRECTORY test)
+	#add_subdirectory(test)
+	#add_subdirectory(test2)
+#ENDIF()
+
+# V2 Plugins
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(direct)
 add_subdirectory(python)
-
-#IF(IS_DIRECTORY test)
-	add_subdirectory(test)
-#ENDIF()

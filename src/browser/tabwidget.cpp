@@ -130,6 +130,7 @@ WebView *TabWidget::cloneTab(int index)
     if (index == -1) index = currentIndex();
     auto tab = newTab(false);
     tab->setUrl(tabAt(index)->url());
+    return tab;
 }
 
 void TabWidget::closeTab(int index)

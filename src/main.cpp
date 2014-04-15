@@ -77,7 +77,7 @@ int main(int argc, char** argv)
         }
     }
 
-    Vlyc vlyc;
+    VlycApp vlyc;
 
     if (!args["proxy"].toString().isNull())
     {
