@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2013-2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef VLYCLOADERPLUGIN_H
-#define VLYCLOADERPLUGIN_H
+#pragma once
 
 #include <QString>
 
@@ -99,5 +98,3 @@ public:
 QT_BEGIN_NAMESPACE
 Q_DECLARE_INTERFACE(Vlyc::LoaderPlugin, "me.sodimm.oro.vlyc.LoaderPlugin/1.0")
 QT_END_NAMESPACE
-
-#endif // VLYCLOADERPLUGIN_H

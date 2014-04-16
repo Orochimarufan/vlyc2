@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2013-2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef VLYCPLUGINMANAGER_H
-#define VLYCPLUGINMANAGER_H
+#pragma once
 
 #include <QObject>
 #include <QList>
@@ -99,5 +98,3 @@ public:
 };
 
 }
-
-#endif // VLYCPLUGINMANAGER_H
