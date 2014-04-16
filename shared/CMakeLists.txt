@@ -31,6 +31,11 @@ VlycLegacySitePlugin.h
 VlycLoaderPlugin.h
 VlycQtPluginLoader.h
 VlycPluginManager.h
+VlycUrlHandlerPlugin.h
+
+VlycResult/Result.h
+VlycResult/Url.h
+VlycResult/Playlist.h
 )
 
 set(PRIVATE_HEADERS
@@ -47,6 +52,9 @@ VlycLoaderPlugin.cpp
 VlycQtPluginLoader.cpp
 VlycPluginManager.cpp
 VlycPluginManagerPrivate.cpp
+
+VlycResult/Result.cpp
+VlycResult/Playlist.cpp
 )
 
 add_definitions(-DLIBVLYC2_LIBRARY)

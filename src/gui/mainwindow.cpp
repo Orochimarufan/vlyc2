@@ -113,8 +113,10 @@ void VideoCaller::getSubtitles(const QString &lang)
 // ----------------------------------------------------------------------------
 void MainWindow::playMrl(const QString &mrl)
 {
-    if (!mp_self->tryPlayUrl(QUrl(mrl)))
+    Vlyc::Result::ResultPtr res = mp_self->handleUrl(QUrl(mrl));
+    if (!res.isValid())
         QMessageBox::critical(this, "Error", QStringLiteral("Cannot open URL %1").arg(mrl));
+    mp_self->handleResult(res);
 }
 
 void MainWindow::_playVideo()

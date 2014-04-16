@@ -22,6 +22,8 @@
 #include <QObject>
 #include <QUrl>
 
+#include <VlycResult/Result.h>
+
 class MainWindow;
 class NetworkAccessManager;
 class QNetworkAccessManager;
@@ -45,10 +47,24 @@ public:
     QNetworkAccessManager *network();
     bool tryPlayUrl(QUrl url);
 
+    Vlyc::Result::ResultPtr handleUrl(const QUrl &url);
+    void handleResult(Vlyc::Result::ResultPtr result);
+
 private:
     MainWindow *mp_window;
     Vlyc::PluginManager *mp_plugins;
     NetworkAccessManager *mp_network;
+};
+
+#include <video.h>
+
+class LegacyVideoResult : public Vlyc::Result::Result
+{
+    VideoPtr mp_video;
+
+public:
+    LegacyVideoResult(VideoPtr video);
+    VideoPtr video();
 };
 
 #endif // VLYC_H
