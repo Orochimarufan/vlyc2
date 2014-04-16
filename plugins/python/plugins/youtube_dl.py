@@ -14,6 +14,18 @@ from youtube_dl.utils import ExtractorError
 import vlyc.plugin
 import vlyc.network
 
+# We don't want playlists (yet)
+import re
+from youtube_dl.extractor import youtube
+youtube.YoutubeIE.suitable = lambda x,url:(re.match(x._VALID_URL, url)is not None)
+
+# Blacklist Extractors
+def default_extractors():
+    for ie in gen_extractors():
+        key = ie.ie_key()
+        if not(key == "Generic" or key.endswith("Channel") or key.endswith("Playlist") or key.endswith("User")):
+            yield ie
+
 
 class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
     name = "Youtube-DL"
@@ -41,9 +53,7 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
         return ie
 
     def add_default_info_extractors(self):
-        for ie in gen_extractors():
-            if ie.ie_key() == "Generic":
-                continue
+        for ie in default_extractors():
             self.add_info_extractor(ie)
 
     # Output

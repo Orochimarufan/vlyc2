@@ -104,8 +104,6 @@ class Video(vlyc.plugin.Video):
 				#"flashVer": "LNX 11,9,900,170",
 				"app": self.app,
 				"pageUrl": "http://vod.sbs.co.kr/onair/onair_index.jsp?Channel=%s" % self.videoId,
-				# FIXME: do it properly!
-				"socks": "localhost:12345",
 			}
 			rtmp_url = " ".join([self.host + "/" + self.app] + ["%s=%s" % (k, rtmp_escape(v)) for k, v in RTMP_OPTS.items()])
 			print("RTMP: %s"% rtmp_url)

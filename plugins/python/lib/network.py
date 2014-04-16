@@ -55,12 +55,18 @@ def RequestToQNetworkRequest(request):
     
         # Headers
         for name, value in request.header_items():
+            if not isinstance(name, bytes):
+                name = bytes(name, "ascii")
+            if not isinstance(value, bytes):
+                value = bytes(value, "utf-8")
             qnrequest.setRawHeader(name, value)
 
         # Method, Data
         data = request.data
         if data is None:
             data = QtCore.QByteArray()
+        elif isinstance(data, str):
+            data = bytes(data, "utf-8")
         return qnrequest, bytes(request.get_method(), "ascii"), data
 
 
