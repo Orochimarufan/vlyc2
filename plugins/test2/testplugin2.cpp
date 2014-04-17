@@ -20,7 +20,7 @@ Vlyc::Result::ResultPtr TestPlugin2::handleUrl(const QUrl &url)
 
     if (url.host() == "playlist")
     {
-        Vlyc::Result::StandardPlaylist *playlist = new Vlyc::Result::StandardPlaylist(1);
+        Vlyc::Result::StandardPlaylist *playlist = new Vlyc::Result::StandardPlaylist("Playlist Test", 1);
         *playlist << new Vlyc::Result::Url("https://www.youtube.com/watch?v=pv5bD2w456Q");
         *playlist << new Vlyc::Result::Url("https://www.youtube.com/watch?v=btqtftCnC-s");
         return playlist;
@@ -31,7 +31,7 @@ Vlyc::Result::ResultPtr TestPlugin2::handleUrl(const QUrl &url)
     }
     else if (url.host() == "all")
     {
-        Vlyc::Result::StandardPlaylist *all = new Vlyc::Result::StandardPlaylist;
+        Vlyc::Result::StandardPlaylist *all = new Vlyc::Result::StandardPlaylist("All Tests");
         *all << new Vlyc::Result::Url("test://url");
         *all << new Vlyc::Result::Url("test://playlist");
         return all;

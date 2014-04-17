@@ -207,16 +207,18 @@ class GenericFormatMapper:
         """
         Just try to map the youtube-dl formats to vlyc2 ones as cleanly as possible
         """
+        import pprint
+        pprint.pprint(formats)
         # Filter and sort formats
         formats = sorted(
             cls.this_or_that(
                 filter(
-                    formats,
-                    lambda f: f["vcodec"] != "none" and f["acodec"] != "none"
+                    lambda f: ("vcodec" not in f or f["vcodec"] != "none") and ("acodec" not in f or f["acodec"] != "none"),
+                    formats
                 ),
                 formats
             ),
-            key=lambda f: (f["height"], f["preference"])
+            key=lambda f: (f["height"], f["preference"]) if "height" in f else ((1,f["preference"]) if "preference" in f else (1,1))
         )
         # Map formats
         avail = list()
@@ -224,10 +226,10 @@ class GenericFormatMapper:
         level = vlyc.plugin.VideoQualityLevel.QA_LOWEST
         levels = list(cls.map)
         for format in formats:
-            while format["height"] > levels[0][0]:
+            while "height" in format and format["height"] > levels[0][0]:
                 level = levels.pop(0)[1]
-            avail.append((level, format["format_note"]))
-            lookup[level] = (level, format["format_note"], format["url"])
+            avail.append((level, format["format_note"] if "format_note" in format else format["format"]))
+            lookup[level] = (level, format["format_note"] if "format_note" in format else format["format"], format["url"])
             level += 1
         return lookup, avail
 

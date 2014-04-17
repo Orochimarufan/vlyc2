@@ -72,11 +72,11 @@ def RequestToQNetworkRequest(request):
 
 def QNetworkReplyToReply(qnreply):
     if (qnreply.error() != QtNetwork.QNetworkReply.NoError):
-        if qnreply.attribute(QNetwork.QNetworkRequest.HttpStatusCodeAttribute).isValid():
+        if qnreply.attribute(QtNetwork.QNetworkRequest.HttpStatusCodeAttribute) is not None:
             raise HTTPError(qnreply)
         else:
             qnreply.deleteLater()
-            raise URLError(qnreply.errorString(), qnreply.request().url().toString())
+            raise URLError(qnreply.errorString(), str(qnreply.request().url()))
     else:
         return Reply(qnreply)
 
