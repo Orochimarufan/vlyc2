@@ -27,6 +27,9 @@
 #include <QtWidgets/QApplication>
 #include <QtCore/QDebug>
 
+#include <video.h>
+#include "logic/TempEventLoop.h"
+
 #if   defined(Q_OS_WIN)
 #   define LIBRARY_EXT ".dll"
 #elif defined(Q_OS_MAC)
@@ -46,6 +49,8 @@ VlycApp::VlycApp(QObject *parent) :
     mp_plugins->loadPluginsFrom(qApp->applicationDirPath() + "/plugins");
 
     mp_window->addPluginActions();
+
+    qRegisterMetaType<ResultPtr>();
 }
 
 VlycApp::~VlycApp()
@@ -70,6 +75,27 @@ QNetworkAccessManager *VlycApp::network()
     return mp_network;
 }
 
+static bool legacy_video_load(VideoPtr v)
+{
+    TempEventLoop loop;
+    bool result;
+
+    loop.connect(&v, &Video::done, [&]() {
+        loop.stop();
+        result = true;
+    });
+    loop.connect(&v, &Video::error, [&]() {
+        loop.stop();
+        result = false;
+    });
+
+    v->load();
+
+    loop.start();
+
+    return result;
+}
+
 bool VlycApp::tryPlayUrl(QUrl url)
 {
     for (Vlyc::LegacySitePlugin *site : mp_plugins->getPlugins<Vlyc::LegacySitePlugin>())
@@ -79,8 +105,9 @@ bool VlycApp::tryPlayUrl(QUrl url)
             continue;
         VideoPtr v = site->video(id);
         qDebug("'%s' is a video url: %s", qPrintable(url.toString()), qPrintable(v->site()->name()));
-        v->load();
-        mp_window->playVideo(v);
+        if (!legacy_video_load(v))
+            return false;
+        mp_window->queueResult(new LegacyVideoResult(v));
         return true;
     }
     return false;
@@ -100,6 +127,8 @@ Vlyc::Result::ResultPtr VlycApp::handleUrl(const QUrl &url)
         if (id.isEmpty())
             continue;
         VideoPtr v = site->video(id);
+        if (!legacy_video_load(v))
+            continue;
         return new LegacyVideoResult(v);
     }
     return nullptr;
@@ -114,9 +143,7 @@ void VlycApp::handleResult(Vlyc::Result::ResultPtr result)
     if (video.isValid())
     {
         qDebug("Playing LegacyVideoResult");
-        VideoPtr v(video->video());
-        v->load();
-        mp_window->playVideo(v);
+        mp_window->queueResult(result);
         return;
     }
 

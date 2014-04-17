@@ -19,6 +19,7 @@
 #pragma once
 
 #include <QtCore/QList>
+#include <QtCore/QString>
 
 #include "Result.h"
 
@@ -34,18 +35,23 @@ public:
 
     /// The index that should play first
     virtual qint64 startAt();
+
+    /// The playlist name
+    virtual QString name();
 };
 
 class StandardPlaylist : public Playlist, public QList<ResultPtr>
 {
     qint64 m_start_index;
+    QString m_name;
 
 public:
-    StandardPlaylist(qint64 startIndex = 0);
+    StandardPlaylist(QString name="Unnamed Playlist", qint64 startIndex=0);
 
     virtual ResultPtr get(const qint64 &);
     virtual qint64 length();
     virtual qint64 startAt();
+    virtual QString name();
 };
 
 

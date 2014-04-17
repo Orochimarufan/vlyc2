@@ -26,9 +26,14 @@ qint64 Playlist::startAt()
     return 0;
 }
 
+QString Playlist::name()
+{
+    return "Unnamed Playlist";
+}
+
 // StandardPlaylist
-StandardPlaylist::StandardPlaylist(qint64 startIndex) :
-    m_start_index(startIndex)
+StandardPlaylist::StandardPlaylist(QString name, qint64 startIndex) :
+    m_start_index(startIndex), m_name(name)
 {
 }
 
@@ -45,6 +50,11 @@ qint64 StandardPlaylist::length()
 qint64 StandardPlaylist::startAt()
 {
     return m_start_index;
+}
+
+QString StandardPlaylist::name()
+{
+    return m_name;
 }
 
 } // namespace Result

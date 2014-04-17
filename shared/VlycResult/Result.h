@@ -19,6 +19,7 @@
 #pragma once
 
 #include <QtCore/QAtomicInt>
+#include <QtCore/QMetaType>
 
 namespace Vlyc {
 namespace Result {
@@ -94,11 +95,13 @@ public:
     ResultPointer &operator=(const ResultPointer &ptr)
     {
         reset(ptr.mp_result);
+        return *this;
     }
 
     ResultPointer &operator=(Result *res)
     {
         reset(res);
+        return *this;
     }
 
     template <typename T>
@@ -150,3 +153,4 @@ typedef ResultPointer<Result> ResultPtr;
 }
 } // namespace Vlyc
 
+Q_DECLARE_METATYPE(Vlyc::Result::ResultPtr)

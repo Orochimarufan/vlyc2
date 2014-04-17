@@ -22,7 +22,9 @@
 #include "ui_fullscreencontroller.h"
 #include "vlyc.h"
 #include "about.h"
-#include <siteplugin.h>
+#include <video.h>
+
+#include "logic/ResultModel.h"
 
 #include <VlycPluginManager.h>
 #include <VlycToolPlugin.h>
@@ -55,59 +57,6 @@ struct BlockChanged
     }
 };
 
-// VideoCaller
-VideoCaller::VideoCaller()
-{
-}
-
-VideoCaller::VideoCaller(VideoPtr v)
-{
-    video = v;
-    connect(this, SIGNAL(_load()), &video, SLOT(load()));
-    connect(this, SIGNAL(_getMedia(VideoQualityLevel)), &video, SLOT(getMedia(VideoQualityLevel)));
-    connect(this, SIGNAL(_getSubtitles(QString)), &video, SLOT(getSubtitles(QString)));
-    connect(&video, SIGNAL(error(QString)), SIGNAL(error(QString)));
-    connect(&video, SIGNAL(done()), SIGNAL(done()));
-    connect(&video, SIGNAL(media(VideoMedia)), SIGNAL(media(VideoMedia)));
-    connect(&video, SIGNAL(subtitles(VideoSubtitles)), SIGNAL(subtitles(VideoSubtitles)));
-}
-
-VideoCaller &VideoCaller::operator =(VideoPtr v)
-{
-    if (&video)
-    {
-        disconnect(this, 0, &video, 0);
-        disconnect(&video, 0, this, 0);
-    }
-    video = v;
-    if (&video)
-    {
-        connect(this, SIGNAL(_load()), &video, SLOT(load()));
-        connect(this, SIGNAL(_getMedia(VideoQualityLevel)), &video, SLOT(getMedia(VideoQualityLevel)));
-        connect(this, SIGNAL(_getSubtitles(QString)), &video, SLOT(getSubtitles(QString)));
-        connect(&video, SIGNAL(error(QString)), SIGNAL(error(QString)));
-        connect(&video, SIGNAL(done()), SIGNAL(done()));
-        connect(&video, SIGNAL(media(VideoMedia)), SIGNAL(media(VideoMedia)));
-        connect(&video, SIGNAL(subtitles(VideoSubtitles)), SIGNAL(subtitles(VideoSubtitles)));
-    }
-    return *this;
-}
-
-void VideoCaller::load()
-{
-    emit _load();
-}
-
-void VideoCaller::getMedia(const VideoQualityLevel &level)
-{
-    emit _getMedia(level);
-}
-
-void VideoCaller::getSubtitles(const QString &lang)
-{
-    emit _getSubtitles(lang);
-}
-
 // ----------------------------------------------------------------------------
 // Video stuff
 // ----------------------------------------------------------------------------
@@ -116,112 +65,32 @@ void MainWindow::playMrl(const QString &mrl)
     Vlyc::Result::ResultPtr res = mp_self->handleUrl(QUrl(mrl));
     if (!res.isValid())
         QMessageBox::critical(this, "Error", QStringLiteral("Cannot open URL %1").arg(mrl));
-    mp_self->handleResult(res);
+
+    m_player2.queueItem(res);
+
+    m_player2.play();
 }
 
-void MainWindow::_playVideo()
+void MainWindow::queueResult(ResultPtr res)
 {
-    playVideo(m_video.video);
+    m_player2.queueItem(res);
+
+    m_player2.play();
 }
 
-void MainWindow::_videoError(const QString &message)
+void MainWindow::updateQualityList(QList<QString> qa, int current)
 {
-    QMessageBox::critical(this, "Video Error", message, "Ok");
-}
-
-void MainWindow::playVideo(VideoPtr v)
-{
-    auto qa = v->availableQualities();
-    if (!qa.length())
-        return;
-
     BlockChanged block(this);
     ui->quality->clear();
-
-    qSort(qa.begin(), qa.end(), qGreater<VideoQuality>());
-
-    foreach (VideoQuality q, qa)
-        ui->quality->addItem(q.description);
-    ui->quality->setCurrentIndex(0);
-
-    m_player.stop();
-
-    ml_qa = qa;
-    mp_video = v;
-
-    m_video = v;
-    m_video.getMedia(qa.first().q);
-
-    ui->subtitles->clear();
-    ui->subtitles->addItem("No Subtitles");
-
-    auto subs = v->availableSubtitleLanguages();
-    if (!subs.length())
-        return;
-
-    foreach(QString language, subs)
-        ui->subtitles->addItem(language);
-    ui->subtitles->setCurrentIndex(0);
-}
-
-void MainWindow::_videoMedia(const VideoMedia &media)
-{
-    m_video_media = media;
-
-    m_media = VlcMedia(media.url);
-    if (media.video->useFileMetadata() && !m_media.isParsed())
-        m_media.parse(false);
-    else
-    {
-        m_media.setMeta(VlcMeta::Title, media.video->title());
-        m_media.setMeta(VlcMeta::Artist, media.video->author());
-        m_media.setMeta(VlcMeta::Description, media.video->description());
-    }
-
-    bool restore = m_player.state() == VlcState::Playing || m_player.state() == VlcState::Paused;
-    float position = m_player.position();
-
-    m_player.open(m_media);
-
-    if (restore)
-        m_player.setPosition(position);
-}
-
-void MainWindow::_videoSubs(const VideoSubtitles &subs)
-{
-    if ((QMetaType::Type)subs.data.type() == QMetaType::QUrl)
-        m_player_video.setSubtitleFile(subs.data.value<QUrl>().toString());
-    else
-    {
-        QString templat ("vlyc2-XXXXXX.");
-        templat.append(subs.type);
-        QTemporaryFile file(QDir::temp().absoluteFilePath(templat));
-        file.setAutoRemove(false);
-        file.open();
-        file.write(subs.data.toByteArray());
-        file.close();
-
-        m_player_video.setSubtitleFile(file.fileName());
-    }
+    for (auto q : qa)
+        ui->quality->addItem(q);
+    ui->quality->setCurrentIndex(current);
 }
 
 void MainWindow::on_quality_currentIndexChanged(const int &index)
 {
     if (block_changed) return;
-    m_video = mp_video;
-    m_video.getMedia(ml_qa.at(index).q);
-}
-
-void MainWindow::on_subtitles_currentIndexChanged(const int &index)
-{
-    if (block_changed) return;
-    if (index == 0)
-        m_player_video.setSpu(0);
-    else
-    {
-        m_video = mp_video;
-        m_video.getSubtitles(ui->subtitles->itemText(index));
-    }
+    m_player2.setQuality(index);
 }
 
 bool MainWindow::eventFilter(QObject *o, QEvent *e)
@@ -237,10 +106,11 @@ bool MainWindow::eventFilter(QObject *o, QEvent *e)
 MainWindow::MainWindow(VlycApp *self) :
     QMainWindow(),
     ui(new Ui::MainWindow),
+    mp_self(self),
+    m_player2(self),
+    m_player(m_player2.player()),
     m_player_audio(m_player),
-    m_player_video(m_player),
-    mp_video(nullptr),
-    mp_self(self)
+    m_player_video(m_player)
 {
 #ifdef Q_OS_LINUX
     if (qApp->platformName() == "xcb")
@@ -252,16 +122,12 @@ MainWindow::MainWindow(VlycApp *self) :
     fsc = new FullScreenController(ui->video);
     ui->video->installEventFilter(this);
 
+    ui->treeView->setModel(&m_player2.model());
+
     connectUiMisc();
 
     // Setup vlc
     setupPlayer();
-
-    // Videos
-    connect(&m_video, SIGNAL(error(QString)), SLOT(_videoError(QString)));
-    connect(&m_video, SIGNAL(done()), SLOT(_playVideo()));
-    connect(&m_video, SIGNAL(media(VideoMedia)), SLOT(_videoMedia(VideoMedia)));
-    connect(&m_video, SIGNAL(subtitles(VideoSubtitles)), SLOT(_videoSubs(VideoSubtitles)));
 
     connect(this, &MainWindow::playMrlSignal, this, &MainWindow::playMrl, Qt::QueuedConnection);
 
@@ -287,7 +153,7 @@ void MainWindow::setupPlayer()
 {
     m_player.setVideoDelegate(ui->video);
 
-    connect(&m_player, &VlcMediaPlayer::endReached, &m_player, &VlcMediaPlayer::stop);
+    //connect(&m_player, &VlcMediaPlayer::endReached, &m_player, &VlcMediaPlayer::stop);
     connect(&m_player, &VlcMediaPlayer::positionChanged, this, &MainWindow::updatePosition);
     //connect(&m_player, &VlcMediaPlayer::mediaChanged, this, &MainWindow::updateMedia);
     connect(&m_player, SIGNAL(mediaChanged(libvlc_media_t*)), this, SLOT(updateMedia(libvlc_media_t*)));
@@ -378,13 +244,11 @@ void MainWindow::on_btn_play_clicked()
         m_player.pause();
         break;
     case VlcState::Paused:
-        m_player.resume();
-        break;
     case VlcState::Stopped:
     case VlcState::Ended:
-        m_player.play();
-        break;
     case VlcState::NothingSpecial:
+        m_player2.play();
+        break;
     case VlcState::Error:
         break;
     }
@@ -404,6 +268,11 @@ void MainWindow::on_actionAbout_triggered()
 {
     About dialog(this);
     dialog.exec();
+}
+
+void MainWindow::on_btn_library_clicked(bool checked)
+{
+    ui->stackedWidget->setCurrentIndex(checked ? 1 : 0);
 }
 
 // ----------------------------------------------------------------------------

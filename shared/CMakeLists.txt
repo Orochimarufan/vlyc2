@@ -18,9 +18,7 @@
 
 set(HEADERS
 ../include/plugin.h
-../include/foreignplugin.h
 ../include/siteplugin.h
-../include/toolplugin.h
 ../include/video.h
 ../include/videoimpl.h
 ../include/vlyc2pointer.h

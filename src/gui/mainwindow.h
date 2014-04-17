@@ -27,6 +27,8 @@
 #include <QtVlc/VlcMediaPlayerVideo.h>
 #include <QtWidgets/QShortcut>
 
+#include "logic/VlycPlayer.h"
+
 #include <video.h>
 
 namespace Ui {
@@ -38,30 +40,7 @@ class FullScreenController;
 class VlcInstance;
 class VlcMedia;
 class VlcMediaPlayer;
-class Video;
 class VlycApp;
-
-class VideoCaller : public QObject
-{
-    Q_OBJECT
-public:
-    VideoPtr video;
-    VideoCaller();
-    VideoCaller(VideoPtr v);
-    VideoCaller &operator =(VideoPtr v);
-    void load();
-    void getMedia(const VideoQualityLevel &level);
-    void getSubtitles(const QString &lang);
-
-signals:
-    void _load();
-    void _getMedia(const VideoQualityLevel &level);
-    void _getSubtitles(const QString &lang);
-    void error(const QString &message);
-    void done();
-    void media(const VideoMedia &media);
-    void subtitles(const VideoSubtitles &subs);
-};
 
 class MainWindow : public QMainWindow
 {
@@ -76,17 +55,14 @@ signals:
     void playMrlSignal(const QString &mrl); // for delayed playback
 
 public slots:
-    void playVideo(VideoPtr);
-
     void setFullScreen(bool fs);
     bool toggleFullScreen();
     void playMrl(const QString &mrl);
+    void queueResult(ResultPtr res);
 
 private slots:
-    void _videoMedia(const VideoMedia &);
-    void _videoSubs(const VideoSubtitles &);
-    void _playVideo();
-    void _videoError(const QString &);
+    void updateQualityList(QList<QString> qa, int current);
+
     void updatePosition(const float &);
     void updateState(const VlcState::Type &);
     void updateMedia(libvlc_media_t *media);
@@ -101,7 +77,9 @@ private slots:
 
     void on_btn_play_clicked();
     void on_quality_currentIndexChanged(const int &);
-    void on_subtitles_currentIndexChanged(const int &);
+    //void on_subtitles_currentIndexChanged(const int &);
+
+    void on_btn_library_clicked(bool checked);
 
 protected:
     bool eventFilter(QObject *, QEvent *);
@@ -120,16 +98,10 @@ private:
     bool block_changed;
     friend class BlockChanged;
 
-    VlcMedia m_media;
+    VlycPlayer m_player2;
     VlcMediaPlayer m_player;
     VlcMediaPlayerAudio m_player_audio;
     VlcMediaPlayerVideo m_player_video;
-
-    VideoPtr mp_video;
-    QList<VideoQuality> ml_qa;
-    VideoCaller m_video;
-    VideoMedia m_video_media;
-    VideoSubtitles m_video_subs;
 
     QShortcut *shortcut_Space;
     QShortcut *shortcut_Esc;
