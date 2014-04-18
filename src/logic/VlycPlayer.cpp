@@ -141,6 +141,7 @@ void VlycPlayer::setItem(PlaylistNode *item)
     m_current_quality_index = 0;
 
     emit qualityListChanged(ml_current_quality_list, m_current_quality_index);
+    m_model.setCurrentlyPlaying(item);
 }
 
 void VlycPlayer::createMedia()
@@ -205,6 +206,7 @@ void VlycPlayer::playItem(PlaylistNode *item)
     {
         m_player.stop();
         emit endReached();
+        m_model.setCurrentlyPlaying(nullptr);
     }
 }
 

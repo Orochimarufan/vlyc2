@@ -41,6 +41,7 @@ PlaylistModel::~PlaylistModel()
 // Node callbacks
 void PlaylistModel::beginInsertNode(PlaylistNode *parent, size_t index)
 {
+    qDebug("insert on %p: %i", parent, index);
     beginInsertRows(createIndexForNode(parent), (int)index, (int)index);
 }
 
@@ -89,12 +90,15 @@ ResultPtr PlaylistModel::completeUrl(UrlPtr url) const
 // Node juggling
 PlaylistNode *PlaylistModel::getNodeFromIndex(const QModelIndex &index) const
 {
-    return static_cast<PlaylistNode *>(index.internalPointer());
+    if (index.internalPointer())
+        return static_cast<PlaylistNode *>(index.internalPointer());
+    else
+        return mp_root;
 }
 
 QModelIndex PlaylistModel::createIndexForNode(PlaylistNode *node, int column) const
 {
-    if (node)
+    if (node && node != mp_root)
         return createIndex(node->index(), column, node);
     else
         return QModelIndex();
@@ -109,10 +113,7 @@ PlaylistNode *PlaylistModel::root() const
 // QAbstractItemModel implementation
 int PlaylistModel::rowCount(const QModelIndex &parent) const
 {
-    if (parent.internalPointer())
-        return getNodeFromIndex(parent)->size();
-    else
-        return mp_root->size();
+    return getNodeFromIndex(parent)->size();
 }
 
 int PlaylistModel::columnCount(const QModelIndex &parent) const
@@ -123,12 +124,7 @@ int PlaylistModel::columnCount(const QModelIndex &parent) const
 
 QModelIndex PlaylistModel::index(int row, int column, const QModelIndex &parent) const
 {
-    PlaylistNode *node;
-    if (parent.internalPointer())
-        node = getNodeFromIndex(parent);
-    else
-        node = mp_root;
-    return createIndexForNode(node->at(row), column);
+    return createIndexForNode(getNodeFromIndex(parent)->at(row), column);
 }
 
 QModelIndex PlaylistModel::parent(const QModelIndex &child) const
@@ -148,6 +144,11 @@ QVariant PlaylistModel::data(const QModelIndex &index, int role) const
             return QIcon(":/type/file");
     case Qt::DisplayRole:
         return node->displayName();
+    case Qt::BackgroundColorRole:
+        if (node == mp_current)
+            return QColor(Qt::darkGreen);
+        else
+            return QVariant();
     }
     return QVariant();
 }
@@ -174,4 +175,24 @@ void PlaylistModel::clear()
     delete mp_root;
     mp_root = new PlaylistNode(this);
     endResetModel();
+}
+
+void PlaylistModel::setCurrentlyPlaying(PlaylistNode *node)
+{
+    static QVector<int> bgrole{Qt::BackgroundColorRole};
+
+    PlaylistNode *old = mp_current;
+    mp_current = node;
+
+    if (node)
+    {
+        QModelIndex index = createIndexForNode(node);
+        emit dataChanged(index, index, bgrole);
+    }
+
+    if (old)
+    {
+        QModelIndex index = createIndexForNode(old);
+        emit dataChanged(index, index, bgrole);
+    }
 }

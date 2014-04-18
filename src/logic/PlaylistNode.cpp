@@ -60,8 +60,8 @@ PlaylistNode::~PlaylistNode()
 
 PlaylistNode *PlaylistNode::append(ResultPtr result)
 {
-    PlaylistNode *node = new PlaylistNode(this, result);
     mp_model->beginInsertNode(this, m_children.size());
+    PlaylistNode *node = new PlaylistNode(this, result);
     m_children.push_back(node);
     mp_model->endInsertNode();
     return node;
@@ -69,8 +69,8 @@ PlaylistNode *PlaylistNode::append(ResultPtr result)
 
 PlaylistNode *PlaylistNode::insert(size_t index, ResultPtr result)
 {
-    PlaylistNode *node = new PlaylistNode(this, result);
     mp_model->beginInsertNode(this, index);
+    PlaylistNode *node = new PlaylistNode(this, result);
     m_children.insert(m_children.begin() + index, node);
     mp_model->endInsertNode();
     return node;

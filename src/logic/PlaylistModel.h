@@ -57,6 +57,9 @@ public:
     void queue(Vlyc::Result::ResultPtr result);
     void clear();
 
+    // Player callbacks
+    void setCurrentlyPlaying(PlaylistNode *node);
+
 private:
     friend class PlaylistNode;
 
@@ -76,4 +79,5 @@ private:
     // members
     VlycApp *mp_app;
     PlaylistNode *mp_root;
+    PlaylistNode *mp_current;
 };
