@@ -109,7 +109,7 @@ public:
         return mp_target != other.mp_target;
     }
 
-    T *operator&() const
+    T *get() const
     {
         return mp_target;
     }

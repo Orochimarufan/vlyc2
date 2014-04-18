@@ -105,40 +105,40 @@ public:
     }
 
     template <typename T>
-    bool operator== (const ResultPointer<T> &ptr)
+    bool operator== (const ResultPointer<T> &ptr) const
     {
         return static_cast<Vlyc::Result::Result*>(ptr.mp_result) ==
                 static_cast<Vlyc::Result::Result*>(mp_result);
     }
 
-    Result *operator->()
+    inline Result *operator->() const
     {
         return mp_result;
     }
 
-    Result *get()
+    inline Result *get() const
     {
         return mp_result;
     }
 
-    Result &operator *()
+    inline Result &operator *() const
     {
         return *mp_result;
     }
 
     template <typename T>
-    ResultPointer<T> cast()
+    inline ResultPointer<T> cast() const
     {
         return ResultPointer<T>(dynamic_cast<T*>(mp_result));
     }
 
     template <typename T>
-    bool is()
+    inline bool is() const
     {
         return dynamic_cast<T*>(mp_result) != nullptr;
     }
 
-    bool isValid()
+    inline bool isValid() const
     {
         return mp_result != nullptr;
     }

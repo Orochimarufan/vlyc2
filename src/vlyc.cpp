@@ -80,11 +80,11 @@ static bool legacy_video_load(VideoPtr v)
     TempEventLoop loop;
     bool result;
 
-    loop.connect(&v, &Video::done, [&]() {
+    loop.connect(v.get(), &Video::done, [&]() {
         loop.stop();
         result = true;
     });
-    loop.connect(&v, &Video::error, [&]() {
+    loop.connect(v.get(), &Video::error, [&]() {
         loop.stop();
         result = false;
     });
@@ -115,6 +115,7 @@ bool VlycApp::tryPlayUrl(QUrl url)
 
 Vlyc::Result::ResultPtr VlycApp::handleUrl(const QUrl &url)
 {
+    qDebug("handleUrl(%s)", qPrintable(url.toString()));
     for (Vlyc::UrlHandlerPlugin *plugin : mp_plugins->getPlugins<Vlyc::UrlHandlerPlugin>())
     {
         auto result = plugin->handleUrl(url);

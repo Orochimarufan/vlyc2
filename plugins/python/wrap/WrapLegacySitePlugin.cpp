@@ -343,8 +343,6 @@ PyObject *WrapLegacyVideo::f_media_func(PyObject *_self, PyObject *args)
     if (!(self = capsule_get(_self)))
         return NULL;
 
-    qDebug("media");
-
     int q;
     PyObject *descobj, *urlobj;
     if (!PyArg_ParseTuple(args, "iUU:media", &q, &descobj, &urlobj))
@@ -355,6 +353,8 @@ PyObject *WrapLegacyVideo::f_media_func(PyObject *_self, PyObject *args)
 
     QString desc(PythonQtConv::PyObjGetString(descobj));
     QUrl url(PythonQtConv::PyObjGetString(urlobj));
+
+    qDebug("media: %i '%s' at '%s'", q, qPrintable(desc), qPrintable(url.toString()));
 
     emit self->media(VideoMedia{VideoPtr(self), VideoQuality{(VideoQualityLevel)q, desc}, url});
 
@@ -398,7 +398,7 @@ PyMethodDef WrapLegacyVideo::f_subtitles {
 
 // use of the PyCFunction stuff
 WrapLegacyVideo::WrapLegacyVideo(WrapLegacySitePlugin *site, PyObject *video) :
-    mo_video(video), mp_plugin(site)
+    mp_plugin(site), mo_video(video)
 {
     self_capsule = capsule_create(this);
     cb_error = PyCFunction_New(&f_error, self_capsule);

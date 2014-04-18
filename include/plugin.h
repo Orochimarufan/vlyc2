@@ -34,7 +34,7 @@ class VlycBasePlugin
 public:
     virtual ~VlycBasePlugin() {}
 
-    virtual void initialize(VlycPluginInitializer init) {}
+    virtual void initialize(VlycPluginInitializer) {}
 
     virtual QString name() const = 0;
     virtual QString author() const = 0;

@@ -48,10 +48,11 @@ SET(VLYC_HEADERS
 	network/simplefilecookiejar.h
 	network/networkaccessmanager.h
 
-	logic/ResultModelNode.h
-	logic/ResultModel.h
 	logic/VlycPlayer.h
 	logic/TempEventLoop.h
+	logic/PlaylistNode.h
+	logic/PlaylistModel.h
+	logic/__lv_hacks.h
 )
 
 
@@ -70,10 +71,10 @@ SET(VLYC_SOURCES
 	network/simplefilecookiejar.cpp
 	network/networkaccessmanager.cpp
 
-	logic/ResultModelNode.cpp
-	logic/ResultModel.cpp
 	logic/VlycPlayer.cpp
 	logic/TempEventLoop.cpp
+	logic/PlaylistNode.cpp
+	logic/PlaylistModel.cpp
 )
 
 

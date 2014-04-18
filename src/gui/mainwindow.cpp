@@ -24,8 +24,6 @@
 #include "about.h"
 #include <video.h>
 
-#include "logic/ResultModel.h"
-
 #include <VlycPluginManager.h>
 #include <VlycToolPlugin.h>
 
@@ -158,6 +156,7 @@ void MainWindow::setupPlayer()
     //connect(&m_player, &VlcMediaPlayer::mediaChanged, this, &MainWindow::updateMedia);
     connect(&m_player, SIGNAL(mediaChanged(libvlc_media_t*)), this, SLOT(updateMedia(libvlc_media_t*)));
     connect(&m_player, &VlcMediaPlayer::stateChanged, this, &MainWindow::updateState);
+    connect(&m_player2, &VlycPlayer::qualityListChanged, this, &MainWindow::updateQualityList);
 }
 
 void MainWindow::updateMedia(libvlc_media_t *media)
@@ -212,6 +211,9 @@ void MainWindow::connectUiMisc()
     connect(ui->volume, &SoundWidget::volumeChanged, &m_player_audio, &VlcMediaPlayerAudio::setVolume);
     connect(ui->volume, &SoundWidget::muteChanged, &m_player_audio, &VlcMediaPlayerAudio::setMuted);
     connect(ui->btn_fullscreen, &QAbstractButton::clicked, this, &MainWindow::toggleFullScreen);
+    connect(ui->btn_next, &QAbstractButton::clicked, &m_player2, &VlycPlayer::next);
+    connect(ui->btn_prev, &QAbstractButton::clicked, &m_player2, &VlycPlayer::prev);
+    connect(ui->treeView, &QAbstractItemView::activated, &m_player2, &VlycPlayer::playNow);
 
     // Fullscreen
     connect(fsc->ui->btn_playpause, &QAbstractButton::clicked, this, &MainWindow::on_btn_play_clicked);
@@ -273,6 +275,17 @@ void MainWindow::on_actionAbout_triggered()
 void MainWindow::on_btn_library_clicked(bool checked)
 {
     ui->stackedWidget->setCurrentIndex(checked ? 1 : 0);
+    // Move Video
+    if (checked)
+    {
+        QGridLayout *layout = ((QGridLayout*)ui->pageLibrary->layout());
+        layout->addWidget(ui->video, 1, 0);
+    }
+    else
+    {
+        QBoxLayout *layout = (QBoxLayout*)ui->pageVideo->layout();
+        layout->addWidget(ui->video);
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -284,13 +297,15 @@ void MainWindow::setFullScreenVideo(bool fs)
     // therefore we modify the MainWindow to
     // only show the video part and fullscreen that.
     if (fs) {
+        // always fullscreen the video page
+        if (ui->btn_library->isChecked())
+            on_btn_library_clicked(false);
         //ui->video->setParent(NULL, Qt::Window);
         //ui->video->showFullScreen();
         showFullScreen();
         ui->menubar->setVisible(false);
         ui->statusbar->setVisible(false);
         ui->controls->setVisible(false);
-        ui->centralwidget->layout()->setContentsMargins(0,0,0,0);
     } else {
         //ui->video->setParent(ui->centralwidget, 0);
         //ui->verticalLayout->insertWidget(0, ui->video);
@@ -298,7 +313,9 @@ void MainWindow::setFullScreenVideo(bool fs)
         ui->menubar->setVisible(true);
         ui->statusbar->setVisible(true);
         ui->controls->setVisible(true);
-        ui->centralwidget->layout()->setContentsMargins(9,9,9,9);
+        // restore library view
+        if (ui->btn_library->isChecked())
+            on_btn_library_clicked(true);
     }
 }
 

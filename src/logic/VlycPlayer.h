@@ -25,7 +25,7 @@
 
 #include <VlycResult/Result.h>
 
-#include "ResultModel.h"
+#include "PlaylistModel.h"
 
 class VlycPlayer : public QObject
 {
@@ -33,7 +33,7 @@ class VlycPlayer : public QObject
 public:
     explicit VlycPlayer(VlycApp *app);
 
-    ResultModel &model();
+    PlaylistModel &model();
     VlcMediaPlayer player();
 
 signals:
@@ -41,7 +41,7 @@ signals:
     void qualityListChanged(QList<QString>, int current);
 
 public slots:
-    void queueItem(ResultPtr result);
+    void queueItem(Vlyc::Result::ResultPtr result);
     void clearPlaylist();
 
     void play();
@@ -50,26 +50,29 @@ public slots:
     void next();
     void prev();
 
+    // UI slots
+    void playNow(const QModelIndex &index);
+
 private slots:
-    void setItem(ResultModelNode *item);
-    void playItem();
-    void playMedia();
-    void playNextItem();
+    void playItem(PlaylistNode *item);
+    void playFirstItem(PlaylistNode *origin);
 
 private:
-    ResultModel m_model;
+    PlaylistModel m_model;
     VlcMediaPlayer m_player;
 
     VlcMedia m_current_media;
-    ResultModelNode *mp_current_node;
+    PlaylistNode *mp_current_node;
 
     // Old & broken stuff
     QList<QString> ml_current_quality_list;
     QList<int> ml_current_quality_id_list;
     int m_current_quality_index;
 
-    ResultModelNode *findNextItem();
-    ResultModelNode *findPrevItem();
+    PlaylistNode *findNextItem(PlaylistNode *origin);
+    PlaylistNode *findPrevItem(PlaylistNode *origin);
 
     void createMedia();
+    void setItem(PlaylistNode *item);
+    void playMedia();
 };

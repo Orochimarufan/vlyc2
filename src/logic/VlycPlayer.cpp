@@ -16,20 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include "VlycPlayer.h"
-
-#include "TempEventLoop.h"
-
 #include <tuple>
 
+#include "VlycPlayer.h"
+#include "PlaylistNode.h"
+
+using namespace Vlyc::Result;
+
 VlycPlayer::VlycPlayer(VlycApp *app) :
-    mp_current_node(nullptr), m_model(app)
+    m_model(app), mp_current_node(nullptr)
 {
-    connect(&m_player, &VlcMediaPlayer::endReached, this, &VlycPlayer::playNextItem);
+    connect(&m_player, &VlcMediaPlayer::endReached, this, &VlycPlayer::next);
 }
 
 // Get data
-ResultModel &VlycPlayer::model()
+PlaylistModel &VlycPlayer::model()
 {
     return m_model;
 }
@@ -55,7 +56,7 @@ void VlycPlayer::clearPlaylist()
 void VlycPlayer::play()
 {
     if (!m_current_media.isValid())
-        playNextItem();
+        playFirstItem(m_model.root());
     else if (m_player.state() == VlcState::Paused)
         m_player.resume();
     else
@@ -65,20 +66,20 @@ void VlycPlayer::play()
 
 void VlycPlayer::next()
 {
-    playNextItem();
+    playItem(findNextItem(mp_current_node ? mp_current_node : m_model.root()));
 }
 
 void VlycPlayer::prev()
 {
-    return; // FIXME: implement
-    setItem(findPrevItem());
-    playItem();
+    playItem(findPrevItem(mp_current_node ? mp_current_node : m_model.root()));
 }
 
 // ----------------------------------------------------------------------------
 // Manage Current item
 
 // Legacy video crap :(
+#include "__lv_hacks.h"
+
 static std::tuple<QList<QString>, QList<int>> legacy_video_qualities(VideoPtr v)
 {
     auto qa = v->availableQualities();
@@ -96,23 +97,19 @@ static std::tuple<QList<QString>, QList<int>> legacy_video_qualities(VideoPtr v)
     return std::make_tuple(qas, qis);
 }
 
-static VlcMedia legacy_video_get_media(VideoPtr v, VideoQualityLevel q)
+VlcMedia __lv_get_media::operator ()(VideoPtr v, int q)
 {
-    TempEventLoop loop;
-    VlcMedia media;
+    connect(v.get(), &Video::error, this, &TempEventLoop::stop);
+    connect(v.get(), &Video::media, this, &__lv_get_media::media);
 
-    v->connect(&v, &Video::media, [&](const VideoMedia &vmedia) {
-        loop.stop();
-        media = VlcMedia(vmedia.url);
-    });
-    v->connect(&v, &Video::error, &loop, &TempEventLoop::stop);
+    v->getMedia((VideoQualityLevel)q);
 
-    v->getMedia(q);
+    start();
 
-    loop.start();
+    if (!url.isValid())
+        return VlcMedia();
 
-    if (!media.isValid())
-        return media;
+    VlcMedia media(url);
 
     if (v->useFileMetadata() && !media.isParsed())
         media.parse(false);
@@ -126,13 +123,19 @@ static VlcMedia legacy_video_get_media(VideoPtr v, VideoQualityLevel q)
     return media;
 }
 
+void __lv_get_media::media(const VideoMedia &m)
+{
+    url = m.url;
+    stop();
+}
+
 // Set a new item
-void VlycPlayer::setItem(ResultModelNode *item)
+void VlycPlayer::setItem(PlaylistNode *item)
 {
     // ONLY CALL ON LegacyVideoResult items!
     mp_current_node = item;
 
-    auto qualities = legacy_video_qualities(item->video());
+    auto qualities = legacy_video_qualities(item->__lvideo());
     ml_current_quality_list = std::get<0>(qualities);
     ml_current_quality_id_list = std::get<1>(qualities);
     m_current_quality_index = 0;
@@ -142,13 +145,7 @@ void VlycPlayer::setItem(ResultModelNode *item)
 
 void VlycPlayer::createMedia()
 {
-    m_current_media = legacy_video_get_media(mp_current_node->video(), (VideoQualityLevel)ml_current_quality_id_list[m_current_quality_index]);
-}
-
-void VlycPlayer::playItem()
-{
-    createMedia();
-    playMedia();
+    m_current_media = __lv_get_media()(mp_current_node->__lvideo(), ml_current_quality_id_list[m_current_quality_index]);
 }
 
 void VlycPlayer::playMedia()
@@ -170,86 +167,60 @@ void VlycPlayer::setQuality(int index)
 
 // ----------------------------------------------------------------------------
 // Traversal
-ResultModelNode *VlycPlayer::findNextItem()
+PlaylistNode *VlycPlayer::findNextItem(PlaylistNode *origin)
 {
-    // FIXME: nuke this piece of crap
-    ResultModelNode *node = mp_current_node;
-    ResultModelNode *parent;
-    int index, length;
-    bool up;
-
-    if (!node)
+    PlaylistNode::iterator it(origin);
+    while (*(++it) != nullptr)
     {
-        if (m_model.root().length() < 1)
-            return nullptr;
-
-        node = m_model.root().at(0);
-        if (node->type() == ResultType::Video)
-            return node;
-        index = 0;
-        length = m_model.root().length();
-    }
-
-    while (node != nullptr)
-    {
-        if (node->length() > 0 && !up)
-        {
-            // Deeper
-            node = node->at(0);
-            index = 0;
-            length = node->length();
-        }
-        else
-        {
-            up = false;
-            parent = node->parent();
-
-            if (!parent)
-            {
-                index = m_model.root().indexOf(node);
-                length = m_model.root().length();
-            }
-            else
-            {
-                index = parent->indexOf(node);
-                length = parent->length();
-            }
-
-            if (length > ++index)
-                // Sibling
-            {
-                if (parent)
-                    node = parent->at(index);
-                else
-                    node = m_model.root().at(index);
-            }
-            else if (parent)
-            {
-                // Upwards
-                node = parent;
-                up = true;
-                continue;
-            }
-            else
-                return nullptr;
-        }
-
-        if (node->type() == ResultType::Video)
-            return node;
-    }
-    return nullptr;
+        if (!it->isComplete())
+            it->complete();
+        if (it->isPlayable())
+            break;
+    };
+    return *it;
 }
 
-ResultModelNode *VlycPlayer::findPrevItem()
+PlaylistNode *VlycPlayer::findPrevItem(PlaylistNode *origin)
 {
-    return nullptr;
+    PlaylistNode::iterator it(origin);
+    while (*(--it) != nullptr)
+    {
+        if (!it->isComplete())
+            it->complete();
+        if (it->isPlayable())
+            break;
+    };
+    return *it;
 }
 
-void VlycPlayer::playNextItem()
+void VlycPlayer::playItem(PlaylistNode *item)
 {
-    ResultModelNode *next = findNextItem();
-    if(!next)
-        return;
-    setItem(next);
-    playItem();
+    if(item)
+    {
+        setItem(item);
+        createMedia();
+        playMedia();
+    }
+    else
+    {
+        m_player.stop();
+        emit endReached();
+    }
+}
+
+void VlycPlayer::playFirstItem(PlaylistNode *origin)
+{
+    if (!origin->isComplete())
+        origin->complete();
+    if (origin->isPlayable())
+        playItem(origin);
+    else
+        playItem(findNextItem(origin));
+}
+
+// ----------------------------------------------------------------------------
+// UI Slots
+void VlycPlayer::playNow(const QModelIndex &index)
+{
+    playFirstItem(m_model.getNodeFromIndex(index));
 }

@@ -18,33 +18,27 @@
 
 #pragma once
 
-#include <QtCore/QAbstractItemModel>
+#include <QAbstractItemModel>
 
 #include <VlycResult/Result.h>
+#include <VlycResult/Url.h>
 
-#include "ResultModelNode.h"
-
-using namespace Vlyc::Result;
-
+class PlaylistNode;
 class VlycApp;
 
-class ResultModel : public QAbstractItemModel
+struct BrokenUrl : Vlyc::Result::Url
+{
+    BrokenUrl(const QUrl &url) : Url(url) {}
+};
+
+class PlaylistModel : public QAbstractItemModel
 {
     Q_OBJECT
-
-    VlycApp *mp_app;
-    QList<ResultModelNode*> ml_root;
-
 public:
-    explicit ResultModel(VlycApp *app);
-    ~ResultModel();
-
-    // Modify
-    void queue(ResultPtr result);
-    void clear();
+    explicit PlaylistModel(VlycApp *app);
+    ~PlaylistModel();
 
     // QAbstractItemModel implementation
-    bool hasChildren(const QModelIndex &parent) const override;
     int rowCount(const QModelIndex &parent) const override;
     int columnCount(const QModelIndex &parent) const override;
 
@@ -54,8 +48,32 @@ public:
     QVariant data(const QModelIndex &index, int role) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
-    // Internal Data handling
-    ResultModelNode *nodeFromIndex(const QModelIndex &index) const;
-    QModelIndex indexFromNode(ResultModelNode *node, int column=0) const;
-    QList<ResultModelNode *> const &root() const;
+    // Node juggling [violates const-ness!]
+    PlaylistNode *getNodeFromIndex(const QModelIndex &index) const;
+    QModelIndex createIndexForNode(PlaylistNode *node, int column = 0) const;
+    PlaylistNode *root() const;
+
+    // Modify it
+    void queue(Vlyc::Result::ResultPtr result);
+    void clear();
+
+private:
+    friend class PlaylistNode;
+
+    // Node callbacks
+    void beginInsertNode(PlaylistNode *parent, size_t index);
+    void beginInsertNode(PlaylistNode *parent, size_t first_index, size_t last_index);
+    void endInsertNode();
+
+    void beginMoveNode(PlaylistNode *node, PlaylistNode *new_parent, size_t new_index);
+    void endMoveNode();
+
+    void beginRemoveNode(PlaylistNode *node);
+    void endRemoveNode();
+
+    Vlyc::Result::ResultPtr completeUrl(Vlyc::Result::UrlPtr url) const;
+
+    // members
+    VlycApp *mp_app;
+    PlaylistNode *mp_root;
 };

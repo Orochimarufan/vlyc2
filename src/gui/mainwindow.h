@@ -42,6 +42,8 @@ class VlcMedia;
 class VlcMediaPlayer;
 class VlycApp;
 
+using namespace Vlyc::Result;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -91,9 +93,10 @@ private:
     void connectUiMisc();
     void setupPlayer();
 
-    VlycApp *mp_self;
     Ui::MainWindow *ui;
     FullScreenController *fsc;
+
+    VlycApp *mp_self;
 
     bool block_changed;
     friend class BlockChanged;
