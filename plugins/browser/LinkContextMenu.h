@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,33 +15,50 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
-/* the browser is modeled after the "Tab Browser" example found in the Qt
- * documentation, available under GPLv3 */
 
 #pragma once
 
-#include <QWidget>
+#include <QtWidgets/QMenu>
+#include <QtWebKitWidgets/QWebPage>
 
-class BrowserWindow;
-class QLineEdit;
+class WebView;
 
-class NavigationBar : public QWidget
+class LinkContextMenu : public QMenu
 {
     Q_OBJECT
+
+    WebView *mp_view;
+    QUrl m_url;
+
 public:
-    explicit NavigationBar(BrowserWindow *parent);
+    LinkContextMenu(WebView *view, const QUrl &url);
 
-private:
-    BrowserWindow *mp_window;
-    QLineEdit *mp_line;
+    enum Action {
+        Open,
+        OpenNewTab,
+        OpenBackgroundTab,
+        OpenNewWindow,
+        SaveLinkTarget,
+        CopyLinkToClipboard,
+        DeveloperInspectElement
+    };
 
-public slots:
-    void urlChanged(const QUrl &new_url);
+    using QMenu::addAction;
+    void addAction(const Action &action);
+    void addAction(const QWebPage::WebAction &action);
+
+    template <typename T>
+    void addAction(const QString &text, T action)
+    {
+        QAction *a = new QAction(text, this);
+        connect(a, &QAction::triggered, action);
+        addAction(a);
+    }
+
+    QUrl url() const;
+    WebView *tab() const;
 
 private slots:
-    void go();
-    void back();
-    void fwd();
-    void reload();
-    void home();
+    void openNewTab();
+    void openBackgroundTab();
 };

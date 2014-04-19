@@ -45,10 +45,10 @@ public:
     virtual ~VlycApp();
 
     QNetworkAccessManager *network();
-    bool tryPlayUrl(QUrl url);
 
     Vlyc::Result::ResultPtr handleUrl(const QUrl &url);
-    void handleResult(Vlyc::Result::ResultPtr result);
+    void queueResult(Vlyc::Result::ResultPtr);
+    void playResult(Vlyc::Result::ResultPtr);
 
 private:
     MainWindow *mp_window;

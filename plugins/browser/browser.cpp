@@ -21,6 +21,7 @@
 #include "browser.h"
 #include "browserwindow.h"
 #include "webview.h"
+#include "LinkContextMenu.h"
 
 #include <QListIterator>
 #include <QEvent>
@@ -151,4 +152,16 @@ void Browser::loadState()
     QSettings config;
     config.beginGroup("Browser");
     m_home_url = QUrl(config.value("Home", "about:blank").toString());
+}
+
+void Browser::linkContextMenu(LinkContextMenu *menu)
+{
+    menu->addAction(LinkContextMenu::Open);
+    menu->addAction(LinkContextMenu::OpenNewTab);
+    menu->addAction(LinkContextMenu::OpenNewWindow);
+    menu->addAction(LinkContextMenu::OpenBackgroundTab);
+    menu->addSeparator();
+    menu->addAction(LinkContextMenu::SaveLinkTarget);
+    menu->addSeparator();
+    menu->addAction(LinkContextMenu::CopyLinkToClipboard);
 }

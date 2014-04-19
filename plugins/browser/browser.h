@@ -18,8 +18,7 @@
 /* the browser is modeled after the "Tab Browser" example found in the Qt
  * documentation, available under GPLv3 */
 
-#ifndef BROWSER_H
-#define BROWSER_H
+#pragma once
 
 #include <QtCore/QObject>
 #include <QtCore/QUrl>
@@ -31,6 +30,7 @@ class QNetworkAccessManager;
 class BrowserWindow;
 class WebView;
 class QNetworkRequest;
+class LinkContextMenu;
 
 class Browser : public QObject
 {
@@ -52,6 +52,8 @@ public:
     virtual bool navigationRequest(QUrl);
     virtual QNetworkAccessManager *network() = 0;
 
+    virtual void linkContextMenu(LinkContextMenu *);
+
     QString titlePostfix() const;
     void setTitlePostfix(const QString &postfix);
 
@@ -69,5 +71,3 @@ protected:
     QString ms_title_postfix;
     QUrl m_home_url;
 };
-
-#endif // BROWSER_H

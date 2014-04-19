@@ -41,7 +41,8 @@ signals:
     void qualityListChanged(QList<QString>, int current);
 
 public slots:
-    void queueItem(Vlyc::Result::ResultPtr result);
+    void queue(Vlyc::Result::ResultPtr result);
+    void queueAndPlay(Vlyc::Result::ResultPtr result);
     void clearPlaylist();
 
     void play();

@@ -64,14 +64,14 @@ void MainWindow::playMrl(const QString &mrl)
     if (!res.isValid())
         QMessageBox::critical(this, "Error", QStringLiteral("Cannot open URL %1").arg(mrl));
 
-    m_player2.queueItem(res);
+    m_player2.queue(res);
 
     m_player2.play();
 }
 
 void MainWindow::queueResult(ResultPtr res)
 {
-    m_player2.queueItem(res);
+    m_player2.queue(res);
 
     m_player2.play();
 }

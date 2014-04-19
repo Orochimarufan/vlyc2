@@ -164,9 +164,9 @@ QVariant PlaylistModel::headerData(int section, Qt::Orientation orientation, int
 
 // ------------------------------------------------------------------------------
 // Modify
-void PlaylistModel::queue(ResultPtr result)
+PlaylistNode *PlaylistModel::queue(ResultPtr result)
 {
-    mp_root->append(result);
+    return mp_root->append(result);
 }
 
 void PlaylistModel::clear()

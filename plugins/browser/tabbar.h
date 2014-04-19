@@ -18,8 +18,7 @@
 /* the browser is modeled after the "Tab Browser" example found in the Qt
  * documentation, available under GPLv3 */
 
-#ifndef TABBAR_H
-#define TABBAR_H
+#pragma once
 
 #include <QtWidgets/QTabBar>
 
@@ -59,5 +58,3 @@ private:
     QPoint m_dragStartPos;
     int mi_dragCurrentIndex;
 };
-
-#endif // TABBAR_H

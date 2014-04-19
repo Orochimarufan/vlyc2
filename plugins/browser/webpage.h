@@ -18,8 +18,7 @@
 /* the browser is modeled after the "Tab Browser" example found in the Qt
  * documentation, available under GPLv3 */
 
-#ifndef WEBPAGE_H
-#define WEBPAGE_H
+#pragma once
 
 #include <QtWebKitWidgets/QWebPage>
 
@@ -42,10 +41,7 @@ private slots:
 private:
     Qt::KeyboardModifiers m_keyboardMods;
     Qt::MouseButtons m_mouseButtons;
-    bool mb_openInTab;
     WebView *mp_view;
 
     friend class WebView;
 };
-
-#endif // WEBPAGE_H

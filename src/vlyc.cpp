@@ -96,23 +96,6 @@ static bool legacy_video_load(VideoPtr v)
     return result;
 }
 
-bool VlycApp::tryPlayUrl(QUrl url)
-{
-    for (Vlyc::LegacySitePlugin *site : mp_plugins->getPlugins<Vlyc::LegacySitePlugin>())
-    {
-        QString id = site->forUrl(url);
-        if (id.isEmpty())
-            continue;
-        VideoPtr v = site->video(id);
-        qDebug("'%s' is a video url: %s", qPrintable(url.toString()), qPrintable(v->site()->name()));
-        if (!legacy_video_load(v))
-            return false;
-        mp_window->queueResult(new LegacyVideoResult(v));
-        return true;
-    }
-    return false;
-}
-
 Vlyc::Result::ResultPtr VlycApp::handleUrl(const QUrl &url)
 {
     qDebug("handleUrl(%s)", qPrintable(url.toString()));
@@ -135,32 +118,14 @@ Vlyc::Result::ResultPtr VlycApp::handleUrl(const QUrl &url)
     return nullptr;
 }
 
-#include <VlycResult/Playlist.h>
-#include <VlycResult/Url.h>
-
-void VlycApp::handleResult(Vlyc::Result::ResultPtr result)
+void VlycApp::queueResult(ResultPtr r)
 {
-    auto video = result.cast<LegacyVideoResult>();
-    if (video.isValid())
-    {
-        qDebug("Playing LegacyVideoResult");
-        mp_window->queueResult(result);
-        return;
-    }
+    mp_window->m_player2.queue(r);
+}
 
-    auto playlist = result.cast<Vlyc::Result::Playlist>();
-    if (playlist.isValid() && playlist->length() > 0)
-    {
-        handleResult(playlist->get(0));
-        return;
-    }
-
-    auto url = result.cast<Vlyc::Result::Url>();
-    if (url.isValid())
-    {
-        handleResult(handleUrl(*url));
-        return;
-    }
+void VlycApp::playResult(ResultPtr r)
+{
+    mp_window->m_player2.queueAndPlay(r);
 }
 
 // LegacyVideoResult

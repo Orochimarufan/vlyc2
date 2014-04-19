@@ -100,6 +100,7 @@ private:
 
     bool block_changed;
     friend class BlockChanged;
+    friend class VlycApp;
 
     VlycPlayer m_player2;
     VlcMediaPlayer m_player;

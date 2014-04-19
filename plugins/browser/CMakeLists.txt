@@ -52,6 +52,7 @@ ENDIF()
 # Sources
 LIST(APPEND PLUGIN_HEADERS
 	BrowserPlugin.h
+	LinkContextMenu.h
 	browser.h
 
 	browserwindow.h
@@ -66,6 +67,7 @@ LIST(APPEND PLUGIN_HEADERS
 
 LIST(APPEND PLUGIN_SOURCES
 	BrowserPlugin.cpp
+	LinkContextMenu.cpp
 	browser.cpp
 
 	browserwindow.cpp

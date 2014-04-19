@@ -31,7 +31,7 @@
 
 #include "webpage.h"
 #include "tabwidget.h"
-
+#include "LinkContextMenu.h"
 #include "browser.h"
 
 WebView::WebView(TabWidget *tabs) :
@@ -72,31 +72,9 @@ void WebView::contextMenuEvent(QContextMenuEvent *event)
 
     if (!r.linkUrl().isEmpty())
     {
-        QMenu menu(this);
-
-        menu.addAction(pageAction(QWebPage::OpenLink));
-
-        menu.addAction(tr("Open Link in Media Player"), this, SLOT(openLinkInMediaPlayer()));
-
-        menu.addAction(pageAction(QWebPage::OpenLinkInNewWindow));
-
-        menu.addAction(tr("Open in New Tab"), this, SLOT(openLinkInNewTab()));
-
-        menu.addSeparator();
-
-        menu.addAction(pageAction(QWebPage::DownloadLinkToDisk));
-
-        menu.addSeparator();
-
-        menu.addAction(pageAction(QWebPage::CopyLinkToClipboard));
-
-        if (page()->settings()->testAttribute(QWebSettings::DeveloperExtrasEnabled))
-            menu.addAction(pageAction(QWebPage::InspectElement));
-
-        m_lastContextUrl = r.linkUrl();
-
+        LinkContextMenu menu(this, r.linkUrl());
+        mp_tabs->browser()->linkContextMenu(&menu);
         menu.exec(mapToGlobal(event->pos()));
-
         return;
     }
 
@@ -132,16 +110,4 @@ void WebView::mouseReleaseEvent(QMouseEvent *event)
             setUrl(url);
         }
     }
-}
-
-void WebView::openLinkInNewTab()
-{
-    mp_page->mb_openInTab = true;
-    mp_page->triggerAction(QWebPage::OpenLinkInNewWindow);
-}
-
-void WebView::openLinkInMediaPlayer()
-{
-    if (mp_tabs->browser()->navigationRequest(m_lastContextUrl))
-        QMessageBox::information(window(), "Could not open in Media Player", "Url doesn't seem to be a media url.");
 }

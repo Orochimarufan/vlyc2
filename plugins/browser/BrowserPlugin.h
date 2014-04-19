@@ -33,14 +33,16 @@ public:
     VLYC_PLUGIN_HEAD(me.sodimm.oro.vlyc.Browser)
 
     BrowserPlugin();
-    virtual void init(Vlyc::InitEvent &init);
+    void init(Vlyc::InitEvent &init) override;
 
     /// Get the tool menu action
-    virtual QAction *toolMenuAction();
+    QAction *toolMenuAction() override;
 
     // Browser interface
-    virtual QNetworkAccessManager *network();
-    virtual bool navigationRequest(QUrl url);
+    QNetworkAccessManager *network() override;
+    bool navigationRequest(QUrl url) override;
+
+    void linkContextMenu(LinkContextMenu *menu) override;
 
 private:
     VlycApp *vlyc;

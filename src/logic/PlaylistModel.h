@@ -54,7 +54,7 @@ public:
     PlaylistNode *root() const;
 
     // Modify it
-    void queue(Vlyc::Result::ResultPtr result);
+    PlaylistNode *queue(Vlyc::Result::ResultPtr result);
     void clear();
 
     // Player callbacks

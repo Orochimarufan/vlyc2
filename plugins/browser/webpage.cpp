@@ -39,8 +39,7 @@ WebPage::WebPage(WebView *view) :
     QWebPage(view),
     mp_view(view),
     m_keyboardMods(Qt::NoModifier),
-    m_mouseButtons(Qt::NoButton),
-    mb_openInTab(false)
+    m_mouseButtons(Qt::NoButton)
 {
     connect(this, SIGNAL(unsupportedContent(QNetworkReply*)),
             this, SLOT(handleUnsupportedContent(QNetworkReply*)));
@@ -50,13 +49,7 @@ QWebPage *WebPage::createWindow(WebWindowType type)
 {
     Q_UNUSED(type)
     if (m_keyboardMods & Qt::ControlModifier || m_mouseButtons == Qt::MidButton)
-        mb_openInTab = true;
-
-    if (mb_openInTab)
-    {
-        mb_openInTab = false;
         return mp_view->tabs()->newTab()->page();
-    }
     else
         return mp_view->tabs()->browser()->newWindow()->currentTab()->page();
 }

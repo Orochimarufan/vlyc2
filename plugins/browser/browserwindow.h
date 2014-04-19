@@ -18,8 +18,7 @@
 /* the browser is modeled after the "Tab Browser" example found in the Qt
  * documentation, available under GPLv3 */
 
-#ifndef BROWSERWINDOW_H
-#define BROWSERWINDOW_H
+#pragma once
 
 #include <QMainWindow>
 
@@ -64,5 +63,3 @@ private:
     TabWidget *mp_body;
     NavigationBar *mp_navi;
 };
-
-#endif // BROWSERWINDOW_H

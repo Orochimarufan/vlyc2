@@ -41,9 +41,14 @@ VlcMediaPlayer VlycPlayer::player()
 }
 
 // Modify playlist
-void VlycPlayer::queueItem(ResultPtr result)
+void VlycPlayer::queue(ResultPtr result)
 {
     m_model.queue(result);
+}
+
+void VlycPlayer::queueAndPlay(ResultPtr result)
+{
+    playItem(m_model.queue(result));
 }
 
 void VlycPlayer::clearPlaylist()
