@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013-2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,31 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#pragma once
+#include "VlycPluginInterface.h"
 
-#include "VlycPluginManager.h"
-#include "VlycLoaderPlugin.h"
+#include <QtCore/QEventLoop>
+#include <QtCore/QCoreApplication>
 
-namespace Vlyc {
+#include "../../src/vlyc.h"
 
-class PluginManagerPrivate
+namespace Vlyc
 {
-    //PluginManager *q_ptr;
-    //Q_DECLARE_PUBLIC(PluginManager)
-    friend class PluginManager;
 
-    PluginManager *manager;
-
-    QList<PluginLoader *> m_plugin_loaders;
-    QList<Plugin *> m_plugins;
-    QList<PluginLoader *> m_failed_plugins;
-
-    void *private_interface;
-    PluginInterface *interface;
-
-    PluginManagerPrivate();
-
-    bool initPlugin(PluginLoader *loader);
-};
+PluginInterface::PluginInterface(VlycApp *a) :
+    mp_private(a)
+{}
 
 }

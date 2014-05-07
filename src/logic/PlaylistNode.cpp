@@ -22,7 +22,7 @@
 #include "PlaylistNode.h"
 #include "PlaylistModel.h"
 
-#include "../vlyc.h"
+#include "__lv_hacks.h"
 
 using namespace Vlyc::Result;
 
@@ -50,6 +50,8 @@ void PlaylistNode::initFromResult(bool from_constructor)
             m_children.push_back(new PlaylistNode(this, playlist->get(i)));
         if (!from_constructor) mp_model->endInsertNode();
     }
+
+    mp_model->nodeWasCreated(this);
 }
 
 PlaylistNode::~PlaylistNode()
@@ -74,6 +76,16 @@ PlaylistNode *PlaylistNode::insert(size_t index, ResultPtr result)
     m_children.insert(m_children.begin() + index, node);
     mp_model->endInsertNode();
     return node;
+}
+
+void PlaylistNode::remove()
+{
+    mp_model->beginRemoveNode(this);
+    auto it = mp_parent->m_children.begin();
+    while (*it != this) ++it;
+    mp_parent->m_children.erase(it);
+    mp_model->endRemoveNode();
+    delete this;
 }
 
 // ------------------------------------------------------------------------------
@@ -127,6 +139,14 @@ PlaylistNode *PlaylistNode::last() const
     while (!node->m_children.empty())
         node = node->m_children.back();
     return node;
+}
+
+bool PlaylistNode::contains(PlaylistNode *node) const
+{
+    for (PlaylistNode *n : *const_cast<PlaylistNode*>(this))
+        if (n == node)
+            return true;
+    return false;
 }
 
 // STL iterator
@@ -244,24 +264,6 @@ ResultPtr PlaylistNode::result()
     return mp_result;
 }
 
-bool PlaylistNode::isComplete() const
-{
-    return !mp_result.is<Url>() || mp_result.is<BrokenUrl>();
-}
-
-void PlaylistNode::complete()
-{
-    UrlPtr url = mp_result.cast<Url>();
-    if (url.isValid())
-    {
-        mp_result = mp_model->completeUrl(url);
-        if (mp_result.isValid())
-            initFromResult();
-        else
-            mp_result = new BrokenUrl(*url);
-    }
-}
-
 bool PlaylistNode::isPlayable() const
 {
     return mp_result.is<LegacyVideoResult>();
@@ -290,4 +292,19 @@ VideoPtr PlaylistNode::__lvideo() const
     if (video.isValid())
         return video->video();
     return nullptr;
+}
+
+// Completeness
+bool PlaylistNode::isComplete() const
+{
+    return !mp_result.is<Promise>() && (!mp_result.is<Url>() || mp_result.is<BrokenUrl>());
+}
+
+void PlaylistNode::replaceWith(ResultPtr new_content)
+{
+    if (new_content.isValid())
+    {
+        mp_result = new_content;
+        initFromResult();
+    }
 }

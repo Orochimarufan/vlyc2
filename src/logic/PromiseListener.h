@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,51 +16,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef VLYC_H
-#define VLYC_H
+#pragma once
 
 #include <QObject>
-#include <QUrl>
 
-#include <VlycResult/Result.h>
+#include <unordered_map>
 
-#include <functional>
+#include <VlycResult/Promise.h>
 
-class MainWindow;
-class NetworkAccessManager;
-class QNetworkAccessManager;
-class VlycPlayer;
+class VlycApp;
+class PlaylistNode;
 
-namespace Vlyc {
-class PluginManager;
-}
-
-
-class VlycApp : public QObject
+class PromiseListener : public QObject
 {
     Q_OBJECT
 public:
-    explicit VlycApp(QObject *parent = 0);
+    PromiseListener();
 
-    MainWindow *window() const;
-    Vlyc::PluginManager *plugins() const;
-    QNetworkAccessManager *network() const;
-    VlycPlayer *player() const;
+    void schedule(PlaylistNode *node);
 
-    virtual ~VlycApp();
+    // This will NOT break the promise, it'll just allow for \c node to be deleted
+    void del(PlaylistNode *node);
 
-    Vlyc::Result::ResultPtr handleUrl(const QUrl &url);
-    void queueResult(Vlyc::Result::ResultPtr);
-    void playResult(Vlyc::Result::ResultPtr);
-
-public slots:
-    void play(const QUrl &url);
+signals:
+    void finished(PlaylistNode *node);
 
 private:
-    VlycPlayer *mp_player;
-    MainWindow *mp_window;
-    Vlyc::PluginManager *mp_plugins;
-    NetworkAccessManager *mp_network;
-};
+    std::unordered_map<Vlyc::Result::PromisePtr, PlaylistNode *> mm_promises;
 
-#endif // VLYC_H
+    bool event(QEvent *) override;
+};

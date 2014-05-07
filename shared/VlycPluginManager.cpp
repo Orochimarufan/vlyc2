@@ -146,4 +146,14 @@ void *PluginManager::getPrivateInterface()
     return d_ptr->private_interface;
 }
 
+void PluginManager::setPublicInterface(PluginInterface *i)
+{
+    d_ptr->interface = i;
+}
+
+PluginInterface *PluginManager::getPublicInterface()
+{
+    return d_ptr->interface;
+}
+
 }

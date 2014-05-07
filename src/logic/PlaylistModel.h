@@ -60,6 +60,10 @@ public:
     // Player callbacks
     void setCurrentlyPlaying(PlaylistNode *node);
 
+signals:
+    void nodeAboutToBeDeleted(PlaylistNode *node);
+    void nodeAdded(PlaylistNode *node);
+
 private:
     friend class PlaylistNode;
 
@@ -74,7 +78,7 @@ private:
     void beginRemoveNode(PlaylistNode *node);
     void endRemoveNode();
 
-    Vlyc::Result::ResultPtr completeUrl(Vlyc::Result::UrlPtr url) const;
+    void nodeWasCreated(PlaylistNode *node); // Actually, node was modified
 
     // members
     VlycApp *mp_app;

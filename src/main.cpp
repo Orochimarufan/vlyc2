@@ -117,7 +117,7 @@ int main(int argc, char** argv)
     vlyc.window()->show();
 
     if (!args["mrl"].toString().isNull())
-        emit vlyc.window()->playMrlSignal(args["mrl"].toString());
+        QMetaObject::invokeMethod(&vlyc, "play", Qt::QueuedConnection, Q_ARG(QUrl, args["mrl"].toString()));
 
     return app.exec();
 }

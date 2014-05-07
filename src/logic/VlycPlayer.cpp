@@ -21,12 +21,17 @@
 #include "VlycPlayer.h"
 #include "PlaylistNode.h"
 
+#include "../vlyc.h"
+
 using namespace Vlyc::Result;
 
 VlycPlayer::VlycPlayer(VlycApp *app) :
-    m_model(app), mp_current_node(nullptr)
+    m_model(app), mp_current_node(nullptr), mp_app(app)
 {
     connect(&m_player, &VlcMediaPlayer::endReached, this, &VlycPlayer::next);
+    connect(&m_model, &PlaylistModel::nodeAboutToBeDeleted, this, &VlycPlayer::onNodeAboutToBeDeleted);
+    connect(&m_model, &PlaylistModel::nodeAdded, this, &VlycPlayer::onNodeAdded);
+    connect(&m_promise, &PromiseListener::finished, this, &VlycPlayer::promiseFulfilled);
 }
 
 // Get data
@@ -48,7 +53,7 @@ void VlycPlayer::queue(ResultPtr result)
 
 void VlycPlayer::queueAndPlay(ResultPtr result)
 {
-    playItem(m_model.queue(result));
+    playFirstItem(m_model.queue(result));
 }
 
 void VlycPlayer::clearPlaylist()
@@ -69,14 +74,19 @@ void VlycPlayer::play()
     // Else do nothing FIXME?
 }
 
+void VlycPlayer::play(PlaylistNode *node)
+{
+    playFirstItem(node);
+}
+
 void VlycPlayer::next()
 {
-    playItem(findNextItem(mp_current_node ? mp_current_node : m_model.root()));
+    playNextItem(mp_current_node ? mp_current_node : m_model.root());
 }
 
 void VlycPlayer::prev()
 {
-    playItem(findPrevItem(mp_current_node ? mp_current_node : m_model.root()));
+    playPrevItem(mp_current_node ? mp_current_node : m_model.root());
 }
 
 // ----------------------------------------------------------------------------
@@ -85,62 +95,13 @@ void VlycPlayer::prev()
 // Legacy video crap :(
 #include "__lv_hacks.h"
 
-static std::tuple<QList<QString>, QList<int>> legacy_video_qualities(VideoPtr v)
-{
-    auto qa = v->availableQualities();
-
-    qSort(qa.begin(), qa.end(), qGreater<VideoQuality>());
-
-    QList<QString> qas;
-    QList<int> qis;
-    for (VideoQuality q : qa)
-    {
-        qas << q.description;
-        qis << (int)q.q;
-    }
-
-    return std::make_tuple(qas, qis);
-}
-
-VlcMedia __lv_get_media::operator ()(VideoPtr v, int q)
-{
-    connect(v.get(), &Video::error, this, &TempEventLoop::stop);
-    connect(v.get(), &Video::media, this, &__lv_get_media::media);
-
-    v->getMedia((VideoQualityLevel)q);
-
-    start();
-
-    if (!url.isValid())
-        return VlcMedia();
-
-    VlcMedia media(url);
-
-    if (v->useFileMetadata() && !media.isParsed())
-        media.parse(false);
-    else
-    {
-        media.setMeta(VlcMeta::Title, v->title());
-        media.setMeta(VlcMeta::Artist, v->author());
-        media.setMeta(VlcMeta::Description, v->description());
-    }
-
-    return media;
-}
-
-void __lv_get_media::media(const VideoMedia &m)
-{
-    url = m.url;
-    stop();
-}
-
 // Set a new item
 void VlycPlayer::setItem(PlaylistNode *item)
 {
     // ONLY CALL ON LegacyVideoResult items!
     mp_current_node = item;
 
-    auto qualities = legacy_video_qualities(item->__lvideo());
+    auto qualities = __lv_qualities(item->__lvideo());
     ml_current_quality_list = std::get<0>(qualities);
     ml_current_quality_id_list = std::get<1>(qualities);
     m_current_quality_index = 0;
@@ -173,30 +134,36 @@ void VlycPlayer::setQuality(int index)
 
 // ----------------------------------------------------------------------------
 // Traversal
-PlaylistNode *VlycPlayer::findNextItem(PlaylistNode *origin)
+void VlycPlayer::playNextItem(PlaylistNode *origin)
 {
     PlaylistNode::iterator it(origin);
     while (*(++it) != nullptr)
     {
         if (!it->isComplete())
-            it->complete();
+        {
+            complete(*it, true);
+            return;
+        }
         if (it->isPlayable())
             break;
-    };
-    return *it;
+    }
+    playItem(*it);
 }
 
-PlaylistNode *VlycPlayer::findPrevItem(PlaylistNode *origin)
+void VlycPlayer::playPrevItem(PlaylistNode *origin)
 {
     PlaylistNode::iterator it(origin);
     while (*(--it) != nullptr)
     {
         if (!it->isComplete())
-            it->complete();
+        {
+            complete(*it, true, true);
+            return;
+        }
         if (it->isPlayable())
             break;
     };
-    return *it;
+    playItem(*it);
 }
 
 void VlycPlayer::playItem(PlaylistNode *item)
@@ -215,14 +182,19 @@ void VlycPlayer::playItem(PlaylistNode *item)
     }
 }
 
-void VlycPlayer::playFirstItem(PlaylistNode *origin)
+void VlycPlayer::playFirstItem(PlaylistNode *origin, bool reverse)
 {
     if (!origin->isComplete())
-        origin->complete();
+    {
+        complete(origin, true);
+        return;
+    }
     if (origin->isPlayable())
         playItem(origin);
+    else if (reverse)
+        playPrevItem(origin);
     else
-        playItem(findNextItem(origin));
+        playNextItem(origin);
 }
 
 // ----------------------------------------------------------------------------
@@ -230,4 +202,73 @@ void VlycPlayer::playFirstItem(PlaylistNode *origin)
 void VlycPlayer::playNow(const QModelIndex &index)
 {
     playFirstItem(m_model.getNodeFromIndex(index));
+}
+
+void VlycPlayer::remove(const QModelIndex &index)
+{
+    m_model.getNodeFromIndex(index)->remove();
+}
+
+void VlycPlayer::onNodeAboutToBeDeleted(PlaylistNode *node)
+{
+    if (node->contains(mp_current_node))
+        // Skip over the whole tree!
+        playNextItem(node->last());
+
+}
+
+// ----------------------------------------------------------------------------
+// Complete
+inline static void complete_url(PlaylistNode *node)
+{
+
+}
+
+void VlycPlayer::complete(PlaylistNode *node, bool play, bool reverse)
+{
+    UrlPtr url = node->result().cast<Url>();
+    if (url.isValid())
+    {
+        ResultPtr it = url.cast<Result>();
+        while (it.is<Url>())
+            it = mp_app->handleUrl(*it.cast<Url>());
+        node->replaceWith(it);
+        if (!node->isComplete())
+            complete(node, play);
+        else if (play)
+            playFirstItem(node, reverse);
+        return;
+    }
+
+    if (node->result().is<Promise>())
+    {
+        m_promise.schedule(node);
+        if (play)
+        {
+            mp_promised_node = node;
+            m_promised_reverse = reverse;
+        }
+        return;
+    }
+
+    qWarning("Cannot complete Result!");
+}
+
+void VlycPlayer::promiseFulfilled(PlaylistNode *node)
+{
+    if (!node->isComplete())
+    {
+        complete(node, node == mp_promised_node, m_promised_reverse);
+        return;
+    }
+
+    if (node == mp_promised_node)
+        playFirstItem(node, m_promised_reverse);
+}
+
+void VlycPlayer::onNodeAdded(PlaylistNode *node)
+{
+    // TODO: Move stuff into a different thread and we can pre-load stuff :)
+    //if (!node->isComplete())
+    //    complete(node);
 }

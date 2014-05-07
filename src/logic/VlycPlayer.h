@@ -26,6 +26,7 @@
 #include <VlycResult/Result.h>
 
 #include "PlaylistModel.h"
+#include "PromiseListener.h"
 
 class VlycPlayer : public QObject
 {
@@ -43,7 +44,11 @@ signals:
 public slots:
     void queue(Vlyc::Result::ResultPtr result);
     void queueAndPlay(Vlyc::Result::ResultPtr result);
+
+    void remove(const QModelIndex &index);
     void clearPlaylist();
+
+    void play(PlaylistNode *node);
 
     void play();
     void setQuality(int index);
@@ -54,24 +59,37 @@ public slots:
     // UI slots
     void playNow(const QModelIndex &index);
 
+    // Complete Playlist Entries (Async)
+    void complete(PlaylistNode *node, bool play=false, bool reverse=false);
+
 private slots:
     void playItem(PlaylistNode *item);
-    void playFirstItem(PlaylistNode *origin);
+    void playFirstItem(PlaylistNode *origin, bool reverse=false);
+
+    void onNodeAboutToBeDeleted(PlaylistNode *node);
+    void onNodeAdded(PlaylistNode *node);
+
+    void promiseFulfilled(PlaylistNode *node);
 
 private:
+    VlycApp *mp_app;
     PlaylistModel m_model;
     VlcMediaPlayer m_player;
 
     VlcMedia m_current_media;
     PlaylistNode *mp_current_node;
 
+    PromiseListener m_promise;
+    PlaylistNode *mp_promised_node;
+    bool m_promised_reverse;
+
     // Old & broken stuff
     QList<QString> ml_current_quality_list;
     QList<int> ml_current_quality_id_list;
     int m_current_quality_index;
 
-    PlaylistNode *findNextItem(PlaylistNode *origin);
-    PlaylistNode *findPrevItem(PlaylistNode *origin);
+    void playNextItem(PlaylistNode *origin);
+    void playPrevItem(PlaylistNode *origin);
 
     void createMedia();
     void setItem(PlaylistNode *item);

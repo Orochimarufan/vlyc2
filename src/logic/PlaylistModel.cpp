@@ -19,9 +19,11 @@
 #include <QIcon>
 
 #include <VlycResult/Playlist.h>
+#include <VlycResult/Promise.h>
 
 #include "PlaylistModel.h"
 #include "PlaylistNode.h"
+#include "VlycPlayer.h"
 
 #include "../vlyc.h"
 
@@ -71,6 +73,7 @@ void PlaylistModel::beginRemoveNode(PlaylistNode *node)
 {
     int old_index = (int)node->index();
     beginRemoveRows(createIndexForNode(node->parent()), old_index, old_index);
+    emit nodeAboutToBeDeleted(node);
 }
 
 void PlaylistModel::endRemoveNode()
@@ -78,12 +81,9 @@ void PlaylistModel::endRemoveNode()
     endRemoveRows();
 }
 
-ResultPtr PlaylistModel::completeUrl(UrlPtr url) const
+void PlaylistModel::nodeWasCreated(PlaylistNode *node)
 {
-    ResultPtr it = url.cast<Result>();
-    while (it.is<Url>())
-        it = mp_app->handleUrl(*it.cast<Url>());
-    return it;
+    emit nodeAdded(node);
 }
 
 // ------------------------------------------------------------------------------
@@ -172,6 +172,7 @@ PlaylistNode *PlaylistModel::queue(ResultPtr result)
 void PlaylistModel::clear()
 {
     beginResetModel();
+    emit nodeAboutToBeDeleted(mp_root);
     delete mp_root;
     mp_root = new PlaylistNode(this);
     endResetModel();

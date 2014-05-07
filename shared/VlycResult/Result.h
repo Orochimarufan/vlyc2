@@ -111,6 +111,13 @@ public:
                 static_cast<Vlyc::Result::Result*>(mp_result);
     }
 
+    template <typename T>
+    bool operator <(const ResultPointer<T> &ptr) const
+    {
+        return static_cast<Vlyc::Result::Result*>(ptr.mp_result) >
+                static_cast<Vlyc::Result::Result*>(mp_result);
+    }
+
     inline Result *operator->() const
     {
         return mp_result;
@@ -152,5 +159,18 @@ typedef ResultPointer<Result> ResultPtr;
 
 }
 } // namespace Vlyc
+
+namespace std {
+template<typename T>
+struct hash<Vlyc::Result::ResultPointer<T>> {
+    typedef Vlyc::Result::ResultPointer<T> argument_type;
+    typedef std::size_t value_type;
+
+    value_type operator()(argument_type const& s) const
+    {
+        return std::hash<void*>()(s.get());
+    }
+};
+}
 
 Q_DECLARE_METATYPE(Vlyc::Result::ResultPtr)

@@ -21,6 +21,7 @@
 #include "network/networkaccessmanager.h"
 
 #include <VlycPluginManager.h>
+#include <VlycPluginInterface.h>
 #include <VlycLegacySitePlugin.h>
 #include <VlycUrlHandlerPlugin.h>
 
@@ -29,6 +30,8 @@
 
 #include <video.h>
 #include "logic/TempEventLoop.h"
+#include "logic/__lv_hacks.h"
+#include "logic/VlycPlayer.h"
 
 #if   defined(Q_OS_WIN)
 #   define LIBRARY_EXT ".dll"
@@ -40,11 +43,13 @@
 
 VlycApp::VlycApp(QObject *parent) :
     QObject(parent),
-    mp_window(new MainWindow(this)),
     mp_plugins(new Vlyc::PluginManager()),
-    mp_network(new NetworkAccessManager(this))
+    mp_network(new NetworkAccessManager(this)),
+    mp_player(new VlycPlayer(this)),
+    mp_window(new MainWindow(this))
 {
     mp_plugins->setPrivateInterface((void*)this);
+    mp_plugins->setPublicInterface(new Vlyc::PluginInterface(this));
     mp_plugins->bootstrap(QRegularExpression("libvlyc2-.+\\" LIBRARY_EXT "$"));
     mp_plugins->loadPluginsFrom(qApp->applicationDirPath() + "/plugins");
 
@@ -58,6 +63,7 @@ VlycApp::~VlycApp()
     delete mp_window;
     delete mp_plugins;
     delete mp_network;
+    delete mp_player;
 }
 
 MainWindow *VlycApp::window() const
@@ -65,35 +71,19 @@ MainWindow *VlycApp::window() const
     return mp_window;
 }
 
-Vlyc::PluginManager *VlycApp::plugins2() const
+Vlyc::PluginManager *VlycApp::plugins() const
 {
     return mp_plugins;
 }
 
-QNetworkAccessManager *VlycApp::network()
+QNetworkAccessManager *VlycApp::network() const
 {
     return mp_network;
 }
 
-static bool legacy_video_load(VideoPtr v)
+VlycPlayer *VlycApp::player() const
 {
-    TempEventLoop loop;
-    bool result;
-
-    loop.connect(v.get(), &Video::done, [&]() {
-        loop.stop();
-        result = true;
-    });
-    loop.connect(v.get(), &Video::error, [&]() {
-        loop.stop();
-        result = false;
-    });
-
-    v->load();
-
-    loop.start();
-
-    return result;
+    return mp_player;
 }
 
 Vlyc::Result::ResultPtr VlycApp::handleUrl(const QUrl &url)
@@ -111,29 +101,24 @@ Vlyc::Result::ResultPtr VlycApp::handleUrl(const QUrl &url)
         if (id.isEmpty())
             continue;
         VideoPtr v = site->video(id);
-        if (!legacy_video_load(v))
-            continue;
-        return new LegacyVideoResult(v);
+        //if (!legacy_video_load(v))
+        //    continue;
+        return new LegacyVideoPromise(v);
     }
     return nullptr;
 }
 
 void VlycApp::queueResult(ResultPtr r)
 {
-    mp_window->m_player2.queue(r);
+    mp_player->queue(r);
 }
 
 void VlycApp::playResult(ResultPtr r)
 {
-    mp_window->m_player2.queueAndPlay(r);
+    mp_player->queueAndPlay(r);
 }
 
-// LegacyVideoResult
-LegacyVideoResult::LegacyVideoResult(VideoPtr video) :
-    mp_video(video)
-{}
-
-VideoPtr LegacyVideoResult::video()
+void VlycApp::play(const QUrl &url)
 {
-    return mp_video;
+    mp_player->queueAndPlay(handleUrl(url));
 }

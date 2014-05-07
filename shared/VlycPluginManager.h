@@ -34,6 +34,7 @@ inline T *plugin_cast(Plugin *p)
 }
 
 class PluginManagerPrivate;
+class PluginInterface;
 
 class PluginManager : public QObject
 {
@@ -95,6 +96,9 @@ public:
     // ---- HAX ----
     void setPrivateInterface(void *pi);
     void *getPrivateInterface();
+
+    void setPublicInterface(Vlyc::PluginInterface *);
+    Vlyc::PluginInterface* getPublicInterface();
 };
 
 }

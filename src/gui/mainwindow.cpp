@@ -33,6 +33,8 @@
 #include <QBoxLayout>
 #include <QTemporaryFile>
 
+#include "logic/VlycPlayer.h"
+
 #ifdef Q_OS_LINUX
 #include "vlyc_xcb.h"
 #endif
@@ -56,57 +58,13 @@ struct BlockChanged
 };
 
 // ----------------------------------------------------------------------------
-// Video stuff
-// ----------------------------------------------------------------------------
-void MainWindow::playMrl(const QString &mrl)
-{
-    Vlyc::Result::ResultPtr res = mp_self->handleUrl(QUrl(mrl));
-    if (!res.isValid())
-        QMessageBox::critical(this, "Error", QStringLiteral("Cannot open URL %1").arg(mrl));
-
-    m_player2.queue(res);
-
-    m_player2.play();
-}
-
-void MainWindow::queueResult(ResultPtr res)
-{
-    m_player2.queue(res);
-
-    m_player2.play();
-}
-
-void MainWindow::updateQualityList(QList<QString> qa, int current)
-{
-    BlockChanged block(this);
-    ui->quality->clear();
-    for (auto q : qa)
-        ui->quality->addItem(q);
-    ui->quality->setCurrentIndex(current);
-}
-
-void MainWindow::on_quality_currentIndexChanged(const int &index)
-{
-    if (block_changed) return;
-    m_player2.setQuality(index);
-}
-
-bool MainWindow::eventFilter(QObject *o, QEvent *e)
-{
-    if (o == ui->video && e->type() == QEvent::MouseButtonDblClick)
-        toggleFullScreen();
-    return false;
-}
-
-// ----------------------------------------------------------------------------
 // MainWindow
 // ----------------------------------------------------------------------------
 MainWindow::MainWindow(VlycApp *self) :
     QMainWindow(),
     ui(new Ui::MainWindow),
     mp_self(self),
-    m_player2(self),
-    m_player(m_player2.player()),
+    m_player(self->player()->player()),
     m_player_audio(m_player),
     m_player_video(m_player)
 {
@@ -120,21 +78,19 @@ MainWindow::MainWindow(VlycApp *self) :
     fsc = new FullScreenController(ui->video);
     ui->video->installEventFilter(this);
 
-    ui->treeView->setModel(&m_player2.model());
+    ui->treeView->setModel(&self->player()->model());
 
     connectUiMisc();
 
     // Setup vlc
     setupPlayer();
 
-    connect(this, &MainWindow::playMrlSignal, this, &MainWindow::playMrl, Qt::QueuedConnection);
-
     loadState();
 }
 
 void MainWindow::addPluginActions()
 {
-    for (Vlyc::ToolPlugin *p : mp_self->plugins2()->getPlugins<Vlyc::ToolPlugin>())
+    for (Vlyc::ToolPlugin *p : mp_self->plugins()->getPlugins<Vlyc::ToolPlugin>())
         ui->menuTools->addAction(p->toolMenuAction());
 }
 
@@ -142,6 +98,31 @@ MainWindow::~MainWindow()
 {
     delete fsc;
     delete ui;
+}
+
+// ----------------------------------------------------------------------------
+// Video stuff
+// ----------------------------------------------------------------------------
+void MainWindow::updateQualityList(QList<QString> qa, int current)
+{
+    BlockChanged block(this);
+    ui->quality->clear();
+    for (auto q : qa)
+        ui->quality->addItem(q);
+    ui->quality->setCurrentIndex(current);
+}
+
+void MainWindow::on_quality_currentIndexChanged(const int &index)
+{
+    if (block_changed) return;
+    mp_self->player()->setQuality(index);
+}
+
+bool MainWindow::eventFilter(QObject *o, QEvent *e)
+{
+    if (o == ui->video && e->type() == QEvent::MouseButtonDblClick)
+        toggleFullScreen();
+    return false;
 }
 
 // ----------------------------------------------------------------------------
@@ -156,7 +137,7 @@ void MainWindow::setupPlayer()
     //connect(&m_player, &VlcMediaPlayer::mediaChanged, this, &MainWindow::updateMedia);
     connect(&m_player, SIGNAL(mediaChanged(libvlc_media_t*)), this, SLOT(updateMedia(libvlc_media_t*)));
     connect(&m_player, &VlcMediaPlayer::stateChanged, this, &MainWindow::updateState);
-    connect(&m_player2, &VlycPlayer::qualityListChanged, this, &MainWindow::updateQualityList);
+    connect(mp_self->player(), &VlycPlayer::qualityListChanged, this, &MainWindow::updateQualityList);
 }
 
 void MainWindow::updateMedia(libvlc_media_t *media)
@@ -211,9 +192,10 @@ void MainWindow::connectUiMisc()
     connect(ui->volume, &SoundWidget::volumeChanged, &m_player_audio, &VlcMediaPlayerAudio::setVolume);
     connect(ui->volume, &SoundWidget::muteChanged, &m_player_audio, &VlcMediaPlayerAudio::setMuted);
     connect(ui->btn_fullscreen, &QAbstractButton::clicked, this, &MainWindow::toggleFullScreen);
-    connect(ui->btn_next, &QAbstractButton::clicked, &m_player2, &VlycPlayer::next);
-    connect(ui->btn_prev, &QAbstractButton::clicked, &m_player2, &VlycPlayer::prev);
-    connect(ui->treeView, &QAbstractItemView::activated, &m_player2, &VlycPlayer::playNow);
+    connect(ui->btn_next, &QAbstractButton::clicked, mp_self->player(), &VlycPlayer::next);
+    connect(ui->btn_prev, &QAbstractButton::clicked, mp_self->player(), &VlycPlayer::prev);
+    connect(ui->treeView, &QAbstractItemView::activated, mp_self->player(), &VlycPlayer::playNow);
+    connect(ui->treeView, &QWidget::customContextMenuRequested, this, &MainWindow::onLibraryContextMenu);
 
     // Fullscreen
     connect(fsc->ui->btn_playpause, &QAbstractButton::clicked, this, &MainWindow::on_btn_play_clicked);
@@ -249,7 +231,7 @@ void MainWindow::on_btn_play_clicked()
     case VlcState::Stopped:
     case VlcState::Ended:
     case VlcState::NothingSpecial:
-        m_player2.play();
+        mp_self->player()->play();
         break;
     case VlcState::Error:
         break;
@@ -263,7 +245,7 @@ void MainWindow::on_actionOpen_triggered()
     if (url.isEmpty())
         return;
 
-    playMrl(url);
+    mp_self->play(url);
 }
 
 void MainWindow::on_actionAbout_triggered()
@@ -286,6 +268,18 @@ void MainWindow::on_btn_library_clicked(bool checked)
         QBoxLayout *layout = (QBoxLayout*)ui->pageVideo->layout();
         layout->addWidget(ui->video);
     }
+}
+
+void MainWindow::onLibraryContextMenu(const QPoint &point)
+{
+    QMenu menu(ui->treeView);
+    QAction *a = menu.addAction("Remove");
+    connect(a, &QAction::triggered, [this](){
+        for (QModelIndex index : ui->treeView->selectionModel()->selectedIndexes())
+            mp_self->player()->remove(index);
+    });
+    a = menu.addAction("Clear Playlist", mp_self->player(), SLOT(clearPlaylist()));
+    menu.exec(ui->treeView->mapToGlobal(point));
 }
 
 // ----------------------------------------------------------------------------

@@ -10,6 +10,7 @@
 #include <VlycResult/Result.h>
 
 #include "../../src/vlyc.h"
+#include "../../src/logic/__lv_hacks.h"
 
 using namespace Vlyc::Result;
 

@@ -23,6 +23,7 @@
 
 namespace Vlyc {
 
+class PluginInterface;
 class PluginManager;
 typedef PluginManager PluginManagerInterface;
 
@@ -38,7 +39,7 @@ struct InitEvent
 {
     PluginManagerInterface *plugin_manager;
     QJsonObject *metadata;
-    void *interface;
+    PluginInterface *interface;
     void *private_interface;
 };
 
@@ -65,6 +66,7 @@ public:
     QString version() const;
 
     PluginManagerInterface *plugins();
+    PluginInterface *interface();
 
 private:
     InitEvent m_initializer;

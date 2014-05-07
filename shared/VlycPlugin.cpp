@@ -68,6 +68,11 @@ PluginManagerInterface *Plugin::plugins()
     return m_initializer.plugin_manager;
 }
 
+PluginInterface *Plugin::interface()
+{
+    return m_initializer.interface;
+}
+
 QJsonObject *Plugin::metadata() const
 {
     return m_initializer.metadata;

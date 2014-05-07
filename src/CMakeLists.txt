@@ -53,6 +53,7 @@ SET(VLYC_HEADERS
 	logic/PlaylistNode.h
 	logic/PlaylistModel.h
 	logic/__lv_hacks.h
+	logic/PromiseListener.h
 )
 
 
@@ -75,6 +76,8 @@ SET(VLYC_SOURCES
 	logic/TempEventLoop.cpp
 	logic/PlaylistNode.cpp
 	logic/PlaylistModel.cpp
+	logic/__lv_hacks.cpp
+	logic/PromiseListener.cpp
 )
 
 

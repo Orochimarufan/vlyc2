@@ -47,6 +47,12 @@ public:
     PlaylistNode *insert(size_t index, Vlyc::Result::ResultPtr result);
 
     /**
+     * @brief remove this node
+     * this will DELETE this node and its children!
+     */
+    void remove();
+
+    /**
      * @brief PlaylistNode destructor
      * Deletes all children!
      */
@@ -102,6 +108,13 @@ public:
      */
     PlaylistNode *last() const;
 
+    /**
+     * @brief contains
+     * @param node
+     * @return whether \c node is in this node's subtree
+     */
+    bool contains(PlaylistNode *node) const;
+
     // STL iterator interface
     /**
      * @brief The iterator class
@@ -153,19 +166,6 @@ public:
     Vlyc::Result::ResultPtr result();
 
     /**
-     * @brief isComplete
-     * @return wether this node is complete
-     */
-    bool isComplete() const;
-
-    /**
-     * @brief complete this node.
-     * This will turn reference results into actual data results, among other things.
-     * All of the following methods are only guaranteed to work on completed nodes!
-     */
-    void complete();
-
-    /**
      * @brief isPlayable
      * @return true if this item can be played
      */
@@ -183,6 +183,20 @@ public:
      * This is sure to be nuked sooner or later!!
      */
     VideoPtr __lvideo() const;
+
+    // Completeness
+    /**
+     * @brief isComplete
+     * @return wether this node is complete
+     */
+    bool isComplete() const;
+
+    /**
+     * @brief used to replace an incomplete with a complete result.
+     * @param new_content the new result
+     * Should only be called from PlaylistModel/PromiseListener
+     */
+    void replaceWith(Vlyc::Result::ResultPtr new_content);
 
 private:
     PlaylistModel *mp_model;

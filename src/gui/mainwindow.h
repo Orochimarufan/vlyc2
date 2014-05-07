@@ -27,7 +27,7 @@
 #include <QtVlc/VlcMediaPlayerVideo.h>
 #include <QtWidgets/QShortcut>
 
-#include "logic/VlycPlayer.h"
+#include <VlycResult/Result.h>
 
 #include <video.h>
 
@@ -53,14 +53,9 @@ public:
 
     void addPluginActions();
 
-signals:
-    void playMrlSignal(const QString &mrl); // for delayed playback
-
 public slots:
     void setFullScreen(bool fs);
     bool toggleFullScreen();
-    void playMrl(const QString &mrl);
-    void queueResult(ResultPtr res);
 
 private slots:
     void updateQualityList(QList<QString> qa, int current);
@@ -83,6 +78,8 @@ private slots:
 
     void on_btn_library_clicked(bool checked);
 
+    void onLibraryContextMenu(const QPoint &point);
+
 protected:
     bool eventFilter(QObject *, QEvent *);
     void closeEvent(QCloseEvent *);
@@ -102,7 +99,6 @@ private:
     friend class BlockChanged;
     friend class VlycApp;
 
-    VlycPlayer m_player2;
     VlcMediaPlayer m_player;
     VlcMediaPlayerAudio m_player_audio;
     VlcMediaPlayerVideo m_player_video;
