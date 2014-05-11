@@ -1,5 +1,6 @@
 {
     "ID":"me.sodimm.oro.vlyc.plugin.Test",
+    "Name": "Testing Helper",
     "Author":"Taeyeon Mori",
     "Version": "0.1",
     "Description": "Test the VlycResult architecture"

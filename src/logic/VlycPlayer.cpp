@@ -21,12 +21,17 @@
 #include "VlycPlayer.h"
 #include "PlaylistNode.h"
 
+#include "../gui/mainwindow.h"
+#include <QtWidgets/QMessageBox>
+#include <QtCore/QTemporaryFile>
+#include <QtCore/QDir>
+
 #include "../vlyc.h"
 
 using namespace Vlyc::Result;
 
 VlycPlayer::VlycPlayer(VlycApp *app) :
-    m_model(app), mp_current_node(nullptr), mp_app(app)
+    mp_app(app), m_model(app), mp_current_node(nullptr), m_player(), m_player_video(m_player)
 {
     connect(&m_player, &VlcMediaPlayer::endReached, this, &VlycPlayer::next);
     connect(&m_model, &PlaylistModel::nodeAboutToBeDeleted, this, &VlycPlayer::onNodeAboutToBeDeleted);
@@ -106,7 +111,12 @@ void VlycPlayer::setItem(PlaylistNode *item)
     ml_current_quality_id_list = std::get<1>(qualities);
     m_current_quality_index = 0;
 
+    ml_current_subs_list = item->__lvideo()->availableSubtitleLanguages();
+    ml_current_subs_list.prepend("No Subtitles");
+    m_current_subs_index = 0;
+
     emit qualityListChanged(ml_current_quality_list, m_current_quality_index);
+    emit subsListChanged(ml_current_subs_list, m_current_subs_index);
     m_model.setCurrentlyPlaying(item);
 }
 
@@ -130,6 +140,33 @@ void VlycPlayer::setQuality(int index)
     float position = m_player.position();
     playMedia();
     m_player.setPosition(position);
+}
+
+void VlycPlayer::setSubtitles(int index)
+{
+    m_current_subs_index = index;
+
+    if (index == 0)
+        m_player_video.setSpu(0);
+    else
+    {
+        __lv_get_subs subs;
+        subs(mp_current_node->__lvideo(), ml_current_subs_list[index]);
+
+        if (subs.type.isNull())
+            m_player_video.setSubtitleFile(subs.data.toString());
+        else
+        {
+            static QString templat ("vlyc2-XXXXXX.%1");
+            QTemporaryFile file(QDir::temp().absoluteFilePath(templat.arg(subs.type)));
+            file.setAutoRemove(false);
+            file.open();
+            file.write(subs.data.toByteArray());
+            file.close();
+
+            m_player_video.setSubtitleFile(file.fileName());
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -219,11 +256,6 @@ void VlycPlayer::onNodeAboutToBeDeleted(PlaylistNode *node)
 
 // ----------------------------------------------------------------------------
 // Complete
-inline static void complete_url(PlaylistNode *node)
-{
-
-}
-
 void VlycPlayer::complete(PlaylistNode *node, bool play, bool reverse)
 {
     UrlPtr url = node->result().cast<Url>();
@@ -263,7 +295,12 @@ void VlycPlayer::promiseFulfilled(PlaylistNode *node)
     }
 
     if (node == mp_promised_node)
-        playFirstItem(node, m_promised_reverse);
+    {
+        if (node->hasFailed())
+            QMessageBox::critical(mp_app->window(), "Error", node->failReason());
+        else
+            playFirstItem(node, m_promised_reverse);
+    }
 }
 
 void VlycPlayer::onNodeAdded(PlaylistNode *node)

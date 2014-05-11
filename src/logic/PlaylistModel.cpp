@@ -30,7 +30,7 @@
 using namespace Vlyc::Result;
 
 PlaylistModel::PlaylistModel(VlycApp *app) :
-    mp_app(app), mp_root(new PlaylistNode(this))
+    mp_app(app), mp_root(new PlaylistNode(this)), mp_current(nullptr)
 {
 }
 
@@ -138,12 +138,17 @@ QVariant PlaylistModel::data(const QModelIndex &index, int role) const
     switch(role)
     {
     case Qt::DecorationRole:
-        if (!node->result().isValid() || node->result().is<Playlist>())
+        if (node->hasFailed() || !node->result().isValid())
+            return QIcon(":/menu/quit"); // Just a generic X symbol
+        else if (node->result().is<Playlist>())
             return QIcon(":/type/playlist");
         else
             return QIcon(":/type/file");
     case Qt::DisplayRole:
-        return node->displayName();
+        if (node->hasFailed())
+            return node->failReason();
+        else
+            return node->displayName();
     case Qt::BackgroundColorRole:
         if (node == mp_current)
             return QColor(Qt::darkGreen);

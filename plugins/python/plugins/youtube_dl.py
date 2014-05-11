@@ -35,7 +35,7 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
     def __init__(self):
         self._ies = dict()
         self.add_default_info_extractors()
-        self.params = {}
+        self.params = {"writesubtitles": True, "writeautomaticsub": True}
         self._current = None
 
 #### YoutubeDL interface
@@ -170,6 +170,10 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
             else:
                 self._formats, self.availableQualities = GenericFormatMapper.process(result["formats"])
 
+            # Subtitles
+            self._subs = result.get("subtitles", {})
+            self.availableSubtitleLanguages = list(self._subs.keys())
+
             #self._plugin.end(self)
             done()
 
@@ -180,7 +184,10 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
                 media(*self._formats[quality])
 
         def getSubtitles(self, language, subtitles, throw):
-            throw("Not implemented")
+            try:
+                subtitles(language, "srt", self._subs[language])
+            except Exception as e:
+                throw(str(e))
 
 
 class GenericFormatMapper:

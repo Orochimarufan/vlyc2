@@ -59,6 +59,7 @@ public slots:
 
 private slots:
     void updateQualityList(QList<QString> qa, int current);
+    void updateSubsList(QList<QString> subs, int current);
 
     void updatePosition(const float &);
     void updateState(const VlcState::Type &);
@@ -74,7 +75,7 @@ private slots:
 
     void on_btn_play_clicked();
     void on_quality_currentIndexChanged(const int &);
-    //void on_subtitles_currentIndexChanged(const int &);
+    void on_subtitles_currentIndexChanged(const int &);
 
     void on_btn_library_clicked(bool checked);
 

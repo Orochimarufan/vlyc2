@@ -19,6 +19,7 @@
 #include "WrapLegacySitePlugin.h"
 
 #include <QtCore/QUrl>
+#include <QtCore/QStringList>
 #include <PythonQt/PythonQt.h>
 #include <PythonQt/PythonQtConversion.h>
 
@@ -292,8 +293,6 @@ PyObject *WrapLegacyVideo::f_error_func(PyObject *_self, PyObject *args)
     if (!(self = capsule_get(_self)))
         return NULL;
 
-    qDebug("error");
-
     PyObject *message;
     if (!PyArg_ParseTuple(args, "U:throw", &message))
     {
@@ -301,7 +300,11 @@ PyObject *WrapLegacyVideo::f_error_func(PyObject *_self, PyObject *args)
         return NULL;
     }
 
-    self->emitError(PythonQtConv::PyObjGetString(message));
+    QString msg = PythonQtConv::PyObjGetString(message);
+    Py_DECREF(message);
+
+    qDebug("error: %s", qPrintable(msg));
+    self->emitError(msg);
 
     Py_RETURN_NONE;
 }
@@ -373,8 +376,6 @@ PyObject *WrapLegacyVideo::f_subtitles_func(PyObject *_self, PyObject *args)
     if (!(self = capsule_get(_self)))
         return NULL;
 
-    qDebug("subtitles");
-
     char *language, *type;
     PyObject *data;
     if (!PyArg_ParseTuple(args, "esesO:subtitles", "utf-8", &language, "utf-8", &type, &data))
@@ -382,6 +383,8 @@ PyObject *WrapLegacyVideo::f_subtitles_func(PyObject *_self, PyObject *args)
         self->emitError("Python: Wrongly called subtitles(str language, str type, object data) callback.");
         return NULL;
     }
+
+    qDebug("subtitles: %s %s", language, type);
 
     emit self->subtitles(VideoSubtitles{VideoPtr(self), QString(language), QString(type), PythonQtConv::PyObjToQVariant(data)});
 
@@ -421,63 +424,109 @@ WrapLegacyVideo::~WrapLegacyVideo()
     Py_DECREF(self_capsule);
 }
 
+#define PY if (!PyErr_Occurred())
+
+inline static QString handleException()
+{
+    // Use the traceback module to generate a error message!
+    QString message("<CAUSE UNKNOWN>");
+
+    PyObject *tp, *exc, *tb, *exc_info;
+    PyErr_Fetch(&tp, &exc, &tb);
+    exc_info = PyTuple_Pack(3, tp, exc, tb);
+
+    PyObject *traceback = NULL, *format_exception = NULL, *message_p = NULL;
+    traceback = PyImport_ImportModule("traceback");
+    if (traceback != NULL)
+        format_exception = PyObject_GetAttrString(traceback, "format_exception");
+    if (format_exception != NULL && exc_info != NULL)
+        message_p = PyObject_CallObject(format_exception, exc_info);
+
+    Py_XDECREF(format_exception);
+    Py_XDECREF(traceback);
+
+    if (message_p != NULL) {
+        bool ok;
+        QStringList message_parts = PythonQtConv::PyObjToStringList(message_p, true, ok);
+        Py_DECREF(message_p);
+        if (ok)
+            message = message_parts.join(QString::null);
+    } else if (tp != NULL && exc != NULL){
+        message = QStringLiteral("[%1]: %2").arg(PythonQtConv::PyObjGetString(tp), PythonQtConv::PyObjGetString(exc));
+    }
+
+    Py_XDECREF(exc_info);
+
+    PyErr_Clear();
+
+    puts(qPrintable(message));
+    return message;
+}
+
 void WrapLegacyVideo::load()
 {
-    QVariantList args;
-    args << PythonQtConv::PyObjToQVariant(cb_done);
-    args << PythonQtConv::PyObjToQVariant(cb_error);
+    PyObject *load, *args, *result;
 
-    mo_video.call("load", args);
+    load = PyObject_GetAttrString(mo_video, "load");
+
+    PY {
+        Py_INCREF(cb_done);
+        Py_INCREF(cb_error);
+        args = PyTuple_Pack(2, cb_done, cb_error);
+    }
+
+    PY result = PyObject_CallObject(load, args);
+
+    Py_XDECREF(result);
+    Py_XDECREF(args);
+    Py_XDECREF(load);
 
     if (PyErr_Occurred())
-    {
-        PyObject *a, *b, *c;
-        PyErr_Fetch(&a, &b, &c);
-        emitError(PythonQtConv::PyObjGetString(b));
-        Py_DECREF(a);
-        Py_DECREF(b);
-        Py_DECREF(c);
-    }
+        emitError(handleException());
 }
 
 void WrapLegacyVideo::getMedia(const VideoQualityLevel &q)
 {
-    QVariantList args;
-    args << QVariant::fromValue<int>((int)q);
-    args << PythonQtConv::PyObjToQVariant(cb_media);
-    args << PythonQtConv::PyObjToQVariant(cb_error);
+    PyObject *getMedia, *args, *result;
 
-    mo_video.call("getMedia", args);
+    getMedia = PyObject_GetAttrString(mo_video, "getMedia");
+
+    PY {
+        Py_INCREF(cb_media);
+        Py_INCREF(cb_error);
+        args = PyTuple_Pack(3, PyLong_FromLong((int)q), cb_media, cb_error);
+    }
+
+    PY result = PyObject_CallObject(getMedia, args);
+
+    Py_XDECREF(result);
+    Py_XDECREF(args);
+    Py_XDECREF(getMedia);
 
     if (PyErr_Occurred())
-    {
-        PyObject *a, *b, *c;
-        PyErr_Fetch(&a, &b, &c);
-        emitError(PythonQtConv::PyObjGetString(b));
-        Py_DECREF(a);
-        Py_DECREF(b);
-        Py_DECREF(c);
-    }
+        emitError(handleException());
 }
 
 void WrapLegacyVideo::getSubtitles(const QString &language)
 {
-    QVariantList args;
-    args << language;
-    args << PythonQtConv::PyObjToQVariant(cb_subtitles);
-    args << PythonQtConv::PyObjToQVariant(cb_error);
+    PyObject *getSubtitles, *args, *result;
 
-    mo_video.call("getSubtitles", args);
+    getSubtitles = PyObject_GetAttrString(mo_video, "getSubtitles");
+
+    PY {
+        Py_INCREF(cb_subtitles);
+        Py_INCREF(cb_error);
+        args = PyTuple_Pack(3, PythonQtConv::QStringToPyObject(language), cb_subtitles, cb_error);
+    }
+
+    PY result = PyObject_CallObject(getSubtitles, args);
+
+    Py_XDECREF(result);
+    Py_XDECREF(args);
+    Py_XDECREF(getSubtitles);
 
     if (PyErr_Occurred())
-    {
-        PyObject *a, *b, *c;
-        PyErr_Fetch(&a, &b, &c);
-        emitError(PythonQtConv::PyObjGetString(b));
-        Py_DECREF(a);
-        Py_DECREF(b);
-        Py_DECREF(c);
-    }
+        emitError(handleException());
 }
 
 QStringList WrapLegacyVideo::availableSubtitleLanguages() const

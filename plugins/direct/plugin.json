@@ -1,5 +1,5 @@
 {
-    "ID": "me.sodimm.oro.vlyc.DirectAccessPlugin",
+    "ID": "me.sodimm.oro.vlyc.plugin.DirectAccess",
     "Name": "Direct File Access Plugin",
     "Version": "1.0",
     "Author": "Taeyeon Mori",

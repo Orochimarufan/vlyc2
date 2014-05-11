@@ -14,7 +14,7 @@ class TestPlugin2 : public QObject, public Vlyc::UrlHandlerPlugin
 public:
     TestPlugin2();
 
-    QString id() const { return "me.sodimm.oro.vlyc.plugins.Test"; }
+    QString id() const { return "me.sodimm.oro.vlyc.plugin.Test"; }
 
     void init(Vlyc::InitEvent &init);
 

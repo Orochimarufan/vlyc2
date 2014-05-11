@@ -107,15 +107,28 @@ void MainWindow::updateQualityList(QList<QString> qa, int current)
 {
     BlockChanged block(this);
     ui->quality->clear();
-    for (auto q : qa)
-        ui->quality->addItem(q);
+    ui->quality->addItems(qa);
     ui->quality->setCurrentIndex(current);
+}
+
+void MainWindow::updateSubsList(QList<QString> subs, int current)
+{
+    BlockChanged block(this);
+    ui->subtitles->clear();
+    ui->subtitles->addItems(subs);
+    ui->subtitles->setCurrentIndex(current);
 }
 
 void MainWindow::on_quality_currentIndexChanged(const int &index)
 {
     if (block_changed) return;
     mp_self->player()->setQuality(index);
+}
+
+void MainWindow::on_subtitles_currentIndexChanged(const int &index)
+{
+    if (block_changed) return;
+    mp_self->player()->setSubtitles(index);
 }
 
 bool MainWindow::eventFilter(QObject *o, QEvent *e)
@@ -138,6 +151,7 @@ void MainWindow::setupPlayer()
     connect(&m_player, SIGNAL(mediaChanged(libvlc_media_t*)), this, SLOT(updateMedia(libvlc_media_t*)));
     connect(&m_player, &VlcMediaPlayer::stateChanged, this, &MainWindow::updateState);
     connect(mp_self->player(), &VlycPlayer::qualityListChanged, this, &MainWindow::updateQualityList);
+    connect(mp_self->player(), &VlycPlayer::subsListChanged, this, &MainWindow::updateSubsList);
 }
 
 void MainWindow::updateMedia(libvlc_media_t *media)

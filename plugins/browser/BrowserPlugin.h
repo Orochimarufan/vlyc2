@@ -26,7 +26,7 @@ class VlycApp;
 class BrowserPlugin : public Browser, public virtual Vlyc::ToolPlugin
 {
     Q_OBJECT
-    Q_INTERFACES(Vlyc::Plugin Vlyc::ToolPlugin)
+    Q_INTERFACES(Vlyc::Plugin)
     Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/2.0" FILE "plugin.json")
 
 public:

@@ -69,7 +69,10 @@ bool PromiseListener::event(QEvent *e)
         else if (event->type() == PromiseEvent::Type::Error)
         {
             qWarning("PromiseListener: Error! %s", qPrintable(event->message()));
+            PlaylistNode *node = it->second;
+            node->markFailed(event->message());
             mm_promises.erase(it);
+            emit finished(node);
         }
     }
     else

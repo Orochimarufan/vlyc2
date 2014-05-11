@@ -21,6 +21,7 @@
 #include <QtCore/QObject>
 #include <QtVlc/VlcInstance.h>
 #include <QtVlc/VlcMediaPlayer.h>
+#include <QtVlc/VlcMediaPlayerVideo.h>
 #include <QtVlc/VlcMedia.h>
 
 #include <VlycResult/Result.h>
@@ -40,6 +41,7 @@ public:
 signals:
     void endReached();
     void qualityListChanged(QList<QString>, int current);
+    void subsListChanged(QList<QString>, int current);
 
 public slots:
     void queue(Vlyc::Result::ResultPtr result);
@@ -52,6 +54,7 @@ public slots:
 
     void play();
     void setQuality(int index);
+    void setSubtitles(int index);
 
     void next();
     void prev();
@@ -75,6 +78,7 @@ private:
     VlycApp *mp_app;
     PlaylistModel m_model;
     VlcMediaPlayer m_player;
+    VlcMediaPlayerVideo m_player_video;
 
     VlcMedia m_current_media;
     PlaylistNode *mp_current_node;
@@ -87,6 +91,8 @@ private:
     QList<QString> ml_current_quality_list;
     QList<int> ml_current_quality_id_list;
     int m_current_quality_index;
+    QList<QString> ml_current_subs_list;
+    int m_current_subs_index;
 
     void playNextItem(PlaylistNode *origin);
     void playPrevItem(PlaylistNode *origin);

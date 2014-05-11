@@ -30,7 +30,3 @@ public:
 };
 
 } // namespace Vlyc
-
-QT_BEGIN_NAMESPACE
-Q_DECLARE_INTERFACE(Vlyc::UrlHandlerPlugin, "me.sodimm.oro.vlyc.UrlHandlerPlugin/1.0")
-QT_END_NAMESPACE

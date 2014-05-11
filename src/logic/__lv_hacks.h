@@ -62,3 +62,14 @@ public:
 public slots:
     void media(const VideoMedia &);
 };
+
+class __lv_get_subs : public TempEventLoop
+{
+    Q_OBJECT
+public:
+    QString type;
+    QVariant data;
+    void operator()(VideoPtr, const QString &);
+public slots:
+    void subtitles(const VideoSubtitles &);
+};

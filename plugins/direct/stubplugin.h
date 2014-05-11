@@ -43,7 +43,7 @@ public:
     DirectAccessPlugin();
     ~DirectAccessPlugin();
 
-    QString id() const { return "me.sodimm.oro.vlyc.DirectAccessPlugin"; }
+    QString id() const { return "me.sodimm.oro.vlyc.plugin.DirectAccess"; }
     QString name() const { return Vlyc::Plugin::name(); }
     QString author() const { return Vlyc::Plugin::author(); }
 

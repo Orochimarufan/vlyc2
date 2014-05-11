@@ -297,7 +297,7 @@ VideoPtr PlaylistNode::__lvideo() const
 // Completeness
 bool PlaylistNode::isComplete() const
 {
-    return !mp_result.is<Promise>() && (!mp_result.is<Url>() || mp_result.is<BrokenUrl>());
+    return !m_error.isNull() || !mp_result.is<Promise>() && (!mp_result.is<Url>() || mp_result.is<BrokenUrl>());
 }
 
 void PlaylistNode::replaceWith(ResultPtr new_content)
@@ -307,4 +307,22 @@ void PlaylistNode::replaceWith(ResultPtr new_content)
         mp_result = new_content;
         initFromResult();
     }
+}
+
+void PlaylistNode::markFailed(const QString &reason)
+{
+    if (reason.isNull())
+        m_error = "[FAILED]" + displayName();
+    else
+        m_error = reason;
+}
+
+bool PlaylistNode::hasFailed() const
+{
+    return !m_error.isNull();
+}
+
+QString PlaylistNode::failReason() const
+{
+    return m_error;
 }

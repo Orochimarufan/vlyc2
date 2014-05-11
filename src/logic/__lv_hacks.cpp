@@ -104,3 +104,20 @@ void __lv_get_media::media(const VideoMedia &m)
     url = m.url;
     stop();
 }
+
+void __lv_get_subs::operator ()(VideoPtr v, const QString &lang)
+{
+    connect(v.get(), &Video::error, this, &TempEventLoop::stop);
+    connect(v.get(), &Video::subtitles, this, &__lv_get_subs::subtitles);
+
+    v->getSubtitles(lang);
+
+    start();
+}
+
+void __lv_get_subs::subtitles(const VideoSubtitles &m)
+{
+    type = m.type;
+    data = m.data;
+    stop();
+}

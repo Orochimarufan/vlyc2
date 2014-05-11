@@ -94,7 +94,3 @@ public:
 };
 
 }
-
-QT_BEGIN_NAMESPACE
-Q_DECLARE_INTERFACE(Vlyc::LoaderPlugin, "me.sodimm.oro.vlyc.LoaderPlugin/1.0")
-QT_END_NAMESPACE

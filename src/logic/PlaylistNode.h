@@ -198,11 +198,21 @@ public:
      */
     void replaceWith(Vlyc::Result::ResultPtr new_content);
 
+    /**
+     * @brief markFailed
+     * This entry is invalid (e.g. because a promise failed)
+     */
+    void markFailed(const QString &reason);
+
+    bool hasFailed() const;
+    QString failReason() const;
+
 private:
     PlaylistModel *mp_model;
     PlaylistNode *mp_parent;
     std::vector<PlaylistNode *> m_children;
     Vlyc::Result::ResultPtr mp_result;
+    QString m_error;
 
     PlaylistNode(PlaylistNode *parent, Vlyc::Result::ResultPtr result);
     void initFromResult(bool from_constructor = false);
