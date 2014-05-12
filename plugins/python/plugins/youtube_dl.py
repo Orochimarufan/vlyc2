@@ -23,7 +23,7 @@ youtube.YoutubeIE.suitable = lambda x,url:(re.match(x._VALID_URL, url)is not Non
 def default_extractors():
     for ie in gen_extractors():
         key = ie.ie_key()
-        if not(key == "Generic" or key.endswith("Channel") or key.endswith("Playlist") or key.endswith("User")):
+        if not(key == "Generic" or key.endswith("Channel") or key.endswith("Playlist") or key.endswith("User")) and "crunchyroll" not in key.lower():
             yield ie
 
 
@@ -35,7 +35,8 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
     def __init__(self):
         self._ies = dict()
         self.add_default_info_extractors()
-        self.params = {"writesubtitles": True, "writeautomaticsub": True}
+        # DASH is broken in Vlc HEAD
+        self.params = {"writesubtitles": True, "writeautomaticsub": True}#, "youtube_add_dash_manifest_as_format": True}
         self._current = None
 
 #### YoutubeDL interface
@@ -247,16 +248,25 @@ class YoutubeFormatDatabase:
         """
         We know more about youtube formats
         """
+        import pprint
+        pprint.pprint(formats)
         avail = list()
         lookup = dict()
         for format in formats:
-            itag = int(format["format_id"])
-            if itag in cls.itags:
-                stream = cls.itags[itag]
-                if stream[0] != vlyc.plugin.VideoQualityLevel.QA_INVALID:
-                    avail.append(stream)
-                    lookup[stream[0]] = (stream[0], stream[1], format["url"])
+            if (format["format_id"] == "dash"):
+                avail.append(cls.dash)
+                lookup[cls.dash[0]] = (cls.dash[0], cls.dash[1], format["url"])
+            else:
+                itag = int(format["format_id"])
+                if itag in cls.itags:
+                    stream = cls.itags[itag]
+                    if stream[0] != vlyc.plugin.VideoQualityLevel.QA_INVALID:
+                        avail.append(stream)
+                        lookup[stream[0]] = (stream[0], stream[1], format["url"])
+        cls.dash_formats(formats, avail, lookup)
         return lookup, avail
+
+    dash =  (vlyc.plugin.VideoQualityLevel.QA_HIGHEST * 2, "Auto (DASH)")
 
     itags = {
         #Mobile/3GP   [MPEG-4-Visual|AAC]
@@ -292,6 +302,28 @@ class YoutubeFormatDatabase:
         # Stream
         120: (vlyc.plugin.VideoQualityLevel.QA_HIGHEST + 1, "720p FLV Stream")
     }
+
+    @staticmethod
+    def dash_formats(formats, avail, lookup):
+        # HAAAAX!
+        format_map = {a["format_id"]:a for a in formats}
+        def add_merged_level(level, desc, main_format_id, *format_ids):
+            avail.append((level, desc))
+            mrl = format_map[main_format_id]["url"]
+            if format_ids:
+                mrl += " :input-slave=" + "#".join(format_map[id]["url"] for id in format_ids)
+            lookup[level] = (level, desc, mrl)
+        def try_combine(level, desc, video_format_id, *audio_format_ids):
+            if video_format_id not in format_map:
+                return
+            for audio_format in audio_format_ids:
+                if audio_format in format_map:
+                    add_merged_level(level, desc, video_format_id, audio_format)
+                    break
+        # GO!
+        try_combine(vlyc.plugin.VideoQualityLevel.QA_1080 + 3, "1080p DASH/MP4", "137", "141", "140", "139")
+        try_combine(vlyc.plugin.VideoQualityLevel.QA_1080 + 4, "1440p DASH/MP4", "264", "141", "140", "139")
+        try_combine(vlyc.plugin.VideoQualityLevel.QA_HIGHEST + 3, "2160p DASH/MP4", "138", "141", "140", "139")
 
     itags_reverse = { qa: (itag, desc) for itag, (qa, desc) in itags.items() }
 
