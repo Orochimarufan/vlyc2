@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <QtCore/QAtomicInt>
-#include <QtCore/QMetaType>
+#include "VlycMem/Object.h"
+#include "VlycMem/Pointer.h"
 
 namespace Vlyc {
 namespace Result {
@@ -28,149 +28,22 @@ namespace Result {
  * @brief The Result class
  * The baseclass for all result types
  */
-class Result
+class Result : public Vlyc::Memory::Object
 {
-public:
-    virtual ~Result();
-
-    void incref();
-    void decref();
-
-private:
-    QAtomicInt m_ref;
 };
 
-/**
- * @brief The ResultPointer<Result> class
- * Describes an intrusive pointer to a Result object.
- */
-template<typename Result>
-class ResultPointer
-{
-    Result *mp_result;
-
-    inline void del()
-    {
-        if (mp_result != nullptr)
-            mp_result->decref();
-        mp_result = nullptr;
-    }
-
-    inline void set(Result *res)
-    {
-        if (res != nullptr)
-            res->incref();
-        mp_result = res;
-    }
-
-    inline void reset(Result *res)
-    {
-        if (res != nullptr)
-            res->incref();
-        del();
-        mp_result = res;
-    }
-
-public:
-    ResultPointer() :
-        mp_result(nullptr)
-    {
-    }
-
-    ResultPointer(const ResultPointer &ptr)
-    {
-        set(ptr.mp_result);
-    }
-
-    ResultPointer(Result *res)
-    {
-        set(res);
-    }
-
-    ~ResultPointer()
-    {
-        del();
-    }
-
-    ResultPointer &operator=(const ResultPointer &ptr)
-    {
-        reset(ptr.mp_result);
-        return *this;
-    }
-
-    ResultPointer &operator=(Result *res)
-    {
-        reset(res);
-        return *this;
-    }
-
-    template <typename T>
-    bool operator== (const ResultPointer<T> &ptr) const
-    {
-        return static_cast<Vlyc::Result::Result*>(ptr.mp_result) ==
-                static_cast<Vlyc::Result::Result*>(mp_result);
-    }
-
-    template <typename T>
-    bool operator <(const ResultPointer<T> &ptr) const
-    {
-        return static_cast<Vlyc::Result::Result*>(ptr.mp_result) >
-                static_cast<Vlyc::Result::Result*>(mp_result);
-    }
-
-    inline Result *operator->() const
-    {
-        return mp_result;
-    }
-
-    inline Result *get() const
-    {
-        return mp_result;
-    }
-
-    inline Result &operator *() const
-    {
-        return *mp_result;
-    }
-
-    template <typename T>
-    inline ResultPointer<T> cast() const
-    {
-        return ResultPointer<T>(dynamic_cast<T*>(mp_result));
-    }
-
-    template <typename T>
-    inline bool is() const
-    {
-        return dynamic_cast<T*>(mp_result) != nullptr;
-    }
-
-    inline bool isValid() const
-    {
-        return mp_result != nullptr;
-    }
-};
+template <class T>
+using ResultPointer = Vlyc::Memory::Pointer<T>;
 
 /**
  * @brief ResultPtr
  * A pointer to a base Result object
  */
-typedef ResultPointer<Result> ResultPtr;
+using ResultPtr = ResultPointer<Result>;
 
 }
 } // namespace Vlyc
 
-namespace std {
-template<typename T>
-struct hash<Vlyc::Result::ResultPointer<T>> {
-    typedef Vlyc::Result::ResultPointer<T> argument_type;
-    typedef std::size_t value_type;
-
-    value_type operator()(argument_type const& s) const
-    {
-        return std::hash<void*>()(s.get());
-    }
-};
-}
-
-Q_DECLARE_METATYPE(Vlyc::Result::ResultPtr)
+// Qt Metatype declaration
+#include <QtCore/QMetaType>
+Q_DECLARE_METATYPE(Vlyc::Memory::Pointer<Vlyc::Result::Result>)

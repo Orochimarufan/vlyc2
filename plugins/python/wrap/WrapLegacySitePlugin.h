@@ -4,7 +4,7 @@
 #include "WrapPlugin.h"
 #include <VlycLegacySitePlugin.h>
 
-#include "../../include/video.h"
+#include <video.h>
 
 namespace Vlyc {
 namespace Python {

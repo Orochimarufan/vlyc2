@@ -21,10 +21,13 @@
 #include <QtCore/QEvent>
 #include <QtCore/QVariant>
 
-#include "Promise.h"
+#include <VlycResult/Promise.h>
 
 namespace Vlyc {
-namespace Result {
+namespace Async {
+
+    typedef Vlyc::Result::Promise Promise;
+    typedef Vlyc::Result::PromisePtr PromisePtr;
 
 /**
  * @brief Events sent to the promise listener

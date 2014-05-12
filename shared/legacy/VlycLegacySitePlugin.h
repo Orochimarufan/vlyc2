@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,19 +16,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include <vlyc2pointer.h>
+#pragma once
 
-Vlyc2Object::~Vlyc2Object()
-{
-}
+#include "VlycPlugin.h"
+#include "video.h"
+#include "siteplugin.h"
 
-void Vlyc2Pointer_incref(Vlyc2Object *o)
-{
-    o->ref.ref();
-}
+namespace Vlyc {
 
-void Vlyc2Pointer_decref(Vlyc2Object *o)
+class LegacySitePlugin : public virtual Vlyc::Plugin, public virtual SitePlugin
 {
-    if (!o->ref.deref())
-        delete o;
-}
+public:
+    /**
+     * @brief get an id for a URL, QString::null if this site cannot handle it.
+     * @param url QString the URL
+     * @return QString video_id | QString::null
+     */
+    virtual QString forUrl(QUrl url) = 0;
+
+    /**
+     * @brief get a Video instance for video_id
+     * @param video_id
+     * @return the Video instance
+     */
+    virtual VideoPtr video(QString video_id) = 0;
+
+    // needed for legacy compat
+    virtual int rev() const;
+};
+
+} // namespace Vlyc

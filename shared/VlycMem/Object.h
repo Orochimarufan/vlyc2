@@ -16,25 +16,38 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include "VlycResult/Result.h"
+#pragma once
+
+#include <atomic>
+
+#include "Pointer.h"
 
 namespace Vlyc {
-namespace Result {
+namespace Memory {
 
-Result::~Result()
+/**
+ * @brief The Object class
+ * A base object class to inherit from.
+ * does reference counting.
+ */
+class Object
 {
-}
+    mutable std::atomic_uint refcount;
 
-void Result::incref()
-{
-    m_ref.ref();
-}
+    friend void ::Vlyc::Memory::incref(Object *);
+    friend void ::Vlyc::Memory::decref(Object *);
 
-void Result::decref()
-{
-    if (!m_ref.deref())
-        delete this;
-}
+protected:
+    Object();
+
+public:
+    virtual ~Object();
+};
+
+void incref(Object *);
+void decref(Object *);
+
+typedef Pointer<Object> ObjectPtr;
 
 }
-} // namespace Vlyc
+}

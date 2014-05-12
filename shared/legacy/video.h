@@ -31,13 +31,13 @@
 #include <QtCore/QVariant>
 #include <QtCore/QAtomicInt>
 
-#include <vlyc2pointer.h>
+#include <VlycMem/Object.h>
 
 class SitePlugin;
 class Video;
 
 /// Smart pointer to a video instance. for weak refs use QWeakPointer(QObject *)
-typedef Vlyc2Pointer<Video> VideoPtr;
+typedef Vlyc::Memory::Pointer<Video> VideoPtr;
 
 /**
  * @brief The VideoQualityLevel enum
@@ -116,7 +116,7 @@ struct LIBVLYC2_EXPORT VideoMedia
  * getMedia() returns by emitting media(VideoMedia), or error() on error
  * getSubtitles() return by emitting subtitles(VideoSubtitles), or error() on error
  */
-class LIBVLYC2_EXPORT Video : public QObject, public Vlyc2Object
+class LIBVLYC2_EXPORT Video : public QObject, public Vlyc::Memory::Object
 {
     Q_OBJECT
 

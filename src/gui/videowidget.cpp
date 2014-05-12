@@ -41,11 +41,12 @@ WId VideoWidget::request(bool b_keep_size, unsigned int i_width, unsigned int i_
 {
     if (mp_stable) return mp_stable->winId();
 
-    if (b_keep_size)
+    /*if (b_keep_size)
     {
         i_width = width();
         i_height = height();
-    }
+    }*/
+    Q_UNUSED(b_keep_size); Q_UNUSED(i_width); Q_UNUSED(i_height);
 
     mp_stable = new QWidget();
     //QPalette plt = mp_stable->palette();

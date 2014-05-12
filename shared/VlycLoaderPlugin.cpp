@@ -30,7 +30,7 @@ BuiltinPluginLoader::BuiltinPluginLoader(LoaderPlugin *loader, const QString &fi
 }
 
 BuiltinPluginLoader::BuiltinPluginLoader(LoaderPlugin *loader, const QString &fileName, const QJsonObject &metaData, const QString &errorString) :
-    mp_loader_plugin(loader), m_file_name(fileName), m_meta_data(metaData), mp_instance(nullptr), m_error_string(errorString)
+    mp_loader_plugin(loader), m_file_name(fileName), m_meta_data(metaData), m_error_string(errorString), mp_instance(nullptr)
 {
 }
 

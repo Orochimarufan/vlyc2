@@ -136,6 +136,7 @@ bool Browser::eventFilter(QObject *recv, QEvent *e)
 
 bool Browser::navigationRequest(QUrl url)
 {
+    Q_UNUSED(url);
     return true;
 }
 

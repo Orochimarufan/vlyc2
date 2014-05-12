@@ -60,7 +60,7 @@ ELSEIF(MINGW)
 ENDIF()
 
 ### include plugin defs ###
-include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/shared)
+include_directories(${PROJECT_SOURCE_DIR}/shared ${PROJECT_SOURCE_DIR}/shared/legacy)
 
 ######## Shared library ########
 add_subdirectory(shared)

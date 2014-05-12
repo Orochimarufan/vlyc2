@@ -39,9 +39,9 @@ private slots:
     void handleUnsupportedContent(QNetworkReply *reply);
 
 private:
+    WebView *mp_view;
     Qt::KeyboardModifiers m_keyboardMods;
     Qt::MouseButtons m_mouseButtons;
-    WebView *mp_view;
 
     friend class WebView;
 };

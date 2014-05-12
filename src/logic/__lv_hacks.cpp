@@ -18,6 +18,8 @@
 
 #include "__lv_hacks.h"
 
+#include <QtCore/QHash>
+
 // LegacyVideoResult
 LegacyVideoResult::LegacyVideoResult(VideoPtr video) :
     mp_video(video)
@@ -85,7 +87,19 @@ VlcMedia __lv_get_media::operator ()(VideoPtr v, int q)
     if (!url.isValid())
         return VlcMedia();
 
-    VlcMedia media(url);
+    // Do some magic
+    QStringList opts;
+    QString url_str = url.toString();
+    if (url_str.contains(" :"))
+    {
+        opts = url_str.split(" :");
+        url_str = opts.takeFirst();
+    }
+
+    VlcMedia media(url_str);
+
+    for (QString opt : opts)
+        media.addOption(opt.prepend(":"));
 
     if (v->useFileMetadata() && !media.isParsed())
         media.parse(false);

@@ -19,10 +19,12 @@
 #include <QtCore/QCoreApplication>
 
 #include "Promise.h"
-#include "Promise_p.h"
+#include "../VlycAsync/PromiseEvent.h"
 
 namespace Vlyc {
 namespace Result {
+
+typedef Vlyc::Async::PromiseEvent PromiseEvent;
 
 #define LOCK() std::lock_guard<std::mutex> lock(m_mutex)
 

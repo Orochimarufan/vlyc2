@@ -17,27 +17,30 @@
 # *****************************************************************************/
 
 set(HEADERS
-../include/plugin.h
-../include/siteplugin.h
-../include/video.h
-../include/videoimpl.h
-../include/vlyc2pointer.h
+VlycMem/Pointer.h
+VlycMem/Object.h
+
+VlycAsync/PromiseEvent.h
 
 VlycPlugin.h
 VlycToolPlugin.h
-VlycLegacySitePlugin.h
 VlycUrlHandlerPlugin.h
 VlycLoaderPlugin.h
 VlycQtPluginLoader.h
 VlycPluginManager.h
 VlycPluginInterface.h
 
+legacy/plugin.h
+legacy/siteplugin.h
+legacy/video.h
+legacy/videoimpl.h
+legacy/VlycLegacySitePlugin.h
+
 VlycResult/Result.h
 VlycResult/Url.h
 VlycResult/Playlist.h
 
 VlycResult/Promise.h
-VlycResult/Promise_p.h
 )
 
 set(PRIVATE_HEADERS
@@ -45,22 +48,23 @@ VlycPluginManagerPrivate.h
 )
 
 set(SOURCES
-video.cpp
-vlyc2pointer.cpp
+VlycMem/Object.cpp
+
+VlycAsync/PromiseEvent.cpp
 
 VlycPlugin.cpp
-VlycLegacySitePlugin.cpp
 VlycLoaderPlugin.cpp
 VlycQtPluginLoader.cpp
 VlycPluginManager.cpp
 VlycPluginManagerPrivate.cpp
 VlycPluginInterface.cpp
 
-VlycResult/Result.cpp
+legacy/video.cpp
+legacy/VlycLegacySitePlugin.cpp
+
 VlycResult/Playlist.cpp
 
 VlycResult/Promise.cpp
-VlycResult/Promise_p.cpp
 )
 
 add_definitions(-DLIBVLYC2_LIBRARY)

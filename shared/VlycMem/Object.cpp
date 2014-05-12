@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,18 +16,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include <plugin.h>
+#include "Object.h"
 
-namespace Vlyc
+namespace Vlyc {
+namespace Memory {
+
+Object::Object() :
+    refcount(0)
 {
+}
 
-Plugin::~Plugin()
-{}
+Object::~Object()
+{
+}
 
-Plugin::initialize(PluginInitializer init)
-{}
+void incref(Object *object)
+{
+    object->refcount.fetch_add(1u, std::memory_order_acquire);
+}
 
-Plugin::registerPreferences(PreferencesRegister &)
-{}
+void decref(Object *object)
+{
+    if (object->refcount.fetch_sub(1u, std::memory_order_release) == 1u)
+    {
+        // TODO: Be more careful about memory ordering when deallocating?
+        delete object;
+    }
+}
 
+}
 }

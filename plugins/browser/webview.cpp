@@ -37,8 +37,8 @@
 WebView::WebView(TabWidget *tabs) :
     QWebView(tabs),
     mp_tabs(tabs),
-    mi_progress(0),
-    mp_page(new WebPage(this))
+    mp_page(new WebPage(this)),
+    mi_progress(0)
 {
     setPage(mp_page);
 

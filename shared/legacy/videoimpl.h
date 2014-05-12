@@ -29,8 +29,8 @@ class LIBVLYC2_EXPORT StandardVideo : public Video
 {
     Q_OBJECT
 protected:
-    QString ms_video_id;
     SitePlugin* mp_site;
+    QString ms_video_id;
 
     QString ms_title;
     QString ms_author;

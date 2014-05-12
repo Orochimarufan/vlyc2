@@ -23,11 +23,11 @@
 #include <QString>
 
 #include <VlycResult/Result.h>
-#include <vlyc2pointer.h>
+#include <VlycMem/Pointer.h>
 
 class PlaylistModel;
 class Video;
-typedef Vlyc2Pointer<Video> VideoPtr;
+typedef Vlyc::Memory::Pointer<Video> VideoPtr;
 
 class PlaylistNode
 {

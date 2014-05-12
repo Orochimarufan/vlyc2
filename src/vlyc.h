@@ -57,10 +57,10 @@ public slots:
     void play(const QUrl &url);
 
 private:
-    VlycPlayer *mp_player;
-    MainWindow *mp_window;
     Vlyc::PluginManager *mp_plugins;
     NetworkAccessManager *mp_network;
+    VlycPlayer *mp_player;
+    MainWindow *mp_window;
 };
 
 #endif // VLYC_H

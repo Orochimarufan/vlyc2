@@ -16,12 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include <VlycResult/Promise_p.h>
+#include <VlycAsync/PromiseEvent.h>
 
 #include "PromiseListener.h"
 #include "PlaylistNode.h"
 
 using namespace Vlyc::Result;
+using namespace Vlyc::Async;
 
 PromiseListener::PromiseListener()
 {
@@ -57,7 +58,7 @@ bool PromiseListener::event(QEvent *e)
         }
         else if (!it->second)
             // Deleted
-            return false;
+            return true;
 
         if (event->type() == PromiseEvent::Type::Finished)
         {
@@ -74,6 +75,10 @@ bool PromiseListener::event(QEvent *e)
             mm_promises.erase(it);
             emit finished(node);
         }
+        else
+            qWarning("Unhandled PromiseEvent");
+
+        return true;
     }
     else
         return QObject::event(e);

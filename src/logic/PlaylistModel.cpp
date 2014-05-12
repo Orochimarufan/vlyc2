@@ -43,7 +43,7 @@ PlaylistModel::~PlaylistModel()
 // Node callbacks
 void PlaylistModel::beginInsertNode(PlaylistNode *parent, size_t index)
 {
-    qDebug("insert on %p: %i", parent, index);
+    qDebug("insert on %p: %lu", parent, index);
     beginInsertRows(createIndexForNode(parent), (int)index, (int)index);
 }
 

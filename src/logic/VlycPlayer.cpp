@@ -31,7 +31,7 @@
 using namespace Vlyc::Result;
 
 VlycPlayer::VlycPlayer(VlycApp *app) :
-    mp_app(app), m_model(app), mp_current_node(nullptr), m_player(), m_player_video(m_player)
+    mp_app(app), m_model(app), m_player(), m_player_video(m_player), mp_current_node(nullptr)
 {
     connect(&m_player, &VlcMediaPlayer::endReached, this, &VlycPlayer::next);
     connect(&m_model, &PlaylistModel::nodeAboutToBeDeleted, this, &VlycPlayer::onNodeAboutToBeDeleted);
@@ -305,6 +305,7 @@ void VlycPlayer::promiseFulfilled(PlaylistNode *node)
 
 void VlycPlayer::onNodeAdded(PlaylistNode *node)
 {
+    Q_UNUSED(node);
     // TODO: Move stuff into a different thread and we can pre-load stuff :)
     //if (!node->isComplete())
     //    complete(node);

@@ -16,10 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include "Promise_p.h"
+#include "PromiseEvent.h"
 
 namespace Vlyc {
-namespace Result {
+namespace Async {
 
 QEvent::Type const PromiseEvent::TYPE = static_cast<QEvent::Type>(QEvent::registerEventType());
 

@@ -297,7 +297,9 @@ VideoPtr PlaylistNode::__lvideo() const
 // Completeness
 bool PlaylistNode::isComplete() const
 {
-    return !m_error.isNull() || !mp_result.is<Promise>() && (!mp_result.is<Url>() || mp_result.is<BrokenUrl>());
+    return !m_error.isNull() ||
+         (!mp_result.is<Promise>() &&
+         (!mp_result.is<Url>() || mp_result.is<BrokenUrl>()));
 }
 
 void PlaylistNode::replaceWith(ResultPtr new_content)
