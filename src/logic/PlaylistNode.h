@@ -134,6 +134,9 @@ public:
         const iterator &operator ++();
         const iterator &operator --();
 
+        iterator &operator +=(unsigned int);
+        iterator &operator -=(unsigned int);
+
         PlaylistNode *operator *() const;
         PlaylistNode *operator ->() const;
 
@@ -164,6 +167,26 @@ public:
      * Note that this might change over the Node's livetime if the result is a Url reference
      */
     Vlyc::Result::ResultPtr result();
+
+    /**
+     * @brief property
+     * @param name
+     * @return The property named \c name
+     * Only used by media results right now
+     */
+    QVariant property(const QString &name);
+
+    template <typename T>
+    inline T property2(const QString &name)
+    {
+        return qvariant_cast<T>(property(name));
+    }
+
+    bool hasProperty(const QString &name);
+
+    bool hasMethod(const QString &name);
+
+    QVariant call(const QString &method, const QVariantList &args);
 
     /**
      * @brief isPlayable
@@ -206,6 +229,9 @@ public:
 
     bool hasFailed() const;
     QString failReason() const;
+
+    // Stuff
+    bool isList() const;
 
 private:
     PlaylistModel *mp_model;

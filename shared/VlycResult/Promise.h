@@ -139,7 +139,7 @@ private:
     Proxy m_proxy;
 };
 
-typedef ResultPointer<Promise> PromisePtr;
+typedef Pointer<Promise> PromisePtr;
 
 } // namespace Result
 } // namespace Vlyc

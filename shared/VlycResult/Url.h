@@ -32,7 +32,7 @@ public:
     Url(const QUrl &url) : QUrl(url) {}
 };
 
-typedef ResultPointer<Url> UrlPtr;
+typedef Pointer<Url> UrlPtr;
 
 } // namespace Result
 } // namespace Vlyc

@@ -46,7 +46,7 @@ public:
 
 class QtLoaderPlugin : public LoaderPlugin
 {
-    //BuiltinPluginLoader *selfLoader;
+    BuiltinPluginLoader *selfLoader;
     QRegularExpression cpp_plugin_match;
     QList<PluginLoader *> static_plugins;
 

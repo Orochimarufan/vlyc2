@@ -31,6 +31,8 @@
 
 #include <video.h>
 
+#include <util/History.h>
+
 namespace Ui {
 class MainWindow;
 }
@@ -71,15 +73,22 @@ private slots:
     void loadState();
 
     void on_actionAbout_triggered();
-    void on_actionOpen_triggered();
+    void on_actionOpenFile_triggered();
+    void on_actionOpenURL_triggered();
 
     void on_btn_play_clicked();
     void on_quality_currentIndexChanged(const int &);
     void on_subtitles_currentIndexChanged(const int &);
 
+    void on_btn_repeat_clicked();
+
     void on_btn_library_clicked(bool checked);
 
     void onLibraryContextMenu(const QPoint &point);
+
+    void openRecent();
+    void addRecent(const QUrl &url, bool restoring=false);
+    void on_actionClearRecent_triggered();
 
 protected:
     bool eventFilter(QObject *, QEvent *);
@@ -108,8 +117,12 @@ private:
     QShortcut *shortcut_Esc;
     QShortcut *shortcut_F11;
     QShortcut *shortcut_AltReturn;
+    QShortcut *shortcut_n;
 
     QRect m_geometry;
+
+    History history;
+    int m_repeat_mode;
 };
 
 #endif // MAINWINDOW_H

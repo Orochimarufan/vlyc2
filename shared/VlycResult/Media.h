@@ -18,23 +18,37 @@
 
 #pragma once
 
-#include "VlycMem/Object.h"
-#include "VlycMem/Pointer.h"
+#include "Object.h"
+
 
 namespace Vlyc {
 namespace Result {
 
-// aliases
-using Result = Vlyc::Memory::Object;
+/*
+ * Valid Object types:
+ * [Media]
+ * - file       = A file to play
+ *
+ * [Playlists]
+ * - urllist    = A list of urls to play
+ * - objectlist = A list of objects to play [used with the special ObjectList class!]
+ */
 
-template <typename T>
-using Pointer = Vlyc::Memory::Pointer<T>;
+inline auto File(const QUrl &mrl)
+{
+    return new Object{{"type", "file"}, {"mrl", mrl}};
+}
 
-using ResultPtr = Pointer<Result>;
+inline auto File(const QString &mrl)
+{
+    return new Object{{"type", "file"}, {"mrl", mrl}};
+}
+
+
+inline auto UrlList(const QStringList &urls, const QString &name="Playlist")
+{
+    return new Object{{"type", "urllist"}, {"urls", urls}, {"name", name}};
+}
 
 } // namespace Result
 } // namespace Vlyc
-
-// Qt Metatype declaration
-#include <QtCore/QMetaType>
-Q_DECLARE_METATYPE(Vlyc::Memory::Pointer<Vlyc::Memory::Object>)

@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include <VlycResult/Playlist.h>
 #include <VlycResult/Url.h>
+#include <VlycResult/Object.h>
+#include <VlycResult/ObjectList.h>
 
 #include "PlaylistNode.h"
 #include "PlaylistModel.h"
@@ -41,14 +42,42 @@ PlaylistNode::PlaylistNode(PlaylistNode *parent, ResultPtr result) :
 
 void PlaylistNode::initFromResult(bool from_constructor)
 {
-    PlaylistPtr playlist = mp_result.cast<Playlist>();
-    if (playlist.isValid())
+    ObjectPtr o = mp_result.cast<Vlyc::Result::Object>();
+    if (o.isValid())
     {
-        if (!from_constructor) mp_model->beginInsertNode(this, 0, playlist->length() - 1);
-        m_children.reserve(playlist->length());
-        for (int i = 0; i < playlist->length(); ++i)
-            m_children.push_back(new PlaylistNode(this, playlist->get(i)));
-        if (!from_constructor) mp_model->endInsertNode();
+        qDebug("Object: %s", qPrintable(o->objectName()));
+
+        auto pl = o.cast<ObjectList>();
+        if (pl.isValid())
+        {
+            if (!from_constructor) mp_model->beginInsertNode(this, 0, pl->length() - 1);
+            m_children.reserve(pl->length());
+            for (ResultPtr res : *pl)
+                m_children.push_back(new PlaylistNode(this, res));
+            if (!from_constructor) mp_model->endInsertNode();
+        }
+
+        else if (o->type() == "objectlist")
+        {
+            QVariantList list = o->property<QVariantList>("children");
+            if (!from_constructor) mp_model->beginInsertNode(this, 0, list.length() - 1);
+            m_children.reserve(list.length());
+            for (QVariant child : list)
+                m_children.push_back(new PlaylistNode(this, child.value<ResultPtr>()));
+            if (!from_constructor) mp_model->endInsertNode();
+        }
+
+        else if (o->type() == "urllist")
+        {
+            QVariantList urls = o->property<QVariantList>("urls");
+            if (!from_constructor) mp_model->beginInsertNode(this, 0, urls.length() - 1);
+            m_children.reserve(urls.length());
+            for (QVariant url : urls)
+                m_children.push_back(new PlaylistNode(this, new Vlyc::Result::Url(url.toUrl())));
+            if (!from_constructor) mp_model->endInsertNode();
+        }
+
+        o->setProperty("__vlyc_playlist_node", QVariant::fromValue((void*)this));
     }
 
     mp_model->nodeWasCreated(this);
@@ -227,6 +256,18 @@ const PlaylistNode::iterator &PlaylistNode::iterator::operator --()
     return *this;
 }
 
+PlaylistNode::iterator &PlaylistNode::iterator::operator+=(unsigned int n)
+{
+    for (; n && **this; --n)
+        ++*this;
+}
+
+PlaylistNode::iterator &PlaylistNode::iterator::operator-=(unsigned int n)
+{
+    for (; n && **this; --n)
+        --*this;
+}
+
 PlaylistNode *PlaylistNode::iterator::operator *() const
 {
     return mp_node;
@@ -264,25 +305,66 @@ ResultPtr PlaylistNode::result()
     return mp_result;
 }
 
+QVariant PlaylistNode::property(const QString &name)
+{
+    ObjectPtr media = mp_result.cast<Object>();
+    if (media.isValid())
+        return media->getProperty(name);
+}
+
+bool PlaylistNode::hasProperty(const QString &name)
+{
+    ObjectPtr o = mp_result.cast<Object>();
+    return o.isValid() && o->hasProperty(name);
+}
+
+bool PlaylistNode::hasMethod(const QString &name)
+{
+    ObjectPtr o = mp_result.cast<Object>();
+    return o.isValid() && o->hasMethod(name);
+}
+
+QVariant PlaylistNode::call(const QString &method, const QVariantList &args)
+{
+    ObjectPtr o = mp_result.cast<Object>();
+    if (o.isValid())
+        return o->call(method, args);
+}
+
 bool PlaylistNode::isPlayable() const
 {
-    return mp_result.is<LegacyVideoResult>();
+    if (mp_result.is<LegacyVideoResult>())
+        return true;
+
+    auto o = mp_result.cast<Object>();
+    return o.isValid() && o->type() == "file";
 }
 
 QString PlaylistNode::displayName() const
 {
-    PlaylistPtr playlist = mp_result.cast<Playlist>();
-    if (playlist.isValid())
-        return playlist->name();
     auto brokenUrl = mp_result.cast<BrokenUrl>();
     if (brokenUrl.isValid())
         return "Unknown: " + brokenUrl->toString();
-    UrlPtr url = mp_result.cast<Url>();
+
+    auto url = mp_result.cast<Url>();
     if (url.isValid())
         return url->toString();
+
     auto video = mp_result.cast<LegacyVideoResult>();
     if (video.isValid())
         return video->video()->title();
+
+    auto o = mp_result.cast<Object>();
+    if (o.isValid())
+    {
+        if (o->hasProperty("name"))
+            return o->property<QString>("name");
+        else if (o->type() == "file")
+            return o->property<QUrl>("mrl").fileName();
+        else
+            return o->objectName();
+    }
+
     return QString();
 }
 
@@ -297,6 +379,10 @@ VideoPtr PlaylistNode::__lvideo() const
 // Completeness
 bool PlaylistNode::isComplete() const
 {
+    auto o = mp_result.cast<Object>();
+    if (o.isValid() && m_error.isNull())
+        return (o->type() == "file" || o->type() == "urllist" || o->type() == "objectlist");
+
     return !m_error.isNull() ||
          (!mp_result.is<Promise>() &&
          (!mp_result.is<Url>() || mp_result.is<BrokenUrl>()));
@@ -327,4 +413,10 @@ bool PlaylistNode::hasFailed() const
 QString PlaylistNode::failReason() const
 {
     return m_error;
+}
+
+bool PlaylistNode::isList() const
+{
+    auto o = mp_result.cast<Object>();
+    return o.isValid() && (o->type() == "objectlist" || o->type() == "urllist");
 }

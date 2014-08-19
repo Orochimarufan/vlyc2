@@ -16,46 +16,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#include "Playlist.h"
+#pragma once
+
+#include <QtCore/QVector>
+
+#include "Object.h"
+
 
 namespace Vlyc {
 namespace Result {
 
-qint64 Playlist::startAt()
+class ObjectList : public Object, public QVector<ResultPtr>
 {
-    return 0;
-}
-
-QString Playlist::name()
-{
-    return "Unnamed Playlist";
-}
-
-// StandardPlaylist
-StandardPlaylist::StandardPlaylist(QString name, qint64 startIndex) :
-    m_start_index(startIndex), m_name(name)
-{
-}
-
-ResultPtr StandardPlaylist::get(const qint64 &index)
-{
-    return QList::operator [](index);
-}
-
-qint64 StandardPlaylist::length()
-{
-    return QList::length();
-}
-
-qint64 StandardPlaylist::startAt()
-{
-    return m_start_index;
-}
-
-QString StandardPlaylist::name()
-{
-    return m_name;
-}
+public:
+    ObjectList() {setProperty("type", "objectlist");}
+    ObjectList(std::initializer_list<std::pair<QString, QVariant>> il):
+        Object(il) {setProperty("type", "objectlist");}
+    ObjectList(std::initializer_list<ResultPtr> il):
+        QVector<ResultPtr>(il) {setProperty("type", "objectlist");}
+    ObjectList(std::initializer_list<std::pair<QString, QVariant>> il, std::initializer_list<ResultPtr> il2):
+        Object(il), QVector<ResultPtr>(il2) {setProperty("type", "objectlist");}
+};
 
 } // namespace Result
 } // namespace Vlyc

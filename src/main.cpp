@@ -34,7 +34,7 @@ int main(int argc, char** argv)
 
     app.setApplicationName("vlyc2");
     app.setApplicationDisplayName("VLYC²");
-    app.setApplicationVersion("0.9.1");
+    app.setApplicationVersion("0.9.10");
     app.setOrganizationName("Orochimarufan");
     app.setOrganizationDomain("oro.sodimm.me");
     app.setWindowIcon(QIcon(":/vlyc/res/vlyc2.png"));
@@ -93,6 +93,8 @@ int main(int argc, char** argv)
     VlcInstance::initGlobalInstance(libvlc_args);
 
     VlycApp vlyc;
+
+    app.setProperty("vlyc", QVariant::fromValue((QObject*)&vlyc));
 
     if (!args["proxy"].toString().isNull())
     {

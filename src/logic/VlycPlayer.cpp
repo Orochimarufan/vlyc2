@@ -31,9 +31,13 @@
 using namespace Vlyc::Result;
 
 VlycPlayer::VlycPlayer(VlycApp *app) :
-    mp_app(app), m_model(app), m_player(), m_player_video(m_player), mp_current_node(nullptr)
+    mp_app(app), m_model(app),
+    m_playback_flags(PlaybackFlags::Normal), mp_repeat_root(m_model.root()),
+    m_player(), m_player_video(m_player),
+    mp_current_node(nullptr), m_last_quality_select((int)VideoQualityLevel::QA_INVALID)
 {
     connect(&m_player, &VlcMediaPlayer::endReached, this, &VlycPlayer::next);
+    connect(&m_player, &VlcMediaPlayer::stateChanged, this, &VlycPlayer::onStateChanged);
     connect(&m_model, &PlaylistModel::nodeAboutToBeDeleted, this, &VlycPlayer::onNodeAboutToBeDeleted);
     connect(&m_model, &PlaylistModel::nodeAdded, this, &VlycPlayer::onNodeAdded);
     connect(&m_promise, &PromiseListener::finished, this, &VlycPlayer::promiseFulfilled);
@@ -48,6 +52,11 @@ PlaylistModel &VlycPlayer::model()
 VlcMediaPlayer VlycPlayer::player()
 {
     return m_player;
+}
+
+PlaylistNode *VlycPlayer::current()
+{
+    return mp_current_node;
 }
 
 // Modify playlist
@@ -86,7 +95,7 @@ void VlycPlayer::play(PlaylistNode *node)
 
 void VlycPlayer::next()
 {
-    playNextItem(mp_current_node ? mp_current_node : m_model.root());
+    playNextItem(mp_current_node ? mp_current_node : m_model.root(), m_playback_flags);
 }
 
 void VlycPlayer::prev()
@@ -100,35 +109,106 @@ void VlycPlayer::prev()
 // Legacy video crap :(
 #include "__lv_hacks.h"
 
+// TODO: move into PlaylistNode
+#include <VlycResult/Object.h>
+
+static const quint32 T_BROKEN = 0;
+static const quint32 T_LEGACY = 1;
+static const quint32 T_DIRECT = 2;
+
 // Set a new item
 void VlycPlayer::setItem(PlaylistNode *item)
 {
-    // ONLY CALL ON LegacyVideoResult items!
-    mp_current_node = item;
+    m_current_item_type = T_BROKEN;
 
-    auto qualities = __lv_qualities(item->__lvideo());
-    ml_current_quality_list = std::get<0>(qualities);
-    ml_current_quality_id_list = std::get<1>(qualities);
-    m_current_quality_index = 0;
+    if (item->result().is<LegacyVideoResult>())
+    {
+        m_current_item_type = T_LEGACY;
 
-    ml_current_subs_list = item->__lvideo()->availableSubtitleLanguages();
-    ml_current_subs_list.prepend("No Subtitles");
-    m_current_subs_index = 0;
+        auto qualities = __lv_qualities(item->__lvideo());
+        ml_current_quality_list = std::get<0>(qualities);
+        ml_current_quality_id_list = std::get<1>(qualities);
 
-    emit qualityListChanged(ml_current_quality_list, m_current_quality_index);
-    emit subsListChanged(ml_current_subs_list, m_current_subs_index);
-    m_model.setCurrentlyPlaying(item);
+        // find best quality [DIRTY HACK!!!!]
+        if (m_last_quality_select != (int)VideoQualityLevel::QA_INVALID)
+            for (int i = ml_current_quality_id_list.length() - 1; i >= 0 && ml_current_quality_id_list[i] < (m_last_quality_select + 15); --i)
+                m_current_quality_index = i;
+
+        ml_current_subs_list = item->__lvideo()->availableSubtitleLanguages();
+        ml_current_subs_list.prepend("No Subtitles");
+    }
+
+    auto o = item->result().cast<Object>();
+    if (o.isValid())
+    {
+        QString type = o->type();
+        if (type == "file")
+        {
+            m_current_item_type = T_DIRECT;
+
+            ml_current_quality_list.clear();
+            ml_current_quality_list << "File";
+
+            ml_current_subs_list.clear();
+        }
+    }
+
+    if (m_current_item_type == T_BROKEN)
+    {
+        QMessageBox::critical(0, "Error:  This shouldn't happen!", "Couldn't handle playable playlist node");
+    }
+    else
+    {
+        cleanupSpu();
+        mp_current_node = item;
+
+        m_current_quality_index = 0;
+        m_current_subs_index = 0;
+
+        emit qualityListChanged(ml_current_quality_list, m_current_quality_index);
+        emit subsListChanged(ml_current_subs_list, m_current_subs_index);
+        m_model.setCurrentlyPlaying(item);
+    }
 }
 
 void VlycPlayer::createMedia()
 {
-    m_current_media = __lv_get_media()(mp_current_node->__lvideo(), ml_current_quality_id_list[m_current_quality_index]);
+    if (m_current_item_type == T_LEGACY)
+        m_current_media = __lv_get_media()(mp_current_node->__lvideo(), ml_current_quality_id_list[m_current_quality_index]);
+    else if (m_current_item_type == T_DIRECT)
+    {
+        m_current_media = VlcMedia(mp_current_node->property2<QUrl>("mrl"));
+        if (!m_current_media.isParsed()) m_current_media.parse();
+    }
 }
 
 void VlycPlayer::playMedia()
 {
     m_player.setMedia(m_current_media);
     m_player.play();
+}
+
+void VlycPlayer::onStateChanged(VlcState::Type state)
+{
+    if (state != VlcState::Playing)
+        return;
+    if (m_current_item_type == T_DIRECT)
+    {
+        // Add file subtitles
+        QHash<int, QString> spu = m_player_video.spuDescription();
+        QList<int> spu_ids = spu.keys();
+        qSort(spu_ids);
+        ml_current_subs_list.clear();
+        ml_current_quality_id_list.clear(); // HACK!
+        for (int i : spu_ids)
+        {
+            qDebug("SPU %i: %s", i, qPrintable(spu[i]));
+            ml_current_subs_list << spu[i];
+            ml_current_quality_id_list << i;
+        }
+        m_current_subs_index = ml_current_quality_id_list.indexOf(m_player_video.spu());
+        emit subsListChanged(ml_current_subs_list, m_current_subs_index);
+    }
 }
 
 // Set the quality level from gui
@@ -140,6 +220,11 @@ void VlycPlayer::setQuality(int index)
     float position = m_player.position();
     playMedia();
     m_player.setPosition(position);
+
+    if (!m_current_spu_file.isEmpty())
+        m_player_video.setSubtitleFile(m_current_spu_file);
+
+    m_last_quality_select = ml_current_quality_id_list[index];
 }
 
 void VlycPlayer::setSubtitles(int index)
@@ -147,8 +232,10 @@ void VlycPlayer::setSubtitles(int index)
     m_current_subs_index = index;
 
     if (index == 0)
-        m_player_video.setSpu(0);
-    else
+        m_player_video.setSpu(-1);
+    else if (m_current_item_type == T_DIRECT)
+        m_player_video.setSpu(ml_current_quality_id_list[index]);
+    else if (m_current_item_type == T_LEGACY)
     {
         __lv_get_subs subs;
         subs(mp_current_node->__lvideo(), ml_current_subs_list[index]);
@@ -169,10 +256,47 @@ void VlycPlayer::setSubtitles(int index)
     }
 }
 
+void VlycPlayer::setSubtitleFile(QString &path)
+{
+    cleanupSpu();
+
+    m_current_spu_file = path;
+    m_player_video.setSubtitleFile(path);
+}
+
+void VlycPlayer::cleanupSpu()
+{
+    if (!m_current_spu_file.isEmpty())
+    {
+        QFile::remove(m_current_spu_file);
+        m_current_spu_file.clear();
+    }
+}
+
 // ----------------------------------------------------------------------------
 // Traversal
-void VlycPlayer::playNextItem(PlaylistNode *origin)
+void VlycPlayer::setPlaybackFlags(const PlaybackFlags &flags)
 {
+    m_playback_flags = flags;
+}
+
+void VlycPlayer::playNextItem(PlaylistNode *origin, PlaybackFlags flags)
+{
+    if (flags & PlaybackFlags::RepeatOne)
+    {
+        if (!origin->isComplete())
+        {
+            complete(origin, true);
+            return;
+        }
+        if (origin->isPlayable())
+        {
+            playItem(origin);
+            return;
+        }
+    }
+
+    // Normal
     PlaylistNode::iterator it(origin);
     while (*(++it) != nullptr)
     {
@@ -184,7 +308,12 @@ void VlycPlayer::playNextItem(PlaylistNode *origin)
         if (it->isPlayable())
             break;
     }
-    playItem(*it);
+
+    // Repeat All
+    if (*it == nullptr && flags & PlaybackFlags::RepeatAll)
+        playFirstItem(mp_repeat_root);
+    else
+        playItem(*it);
 }
 
 void VlycPlayer::playPrevItem(PlaylistNode *origin)
@@ -230,6 +359,15 @@ void VlycPlayer::playFirstItem(PlaylistNode *origin, bool reverse)
         playItem(origin);
     else if (reverse)
         playPrevItem(origin);
+    else if (origin->property("start_index").isValid())
+    {
+        PlaylistNode::iterator it(origin);
+        it += origin->property2<int>("start_index");
+        if (!*it)
+            playNextItem(origin);
+        else
+            playNextItem(*it);
+    }
     else
         playNextItem(origin);
 }
@@ -239,6 +377,11 @@ void VlycPlayer::playFirstItem(PlaylistNode *origin, bool reverse)
 void VlycPlayer::playNow(const QModelIndex &index)
 {
     playFirstItem(m_model.getNodeFromIndex(index));
+}
+
+void VlycPlayer::setRepeatRoot(const QModelIndex &index)
+{
+    mp_repeat_root = m_model.getNodeFromIndex(index);
 }
 
 void VlycPlayer::remove(const QModelIndex &index)
@@ -262,8 +405,15 @@ void VlycPlayer::complete(PlaylistNode *node, bool play, bool reverse)
     if (url.isValid())
     {
         ResultPtr it = url.cast<Result>();
-        while (it.is<Url>())
+        while (it.is<Url>() && !it.is<BrokenUrl>())
             it = mp_app->handleUrl(*it.cast<Url>());
+        if (!it.isValid())
+        {
+            node->markFailed("BAM");
+            if (play)
+                playNextItem(node);
+            return;
+        }
         node->replaceWith(it);
         if (!node->isComplete())
             complete(node, play);

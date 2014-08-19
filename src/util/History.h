@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,44 +18,20 @@
 
 #pragma once
 
-#include <QtCore/QList>
-#include <QtCore/QString>
+#include <QtCore/QSettings>
 
-#include "Result.h"
-
-namespace Vlyc {
-namespace Result {
-
-class Playlist : public Result
+class History
 {
+    int size;
+    QString prefix;
+    QSettings settings;
 public:
-    virtual ResultPtr get(const qint64 &index) = 0;
+    History(const QString &prefix="History", int size=10);
 
-    virtual qint64 length() = 0;
+    QStringList recentFiles();
+    QString lastFileOpenDir();
 
-    /// The index that should play first
-    virtual qint64 startAt();
-
-    /// The playlist name
-    virtual QString name();
+    void setFileOpenDir(const QString &dir);
+    void addRecentFile(const QString &path);
+    void clearRecentFiles();
 };
-
-class StandardPlaylist : public Playlist, public QList<ResultPtr>
-{
-    qint64 m_start_index;
-    QString m_name;
-
-public:
-    StandardPlaylist(QString name="Unnamed Playlist", qint64 startIndex=0);
-
-    virtual ResultPtr get(const qint64 &);
-    virtual qint64 length();
-    virtual qint64 startAt();
-    virtual QString name();
-};
-
-
-typedef ResultPointer<Playlist> PlaylistPtr;
-
-} // namespace Result
-} // namespace Vlyc

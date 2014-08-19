@@ -18,7 +18,6 @@
 
 #include <QIcon>
 
-#include <VlycResult/Playlist.h>
 #include <VlycResult/Promise.h>
 
 #include "PlaylistModel.h"
@@ -140,7 +139,7 @@ QVariant PlaylistModel::data(const QModelIndex &index, int role) const
     case Qt::DecorationRole:
         if (node->hasFailed() || !node->result().isValid())
             return QIcon(":/menu/quit"); // Just a generic X symbol
-        else if (node->result().is<Playlist>())
+        else if (node->isList())
             return QIcon(":/type/playlist");
         else
             return QIcon(":/type/file");

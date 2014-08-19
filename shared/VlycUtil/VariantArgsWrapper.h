@@ -18,23 +18,56 @@
 
 #pragma once
 
-#include "VlycMem/Object.h"
-#include "VlycMem/Pointer.h"
+#include <QtCore/QVariant>
+
+#include "VariantArgs.h"
+
 
 namespace Vlyc {
-namespace Result {
+namespace Util {
 
-// aliases
-using Result = Vlyc::Memory::Object;
+/**
+ * Unpack a VariantArgs call
+ * FIXME: HOW to unpack it?
+ */
+/*template <typename Ret, typename... Args>
+class VariantArgsProxy
+{
+public:
+    typedef std::function <Ret(Args...)> function;
+    typedef VariantArgs<Args...> VArgs;
 
-template <typename T>
-using Pointer = Vlyc::Memory::Pointer<T>;
+    VariantArgsProxy(function f) : func(f) {}
 
-using ResultPtr = Pointer<Result>;
+    Ret operator () (QVariantList args)
+    {
+        assert(args.length() == VArgs::size);
+        return func(VArgs::element<...>::value(args));
+    }
 
-} // namespace Result
-} // namespace Vlyc
+private:
+    function func;
+};*/
 
-// Qt Metatype declaration
-#include <QtCore/QMetaType>
-Q_DECLARE_METATYPE(Vlyc::Memory::Pointer<Vlyc::Memory::Object>)
+/**
+ * Wrap a simple VariantArgs function
+ */
+template <typename Ret, typename... Args>
+class VariantArgsWrapper
+{
+public:
+    typedef std::function <QVariant(const QVariantList &)> function;
+
+    VariantArgsWrapper(function f) : func(f) {}
+
+    Ret operator() (Args... args)
+    {
+        return qvariant_cast<Ret>(func(QVariantList{args...}));
+    }
+
+private:
+    function func;
+};
+
+}
+}

@@ -23,6 +23,9 @@
 
 #include <VlcInstance.h>
 
+#include "../vlyc.h"
+#include <VlycPluginManager.h>
+
 About::About(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::About)
@@ -33,6 +36,7 @@ About::About(QWidget *parent) :
     PAGE_LINK(license);
     PAGE_LINK(authors);
     PAGE_LINK(versions);
+    PAGE_LINK(plugins);
 #undef PAGE_LINK
 
     // Generate versions page
@@ -53,6 +57,17 @@ About::About(QWidget *parent) :
 
     // Version
     ui->appver->setText(qApp->applicationVersion());
+
+    // Generate Plugins page
+    VlycApp *app = (VlycApp*)qApp->property("vlyc").value<QObject*>();
+    int i = -1;
+    for (Vlyc::Plugin *p : app->plugins()->getAllPlugins())
+    {
+        ui->pluginTable->insertRow(++i);
+        ui->pluginTable->setItem(i, 0, new QTableWidgetItem(p->name()));
+        ui->pluginTable->setItem(i, 1, new QTableWidgetItem(p->version()));
+        ui->pluginTable->setItem(i, 2, new QTableWidgetItem(p->author()));
+    }
 }
 
 void About::onLinkClicked(const QString &url)

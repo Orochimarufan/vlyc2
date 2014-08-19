@@ -45,7 +45,8 @@ void PluginManager::bootstrap(QRegularExpression cpp_plugin_match)
     if (getPluginById(CPP_ID) == nullptr)
     {
         QtLoaderPlugin *loader = new QtLoaderPlugin(cpp_plugin_match);
-        d_ptr->m_plugins << loader;
+        //d_ptr->m_plugins << loader;
+        d_ptr->initPlugin(loader->builtinPlugins()[0]);
     }
 }
 

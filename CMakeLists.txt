@@ -22,6 +22,10 @@ IF(POLICY CMP0020)
     CMAKE_POLICY(SET CMP0020 NEW)
 ENDIF()
 
+IF(POLICY CMP0028) # 3.0: Double-colon targets
+    CMAKE_POLICY(SET CMP0028 NEW)
+ENDIF()
+
 IF(NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
@@ -45,15 +49,15 @@ SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 ######## Set compiler flags ########
 IF(APPLE)
-	# assume clang 4.1.0+, add C++0x/C++11 stuff
+        # assume clang, add C++1y/C++14 stuff
 	message(STATUS "Using APPLE CMAKE_CXX_FLAGS")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -stdlib=libc++")
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -stdlib=libc++")
 ELSEIF(UNIX)
-	# assume GCC, add C++0x/C++11 stuff
+        # assume GCC, add C++1y/C++14 stuff
 	MESSAGE(STATUS "Using UNIX CMAKE_CXX_FLAGS")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
 	# Need extra -Xlinker -export-dynamic for python C extensions.
-	SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic")
+        #SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic")
 ELSEIF(MINGW)
 	MESSAGE(STATUS "Using MINGW CMAKE_CXX_FLAGS")
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")

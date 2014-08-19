@@ -32,8 +32,11 @@
 #include <QMessageBox>
 #include <QBoxLayout>
 #include <QTemporaryFile>
+#include <QFileDialog>
 
 #include "logic/VlycPlayer.h"
+#include "logic/PlaylistModel.h"
+#include "logic/PlaylistNode.h"
 
 #ifdef Q_OS_LINUX
 #include "vlyc_xcb.h"
@@ -66,7 +69,8 @@ MainWindow::MainWindow(VlycApp *self) :
     mp_self(self),
     m_player(self->player()->player()),
     m_player_audio(m_player),
-    m_player_video(m_player)
+    m_player_video(m_player),
+    m_repeat_mode(0)
 {
 #ifdef Q_OS_LINUX
     if (qApp->platformName() == "xcb")
@@ -109,6 +113,7 @@ void MainWindow::updateQualityList(QList<QString> qa, int current)
     ui->quality->clear();
     ui->quality->addItems(qa);
     ui->quality->setCurrentIndex(current);
+    ui->quality->setEnabled(qa.length() > 1);
 }
 
 void MainWindow::updateSubsList(QList<QString> subs, int current)
@@ -117,6 +122,7 @@ void MainWindow::updateSubsList(QList<QString> subs, int current)
     ui->subtitles->clear();
     ui->subtitles->addItems(subs);
     ui->subtitles->setCurrentIndex(current);
+    ui->subtitles->setEnabled(subs.length() > 1);
 }
 
 void MainWindow::on_quality_currentIndexChanged(const int &index)
@@ -231,6 +237,9 @@ void MainWindow::connectUiMisc()
 
     shortcut_Esc = new QShortcut(QKeySequence("Esc"), ui->video);
     connect(shortcut_Esc, &QShortcut::activated, [=] () {setFullScreen(false);});
+
+    shortcut_n = new QShortcut(QKeySequence("N"), ui->video);
+    connect(shortcut_n, &QShortcut::activated, mp_self->player(), &VlycPlayer::next);
 }
 
 void MainWindow::on_btn_play_clicked()
@@ -252,7 +261,25 @@ void MainWindow::on_btn_play_clicked()
     }
 }
 
-void MainWindow::on_actionOpen_triggered()
+void MainWindow::on_actionOpenFile_triggered()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Open File", history.lastFileOpenDir());
+
+    if (path.isEmpty())
+        return;
+
+    history.setFileOpenDir(QFileInfo(path).dir().path());
+
+    QUrl url;
+    url.setScheme("file");
+    url.setPath(path);
+
+    addRecent(url);
+
+    mp_self->play(url);
+}
+
+void MainWindow::on_actionOpenURL_triggered()
 {
     QString url = QInputDialog::getText(this, tr("Open Url"), tr("Enter URL"));
 
@@ -287,6 +314,24 @@ void MainWindow::on_btn_library_clicked(bool checked)
 void MainWindow::onLibraryContextMenu(const QPoint &point)
 {
     QMenu menu(ui->treeView);
+    if (ui->treeView->selectionModel()->selectedRows().length() < 2)
+    {
+        PlaylistNode *node = mp_self->player()->model().getNodeFromIndex(ui->treeView->indexAt(point));
+        if (node->hasProperty("library_context_menu"))
+        {
+            QVariantHash entries = node->property2<QVariantHash>("library_context_menu");
+            for (QString method : entries.keys())
+            {
+                if (!node->hasMethod(method))
+                    continue;
+                QAction *a = menu.addAction(entries[method].toString());
+                connect(a, &QAction::triggered, [node, method](){
+                    node->call(method, QVariantList());
+                });
+            }
+            menu.addSeparator();
+        }
+    }
     QAction *a = menu.addAction("Remove");
     connect(a, &QAction::triggered, [this](){
         for (QModelIndex index : ui->treeView->selectionModel()->selectedIndexes())
@@ -294,6 +339,16 @@ void MainWindow::onLibraryContextMenu(const QPoint &point)
     });
     a = menu.addAction("Clear Playlist", mp_self->player(), SLOT(clearPlaylist()));
     menu.exec(ui->treeView->mapToGlobal(point));
+}
+
+void MainWindow::on_btn_repeat_clicked()
+{
+    if (++m_repeat_mode > 2)
+        m_repeat_mode = 0;
+
+    ui->btn_repeat->updateButtonIcons(m_repeat_mode);
+
+    mp_self->player()->setPlaybackFlags((PlaybackFlags)m_repeat_mode); // Add shuffle
 }
 
 // ----------------------------------------------------------------------------
@@ -381,4 +436,50 @@ void MainWindow::loadState()
     setGeometry(config.value("geometry", geometry()).toRect());
     if (config.value("maximised", false).toBool())
         setWindowState(windowState() | Qt::WindowMaximized);
+
+    // Recent files
+    ui->actionClearRecent->setParent(this);
+    ui->menuRecent->clear();
+    for (QString file : history.recentFiles())
+        addRecent(file, true);
+    ui->menuRecent->addSeparator();
+    ui->menuRecent->addAction(ui->actionClearRecent);
+}
+
+void MainWindow::addRecent(const QUrl &url, bool restoring)
+{
+    // Save it to the config
+    if (!restoring)
+        history.addRecentFile(url.toString());
+
+    // Add the Menu entry
+    QString name = url.scheme() == "file" ? url.fileName() : url.toString();
+
+    QAction *action = new QAction(name, ui->menuRecent);
+    action->setData(url);
+    connect(action, &QAction::triggered, this, &MainWindow::openRecent);
+
+    // Insert it on the top
+    if (!restoring)
+        ui->menuRecent->insertAction(ui->menuRecent->actions().at(0), action);
+    // Insert it above the separator
+    else
+        ui->menuRecent->addAction(action);
+
+    // Enable the menu, if this was the first entry
+    ui->menuRecent->setEnabled(true);
+}
+
+void MainWindow::openRecent()
+{
+    mp_self->play(static_cast<QAction*>(sender())->data().toUrl());
+}
+
+void MainWindow::on_actionClearRecent_triggered()
+{
+    history.clearRecentFiles();
+    ui->menuRecent->clear();
+    ui->menuRecent->addSeparator();
+    ui->menuRecent->addAction(ui->actionClearRecent);
+    ui->menuRecent->setEnabled(false);
 }

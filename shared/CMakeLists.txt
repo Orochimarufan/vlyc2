@@ -38,9 +38,14 @@ legacy/VlycLegacySitePlugin.h
 
 VlycResult/Result.h
 VlycResult/Url.h
-VlycResult/Playlist.h
+
+VlycResult/Object.h
+VlycResult/ObjectList.h
+VlycResult/Media.h
 
 VlycResult/Promise.h
+
+VlycUtil/VariantArgs.h
 )
 
 set(PRIVATE_HEADERS
@@ -62,7 +67,7 @@ VlycPluginInterface.cpp
 legacy/video.cpp
 legacy/VlycLegacySitePlugin.cpp
 
-VlycResult/Playlist.cpp
+VlycResult/Object.cpp
 
 VlycResult/Promise.cpp
 )

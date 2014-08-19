@@ -39,6 +39,7 @@ SET(VLYC_HEADERS
 
 	util/cmdparser.h
 	util/cmdparser_p.h
+        util/History.h
 
 	gui/mainwindow.h
 	gui/fullscreencontroller.h
@@ -63,6 +64,7 @@ SET(VLYC_SOURCES
 	vlyc.cpp
 
 	util/cmdparser.cpp
+        util/History.cpp
 
 	gui/mainwindow.cpp
 	gui/fullscreencontroller.cpp

@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2013-2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -135,18 +135,19 @@ const QString QtLoaderPlugin::ID = "__CppLoaderPlugin";
 QtLoaderPlugin::QtLoaderPlugin(QRegularExpression cpp_plugin_match) :
     cpp_plugin_match(cpp_plugin_match)
 {
-    /*static QJsonObject metaData;
+    static QJsonObject metaData;
     if (metaData.isEmpty())
     {
         QVariantMap map;
-        map.insert("ID", CPP_ID);
+        map.insert("ID", ID);
         map.insert("Name", "Vlyc2 Qt C++ Plugin Loader");
-        map.insert("Author", "Orochimarufan");
+        map.insert("Author", "Taeyeon Mori");
         map.insert("Version", "1.0");
         map.insert("Description", "The default Plugin Loader");
         metaData = QJsonObject::fromVariantMap(map);
     }
-    selfLoader = new BuiltinPluginLoader(this, NULL, metaData, this);*/
+    selfLoader = new BuiltinPluginLoader(this, NULL, metaData, this);
+    static_plugins << selfLoader;
 
     // register static plugins
     for (QObject *o : QPluginLoader::staticInstances())

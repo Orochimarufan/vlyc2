@@ -66,7 +66,7 @@
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
             <horstretch>3</horstretch>
-            <verstretch>0</verstretch>
+            <verstretch>5</verstretch>
            </sizepolicy>
           </property>
           <property name="minimumSize">
@@ -120,6 +120,9 @@
               </property>
               <property name="contextMenuPolicy">
                <enum>Qt::CustomContextMenu</enum>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ExtendedSelection</enum>
               </property>
              </widget>
             </item>
@@ -194,9 +197,6 @@
          </item>
          <item>
           <widget class="QToolButton" name="btn_prev">
-           <property name="text">
-            <string>...</string>
-           </property>
            <property name="icon">
             <iconset>
              <normaloff>:/toolbar/previous_b</normaloff>:/toolbar/previous_b</iconset>
@@ -213,9 +213,6 @@
          </item>
          <item>
           <widget class="QToolButton" name="btn_next">
-           <property name="text">
-            <string>...</string>
-           </property>
            <property name="icon">
             <iconset>
              <normaloff>:/toolbar/next_b</normaloff>:/toolbar/next_b</iconset>
@@ -224,13 +221,17 @@
          </item>
          <item>
           <widget class="QToolButton" name="btn_library">
-           <property name="text">
-            <string>...</string>
-           </property>
            <property name="icon">
             <iconset>
              <normaloff>:/toolbar/playlist</normaloff>:/toolbar/playlist</iconset>
            </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="LoopButton" name="btn_repeat">
            <property name="checkable">
             <bool>true</bool>
            </property>
@@ -261,10 +262,18 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="subtitles"/>
+          <widget class="QComboBox" name="subtitles">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="quality"/>
+          <widget class="QComboBox" name="quality">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="SoundWidget" name="volume" native="true"/>
@@ -282,14 +291,30 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>22</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionOpen"/>
+    <widget class="QMenu" name="menuOpen">
+     <property name="title">
+      <string>Open</string>
+     </property>
+     <addaction name="actionOpenFile"/>
+     <addaction name="actionOpenURL"/>
+    </widget>
+    <widget class="QMenu" name="menuRecent">
+     <property name="title">
+      <string>Recent</string>
+     </property>
+     <addaction name="separator"/>
+     <addaction name="actionClearRecent"/>
+    </widget>
+    <addaction name="menuOpen"/>
+    <addaction name="menuRecent"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuTools">
@@ -308,11 +333,6 @@
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionOpen">
-   <property name="text">
-    <string>Open</string>
-   </property>
-  </action>
   <action name="actionQuit">
    <property name="text">
     <string>Quit</string>
@@ -326,6 +346,21 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionOpenFile">
+   <property name="text">
+    <string>File</string>
+   </property>
+  </action>
+  <action name="actionOpenURL">
+   <property name="text">
+    <string>URL</string>
+   </property>
+  </action>
+  <action name="actionClearRecent">
+   <property name="text">
+    <string>Clear Recent Files</string>
    </property>
   </action>
  </widget>
@@ -356,6 +391,11 @@
    <extends>QWidget</extends>
    <header location="global">gui/videowidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>LoopButton</class>
+   <extends>QToolButton</extends>
+   <header location="global">QtVlcWidgets/SpecialButtons.h</header>
   </customwidget>
  </customwidgets>
  <resources>

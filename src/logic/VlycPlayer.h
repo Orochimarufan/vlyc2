@@ -29,6 +29,15 @@
 #include "PlaylistModel.h"
 #include "PromiseListener.h"
 
+//FIXME: enum class and operator& ?
+enum PlaybackFlags
+{
+    Normal = 0,
+    RepeatAll = 1,
+    RepeatOne = 2,
+    Shuffle = 4,
+};
+
 class VlycPlayer : public QObject
 {
     Q_OBJECT
@@ -37,6 +46,8 @@ public:
 
     PlaylistModel &model();
     VlcMediaPlayer player();
+
+    PlaylistNode *current();
 
 signals:
     void endReached();
@@ -47,20 +58,23 @@ public slots:
     void queue(Vlyc::Result::ResultPtr result);
     void queueAndPlay(Vlyc::Result::ResultPtr result);
 
+    void play(PlaylistNode *node);
+
+    // UI slots
+    void playNow(const QModelIndex &index);
+    void setRepeatRoot(const QModelIndex &index);
+
     void remove(const QModelIndex &index);
     void clearPlaylist();
-
-    void play(PlaylistNode *node);
 
     void play();
     void setQuality(int index);
     void setSubtitles(int index);
 
+    void setPlaybackFlags(const PlaybackFlags &flags);
+
     void next();
     void prev();
-
-    // UI slots
-    void playNow(const QModelIndex &index);
 
     // Complete Playlist Entries (Async)
     void complete(PlaylistNode *node, bool play=false, bool reverse=false);
@@ -74,30 +88,42 @@ private slots:
 
     void promiseFulfilled(PlaylistNode *node);
 
+    void onStateChanged(VlcState::Type state);
+
 private:
     VlycApp *mp_app;
     PlaylistModel m_model;
+
+    PlaybackFlags m_playback_flags;
+    PlaylistNode *mp_repeat_root;
+
     VlcMediaPlayer m_player;
     VlcMediaPlayerVideo m_player_video;
 
     VlcMedia m_current_media;
     PlaylistNode *mp_current_node;
+    quint32 m_current_item_type;
 
     PromiseListener m_promise;
     PlaylistNode *mp_promised_node;
     bool m_promised_reverse;
 
     // Old & broken stuff
+    int m_last_quality_select;
     QList<QString> ml_current_quality_list;
     QList<int> ml_current_quality_id_list;
     int m_current_quality_index;
     QList<QString> ml_current_subs_list;
     int m_current_subs_index;
 
-    void playNextItem(PlaylistNode *origin);
+    void playNextItem(PlaylistNode *origin, PlaybackFlags flags=PlaybackFlags::Normal);
     void playPrevItem(PlaylistNode *origin);
 
     void createMedia();
     void setItem(PlaylistNode *item);
     void playMedia();
+
+    void setSubtitleFile(QString &path);
+    QString m_current_spu_file;
+    void cleanupSpu();
 };
