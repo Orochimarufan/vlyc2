@@ -1,0 +1,7 @@
+{
+    "ID": "me.sodimm.oro.vlyc.plugin.SimplePlaylist",
+    "Name": "VML Series Playlist Plugin",
+    "Version": "0.2",
+    "Author": "Taeyeon Mori",
+    "Description": "Reads line-delimited .vml files"
+}
