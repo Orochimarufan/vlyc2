@@ -1,6 +1,6 @@
 #/*****************************************************************************
 # * vlyc2 - A Desktop YouTube client
-# * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+# * Copyright (C) 2013-2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
 # *
 # * This program is free software: you can redistribute it and/or modify
 # * it under the terms of the GNU General Public License as published by
@@ -16,20 +16,16 @@
 # * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # *****************************************************************************/
 
-SET(PLUGIN_NAME test2)
-
-######## Prepare ########
-include(../prepare.cmake)
-
-######## Plugin ########
-## this is where custom stuff goes!
-SET(PLUGIN_HEADERS
-testplugin2.h
-)
-
-SET(PLUGIN_SOURCES
-testplugin2.cpp
-)
+# Include this file from your plugin cmakelists
 
 ######## Build ########
-include(../build.cmake)
+# Qt
+FOREACH(module ${PLUGIN_QT})
+	find_package(Qt5${module} REQUIRED)
+ENDFOREACH(module)
+
+# Build
+add_library(${PLUGIN} SHARED ${PLUGIN_HEADERS} ${PLUGIN_SOURCES})
+qt5_use_modules(${PLUGIN} ${PLUGIN_QT})
+target_link_libraries(${PLUGIN} ${PLUGIN_LIBS})
+

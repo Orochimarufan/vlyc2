@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2013-2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,41 +16,39 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef STUBPLUGIN_H
-#define STUBPLUGIN_H
+#pragma once
 
-#include <QObject>
-#include <QString>
-
-#include <VlycPlugin.h>
-#include <VlycLegacySitePlugin.h>
+#include <QtCore/QObject>
+#include <QtCore/QString>
 
 #ifdef WITH_LIBMAGIC
 #include <magic.h>
 #endif
 
-class DirectAccessPlugin : public QObject, public Vlyc::LegacySitePlugin
+#include <VlycUrlHandlerPlugin.h>
+
+
+class QNetworkAccessManager;
+
+class DirectAccessPlugin : public QObject, public Vlyc::UrlHandlerPlugin
 {
     Q_OBJECT
-    Q_INTERFACES(Vlyc::Plugin SitePlugin)
+    Q_INTERFACES(Vlyc::Plugin)
     Q_PLUGIN_METADATA(IID "me.sodimm.oro.vlyc.Plugin/2.0" FILE "plugin.json")
 
 #ifdef WITH_LIBMAGIC
     magic_t m_cookie;
 #endif
+
     QNetworkAccessManager *mp_network;
+
 public:
     DirectAccessPlugin();
     ~DirectAccessPlugin();
 
-    QString id() const { return "me.sodimm.oro.vlyc.plugin.DirectAccess"; }
-    QString name() const { return Vlyc::Plugin::name(); }
-    QString author() const { return Vlyc::Plugin::author(); }
+    QString id() const override { return "me.sodimm.oro.vlyc.plugin.DirectAccess"; }
 
-    virtual void init(Vlyc::InitEvent &init);
+    void init(Vlyc::InitEvent &init) override;
 
-    virtual QString forUrl(QUrl url);
-    virtual VideoPtr video(QString video_id);
+    Vlyc::Result::ResultPtr handleUrl(const QUrl &url) override;
 };
-
-#endif // STUBPLUGIN_H

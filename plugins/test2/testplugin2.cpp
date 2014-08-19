@@ -10,8 +10,9 @@ void TestPlugin2::init(Vlyc::InitEvent &init)
     Plugin::init(init);
 }
 
-#include <VlycResult/Playlist.h>
 #include <VlycResult/Url.h>
+#include <VlycResult/Media.h>
+#include <VlycResult/ObjectList.h>
 
 Vlyc::Result::ResultPtr TestPlugin2::handleUrl(const QUrl &url)
 {
@@ -19,23 +20,25 @@ Vlyc::Result::ResultPtr TestPlugin2::handleUrl(const QUrl &url)
         return nullptr;
 
     if (url.host() == "playlist")
-    {
-        Vlyc::Result::StandardPlaylist *playlist = new Vlyc::Result::StandardPlaylist("Playlist Test", 1);
-        *playlist << new Vlyc::Result::Url("https://www.youtube.com/watch?v=pv5bD2w456Q");
-        *playlist << new Vlyc::Result::Url("https://www.youtube.com/watch?v=btqtftCnC-s");
-        return playlist;
-    }
+        return new Vlyc::Result::ObjectList({
+                    {"name", "ObjectList Test"},
+                    {"start_index", 1}
+                }, {
+                   new Vlyc::Result::Url("https://www.youtube.com/watch?v=pv5bD2w456Q"),
+                   new Vlyc::Result::Url("https://www.youtube.com/watch?v=btqtftCnC-s")
+                });
+
     else if (url.host() == "url")
-    {
         return new Vlyc::Result::Url("https://www.youtube.com/watch?v=baJpkNC_ilY");
-    }
+
     else if (url.host() == "all")
-    {
-        Vlyc::Result::StandardPlaylist *all = new Vlyc::Result::StandardPlaylist("All Tests");
-        *all << new Vlyc::Result::Url("test://url");
-        *all << new Vlyc::Result::Url("test://playlist");
-        return all;
-    }
+        return Vlyc::Result::UrlList({
+            "test://url",
+            "test://playlist"
+        });
+
+    else if (url.host() == "8dayz")
+        return Vlyc::Result::File("file:///run/media/hinata/TOSHIBA EXT/메건리(MEGANLEE)  - 8dayz M_V (뮤직비디오)-jhlZuTn04w4.mp4");
 
     return nullptr;
 }

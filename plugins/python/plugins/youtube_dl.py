@@ -168,15 +168,23 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
             # Do quality stuff
             if result["extractor_key"] == "Youtube":
                 self._formats, self.availableQualities = YoutubeFormatDatabase.process(result["formats"])
-            else:
+            elif "formats" in result:
                 self._formats, self.availableQualities = GenericFormatMapper.process(result["formats"])
+            elif "url" in result:
+                lx = vlyc.plugin.VideoQualityLevel.QA_LOWEST
+                self._formats = {lx: (lx, "Default", result["url"])}
+                self.availableQualities = [(lx, "Default")]
+            else:
+                import pprint
+                pprint.pprint(result)
+                return throw("could not figure out video url")
 
             # Subtitles
             self._subs = result.get("subtitles", {})
             self.availableSubtitleLanguages = list(self._subs.keys())
 
             #self._plugin.end(self)
-            done()
+            return done()
 
         def getMedia(self, quality, media, throw):
             if quality not in self._formats:
@@ -248,8 +256,6 @@ class YoutubeFormatDatabase:
         """
         We know more about youtube formats
         """
-        import pprint
-        pprint.pprint(formats)
         avail = list()
         lookup = dict()
         for format in formats:

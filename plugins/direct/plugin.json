@@ -1,7 +1,7 @@
 {
     "ID": "me.sodimm.oro.vlyc.plugin.DirectAccess",
     "Name": "Direct File Access Plugin",
-    "Version": "1.0",
+    "Version": "2.0",
     "Author": "Taeyeon Mori",
     "Description": "Allows playback of plain media files"
 }

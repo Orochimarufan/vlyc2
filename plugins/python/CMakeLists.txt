@@ -20,30 +20,7 @@
 SET(PLUGIN_NAME python)
 
 ######## Prepare ########
-# Plugin stuff
-STRING(SUBSTRING "${PLUGIN_NAME}" 0 1 _FIRST)
-STRING(TOUPPER "${_FIRST}" _FIRST)
-STRING(REGEX REPLACE "^.(.*)" "${_FIRST}\\1Plugin" PLUGIN_PROJECT "${PLUGIN_NAME}")
-project(${PLUGIN_PROJECT})
-SET(PLUGIN vlyc2-${PLUGIN_NAME})
-SET(PLUGIN_QT Core Network Widgets)
-SET(PLUGIN_LIBS libvlyc2)
-SET(PLUGIN_SOURCES)
-SET(PLUGIN_HEADERS)
-
-# Set compiler flags
-IF(APPLE)
-	# assume clang 4.1.0+, add C++0x/C++11 stuff
-	message(STATUS "Using APPLE CMAKE_CXX_FLAGS")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -stdlib=libc++")
-ELSEIF(UNIX)
-	# assume GCC, add C++0x/C++11 stuff
-	MESSAGE(STATUS "Using UNIX CMAKE_CXX_FLAGS")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-ELSEIF(MINGW)
-	MESSAGE(STATUS "Using MINGW CMAKE_CXX_FLAGS")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
-ENDIF()
+include(../prepare.cmake)
 
 ######## Plugin ########
 ## this is where custom stuff goes!

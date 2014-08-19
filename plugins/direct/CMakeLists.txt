@@ -16,48 +16,30 @@
 # * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # *****************************************************************************/
 
-project(DirectAccessPlugin)
+SET(PLUGIN_NAME direct)
 
-######## Set compiler flags ########
-IF(APPLE)
-	# assume clang 4.1.0+, add C++0x/C++11 stuff
-	message(STATUS "Using APPLE CMAKE_CXX_FLAGS")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -stdlib=libc++")
-ELSEIF(UNIX)
-	# assume GCC, add C++0x/C++11 stuff
-	MESSAGE(STATUS "Using UNIX CMAKE_CXX_FLAGS")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-ELSEIF(MINGW)
-	MESSAGE(STATUS "Using MINGW CMAKE_CXX_FLAGS")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
-ENDIF()
+######## Prepare ########
+include(../prepare.cmake)
 
-
-# Find Qt
-find_package(Qt5Core REQUIRED)
-
+######## Plugin ########
+## this is where custom stuff goes!
 # Find libmagic
 find_package(LibMagic)
 if(LIBMAGIC_FOUND)
 	include_directories(${LIBMAGIC_INCLUDE_DIR})
-	set(PLUGIN_LIBS ${LIBMAGIC_LIBRARY})
+        list(APPEND PLUGIN_LIBS ${LIBMAGIC_LIBRARY})
 	add_definitions(-DWITH_LIBMAGIC)
 else()
 	message(STATUS "Could not find libmagic development files. Falling back to fileext-based detection. It is recommended to use libmagic.")
 endif()
 
-# Plugin
-SET(PLUGIN_NAME direct)
-
-SET(PLUGIN_HEADERS
+list(APPEND PLUGIN_HEADERS
 stubplugin.h
 )
 
-SET(PLUGIN_SOURCES
+list(APPEND PLUGIN_SOURCES
 stubplugin.cpp
 )
 
-
-add_library(vlyc2-${PLUGIN_NAME} SHARED ${PLUGIN_SOURCES} ${PLUGIN_HEADERS})
-qt5_use_modules(vlyc2-${PLUGIN_NAME} Core Network)
-target_link_libraries(vlyc2-${PLUGIN_NAME} libvlyc2 ${PLUGIN_LIBS})
+######## Build ########
+include(../build.cmake)

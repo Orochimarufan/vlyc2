@@ -17,10 +17,6 @@
  *****************************************************************************/
 
 #include "stubplugin.h"
-#include "videoimpl.h"
-
-// TODO: make it public D:
-#include "../../src/vlyc.h"
 
 #include <QtCore/QUrl>
 #include <QtCore/QEventLoop>
@@ -30,44 +26,18 @@
 
 #ifdef WITH_LIBMAGIC
 #include <QtCore/QByteArray>
+QStringList mimeWhitelist = QStringList() <<
+    "application/ogg";
 #else
 QStringList videoFileExts = QStringList() <<
-    "mkv" << "mp4" << "avi" << "webm" << "ogv" << "wmv" << "mpg" << "ts" << "3gp";
+    "mkv" << "mp4" << "avi" << "webm" << "ogv" << "wmv" << "mpg" << "ts" << "3gp" << "ps" << "ogm";
 #endif
 
-struct DirectAccessVideo : StandardVideo
-{
-    DirectAccessVideo(DirectAccessPlugin *site, const QString &video_id) :
-        StandardVideo(site, video_id)
-    {
-    }
+#include <VlycResult/Media.h>
 
-    bool useFileMetadata() const
-    {
-        return true;
-    }
+// TODO: make it public D:
+#include "../../src/vlyc.h"
 
-    void getMedia(const VideoQualityLevel &q)
-    {
-        QUrl url(videoId());
-        QString ext = url.path().split(".").last();
-        emit media(VideoMedia{VideoPtr(this), VideoQuality{q, ext.toUpper()}, url});
-    }
-
-    void load()
-    {
-        ms_title = videoId().split("/").last();
-        ms_author = "File";
-        ms_description = "";
-
-        VideoQuality url;
-        url.q = VideoQualityLevel::QA_LOWEST;
-        url.description = videoId().split(".").last().toUpper();
-        ml_availableQualities.append(url);
-
-        emit done();
-    }
-};
 
 DirectAccessPlugin::DirectAccessPlugin()
 {
@@ -90,37 +60,41 @@ DirectAccessPlugin::~DirectAccessPlugin()
 }
 
 
-QString DirectAccessPlugin::forUrl(QUrl url)
+Vlyc::Result::ResultPtr DirectAccessPlugin::handleUrl(const QUrl &url)
 {
+    bool valid = false;
+
     if (url.scheme() == "file")
-#ifdef WITH_LIBMAGIC
     {
+#ifdef WITH_LIBMAGIC
         QByteArray mime = magic_file(m_cookie, url.path().toUtf8().constData());
-        if (mime.startsWith("video/") || mime.startsWith("audio/"))
-            return url.toString();
-    }
+        qDebug("%s mime: %s", qPrintable(url.fileName()), qPrintable(mime));
+        if (mime.startsWith("video/") || mime.startsWith("audio/") || mimeWhitelist.contains(mime))
+        {
 #else
         if (videoFileExts.contains(url.path().split(".").last().toLower()))
-            return url.toString();
-#endif
-        else if ((url.scheme() == "http" || url.scheme() == "https") &&
-                 !(url.path().endsWith(".html") || url.path().endsWith(".htm") || url.path().endsWith("/") || url.path().endsWith(".shtml")))
         {
-            // TODO: (expensive) HEAD request, make it a config option
-            auto reply = mp_network->head(QNetworkRequest(url));
-            QEventLoop loop;
-            connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), &loop, SLOT(quit()));
-            connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
-            loop.exec();
-            QString h = reply->header(QNetworkRequest::ContentTypeHeader).toString();
-            reply->deleteLater();
-            if (!h.isEmpty() && (h.startsWith("video/") || h.startsWith("audio/")))
-                return url.toString();
+#endif
+            valid = true;
         }
-    return QString::null;
-}
+    }
+    else if ((url.scheme() == "http" || url.scheme() == "https") &&
+             !(url.path().endsWith(".html") || url.path().endsWith(".htm") || url.path().endsWith("/") || url.path().endsWith(".shtml")))
+    {
+        // TODO: (expensive) HEAD request, make it a config option
+        auto reply = mp_network->head(QNetworkRequest(url));
+        QEventLoop loop;
+        connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), &loop, SLOT(quit()));
+        connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
+        loop.exec();
+        QString h = reply->header(QNetworkRequest::ContentTypeHeader).toString();
+        reply->deleteLater();
+        if (!h.isEmpty() && (h.startsWith("video/") || h.startsWith("audio/")))
+            valid = true;
+    }
 
-VideoPtr DirectAccessPlugin::video(QString video_id)
-{
-    return VideoPtr(new DirectAccessVideo(this, video_id));
+    if (valid)
+        return Vlyc::Result::File(url);
+    else
+        return nullptr;
 }
