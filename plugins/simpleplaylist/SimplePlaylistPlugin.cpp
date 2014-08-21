@@ -40,7 +40,7 @@ QVariant save_progress(Vlyc::Result::ObjectPtr o, QVariantList args)
     for (QString line : lines)
         f.write(line.toUtf8());
     f.close();
-    o->setProperty("start_index", cur->index());
+    o->setProperty("start_index", QVariant::fromValue(cur->index()));
     return QVariant();
 }
 
