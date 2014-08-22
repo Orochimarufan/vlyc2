@@ -279,6 +279,16 @@ void MainWindow::on_actionOpenFile_triggered()
     mp_self->play(url);
 }
 
+void MainWindow::on_actionOpenFolder_triggered()
+{
+    QUrl folder = QFileDialog::getExistingDirectoryUrl(this, "Open Folder", history.lastFileOpenDir());
+
+    history.setFileOpenDir(QFileInfo(folder.path()).dir().path());
+
+    addRecent(folder);
+    mp_self->play(folder);
+}
+
 void MainWindow::on_actionOpenURL_triggered()
 {
     QString url = QInputDialog::getText(this, tr("Open Url"), tr("Enter URL"));
@@ -311,34 +321,89 @@ void MainWindow::on_btn_library_clicked(bool checked)
     }
 }
 
+/**
+ * @brief Populate a QMenu from a node's menu definition called "menu_key"
+ * @param menu The QMenu to populate
+ * @param node The PlaylistNode the menu belongs to
+ * @param menu_key The name of the menu
+ */
+inline void populate_menu(QMenu &menu, PlaylistNode* node, QString menu_key)
+{
+    for (QVariant e : node->property2<QVariantList>(menu_key))
+    {
+        QVariantMap entry = e.toMap();
+
+        QAction *a = menu.addAction(entry["text"].toString());
+        if (entry["action"].toString() == "call" && node->hasMethod(entry["method"].toString()))
+            a->connect(a, &QAction::triggered, [entry, node](){
+                node->call(entry["method"].toString(), entry.value("args").toList());
+            });
+        else
+            a->setEnabled(false);
+    }
+}
+
 void MainWindow::onLibraryContextMenu(const QPoint &point)
 {
     QMenu menu(ui->treeView);
+
     if (ui->treeView->selectionModel()->selectedRows().length() < 2)
     {
         PlaylistNode *node = mp_self->player()->model().getNodeFromIndex(ui->treeView->indexAt(point));
+
         if (node->hasProperty("library_context_menu"))
         {
-            QVariantHash entries = node->property2<QVariantHash>("library_context_menu");
-            for (QString method : entries.keys())
-            {
-                if (!node->hasMethod(method))
-                    continue;
-                QAction *a = menu.addAction(entries[method].toString());
-                connect(a, &QAction::triggered, [node, method](){
-                    node->call(method, QVariantList());
-                });
-            }
+            populate_menu(menu, node, "library_context_menu");
+            menu.addSeparator();
+        }
+        else if (node->hasProperty("menu"))
+        {
+            populate_menu(menu, node, "menu");
             menu.addSeparator();
         }
     }
+
     QAction *a = menu.addAction("Remove");
     connect(a, &QAction::triggered, [this](){
         for (QModelIndex index : ui->treeView->selectionModel()->selectedIndexes())
             mp_self->player()->remove(index);
     });
     a = menu.addAction("Clear Playlist", mp_self->player(), SLOT(clearPlaylist()));
+
     menu.exec(ui->treeView->mapToGlobal(point));
+}
+
+void MainWindow::on_btn_menu_clicked()
+{
+    QMenu menu(ui->btn_menu);
+    PlaylistNode *node = mp_self->player()->current();
+
+    while (node)
+    {
+        if (node->hasProperty("video_menu"))
+        {
+            if (node != mp_self->player()->current())
+                menu.addSection(node->displayName());
+
+            populate_menu(menu, node, "video_menu");
+        }
+        else if (node->hasProperty("menu"))
+        {
+            if (node != mp_self->player()->current())
+                menu.addSection(node->displayName());
+
+            populate_menu(menu, node, "menu");
+        }
+
+        node = node->parent();
+    }
+
+    if (menu.isEmpty())
+        menu.addSection("No Actions available for video.");
+
+    ui->btn_menu->setMenu(&menu);
+    ui->btn_menu->showMenu();
+    ui->btn_menu->setMenu(nullptr);
 }
 
 void MainWindow::on_btn_repeat_clicked()

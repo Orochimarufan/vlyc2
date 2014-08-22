@@ -178,6 +178,12 @@ void VlycPlayer::createMedia()
     else if (m_current_item_type == T_DIRECT)
     {
         m_current_media = VlcMedia(mp_current_node->property2<QUrl>("mrl"));
+        if (mp_current_node->hasProperty("options"))
+            for (auto opt : mp_current_node->property2<QStringList>("options"))
+            {
+                qDebug("option: %s", qPrintable(opt));
+                m_current_media.addOption(opt);
+            }
         if (!m_current_media.isParsed()) m_current_media.parse();
     }
 }
@@ -366,7 +372,11 @@ void VlycPlayer::playFirstItem(PlaylistNode *origin, bool reverse)
         if (!*it)
             playNextItem(origin);
         else
+        {
             playNextItem(*it);
+            if (origin->property("start_time").isValid())
+                m_player.setTime(origin->property("start_time").toLongLong());
+        }
     }
     else
         playNextItem(origin);

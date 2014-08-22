@@ -42,6 +42,7 @@ VlycResult/Url.h
 VlycResult/Object.h
 VlycResult/ObjectList.h
 VlycResult/Media.h
+VlycResult/Menu.h
 
 VlycResult/Promise.h
 

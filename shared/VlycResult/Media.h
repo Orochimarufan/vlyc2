@@ -20,6 +20,10 @@
 
 #include "Object.h"
 
+/**
+ * @file Media.h
+ * Helper functions to create objects.
+ */
 
 namespace Vlyc {
 namespace Result {
@@ -39,9 +43,19 @@ inline auto File(const QUrl &mrl)
     return new Object{{"type", "file"}, {"mrl", mrl}};
 }
 
+inline auto File(const QUrl &mrl, const QStringList &options)
+{
+    return new Object{{"type", "file"}, {"mrl", mrl}, {"options", options}};
+}
+
 inline auto File(const QString &mrl)
 {
     return new Object{{"type", "file"}, {"mrl", mrl}};
+}
+
+inline auto File(const QString &mrl, const QStringList &options)
+{
+    return new Object{{"type", "file"}, {"mrl", mrl}, {"options", options}};
 }
 
 

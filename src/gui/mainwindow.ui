@@ -198,7 +198,7 @@
          <item>
           <widget class="QToolButton" name="btn_prev">
            <property name="icon">
-            <iconset>
+            <iconset resource="../../../QtVlc/vlc/modules/gui/qt4/vlc.qrc">
              <normaloff>:/toolbar/previous_b</normaloff>:/toolbar/previous_b</iconset>
            </property>
           </widget>
@@ -206,7 +206,7 @@
          <item>
           <widget class="QToolButton" name="btn_stop">
            <property name="icon">
-            <iconset>
+            <iconset resource="../../../QtVlc/vlc/modules/gui/qt4/vlc.qrc">
              <normaloff>:/toolbar/stop_b</normaloff>:/toolbar/stop_b</iconset>
            </property>
           </widget>
@@ -214,7 +214,7 @@
          <item>
           <widget class="QToolButton" name="btn_next">
            <property name="icon">
-            <iconset>
+            <iconset resource="../../../QtVlc/vlc/modules/gui/qt4/vlc.qrc">
              <normaloff>:/toolbar/next_b</normaloff>:/toolbar/next_b</iconset>
            </property>
           </widget>
@@ -222,7 +222,7 @@
          <item>
           <widget class="QToolButton" name="btn_library">
            <property name="icon">
-            <iconset>
+            <iconset resource="../../../QtVlc/vlc/modules/gui/qt4/vlc.qrc">
              <normaloff>:/toolbar/playlist</normaloff>:/toolbar/playlist</iconset>
            </property>
            <property name="checkable">
@@ -251,12 +251,23 @@
           </spacer>
          </item>
          <item>
+          <widget class="QToolButton" name="btn_menu">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="icon">
+            <iconset resource="../../../QtVlc/vlc/modules/gui/qt4/vlc.qrc">
+             <normaloff>:/toolbar/dvd_menu</normaloff>:/toolbar/dvd_menu</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QToolButton" name="btn_fullscreen">
            <property name="text">
             <string>...</string>
            </property>
            <property name="icon">
-            <iconset>
+            <iconset resource="../../../QtVlc/vlc/modules/gui/qt4/vlc.qrc">
              <normaloff>:/toolbar/fullscreen</normaloff>:/toolbar/fullscreen</iconset>
            </property>
           </widget>
@@ -291,7 +302,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>19</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -303,6 +314,7 @@
       <string>Open</string>
      </property>
      <addaction name="actionOpenFile"/>
+     <addaction name="actionOpenFolder"/>
      <addaction name="actionOpenURL"/>
     </widget>
     <widget class="QMenu" name="menuRecent">
@@ -363,6 +375,14 @@
     <string>Clear Recent Files</string>
    </property>
   </action>
+  <action name="actionOpenFolder">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Folder</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -400,6 +420,7 @@
  </customwidgets>
  <resources>
   <include location="../../vlyc.qrc"/>
+  <include location="../../../QtVlc/vlc/modules/gui/qt4/vlc.qrc"/>
  </resources>
  <connections/>
 </ui>

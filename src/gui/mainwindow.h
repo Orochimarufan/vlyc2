@@ -74,6 +74,7 @@ private slots:
 
     void on_actionAbout_triggered();
     void on_actionOpenFile_triggered();
+    void on_actionOpenFolder_triggered();
     void on_actionOpenURL_triggered();
 
     void on_btn_play_clicked();
@@ -85,6 +86,7 @@ private slots:
     void on_btn_library_clicked(bool checked);
 
     void onLibraryContextMenu(const QPoint &point);
+    void on_btn_menu_clicked();
 
     void openRecent();
     void addRecent(const QUrl &url, bool restoring=false);
