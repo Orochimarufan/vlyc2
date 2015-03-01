@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "VlycConfig.h"
+
 /**
  * like boost::shared_ptr::intrusive_ptr
  *
@@ -29,7 +31,7 @@ namespace Vlyc {
 namespace Memory {
 
 template <class Type>
-class Pointer
+class VLYC_EXPORT Pointer
 {
     Type *mp_object;
 
@@ -180,7 +182,7 @@ public:
 namespace std {
 
 template <class Type>
-struct hash<Vlyc::Memory::Pointer<Type>> {
+struct VLYC_EXPORT hash<Vlyc::Memory::Pointer<Type>> {
     typedef Vlyc::Memory::Pointer<Type> argument_type;
     typedef std::size_t value_type;
 

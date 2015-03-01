@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "VlycConfig.h"
 #include "Result.h"
 
 #include <QtCore/QUrl>
@@ -25,11 +26,11 @@
 namespace Vlyc {
 namespace Result {
 
-class Url : public Result, public QUrl
+class VLYC_EXPORT Url : public Result, public QUrl
 {
 public:
-    Url(const QString &url) : QUrl(url) {}
-    Url(const QUrl &url) : QUrl(url) {}
+    Url(const QString &url);
+    Url(const QUrl &url);
 };
 
 typedef Pointer<Url> UrlPtr;

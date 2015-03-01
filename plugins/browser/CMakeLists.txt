@@ -26,6 +26,10 @@ include(../prepare.cmake)
 
 ######## Plugin ########
 ## this is where custom stuff goes!
+find_package(QtVlc) #HACK until public interfaces
+include_directories(${QtVlc_INCLUDE_DIRS})
+list(APPEND PLUGIN_LIBS vlyc2)
+
 # Sources
 LIST(APPEND PLUGIN_HEADERS
 	BrowserPlugin.h

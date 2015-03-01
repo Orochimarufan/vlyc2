@@ -33,6 +33,8 @@ else()
 	message(STATUS "Could not find libmagic development files. Falling back to fileext-based detection. It is recommended to use libmagic.")
 endif()
 
+list(APPEND PLUGIN_LIBS vlyc2)
+
 list(APPEND PLUGIN_HEADERS
 stubplugin.h
 )

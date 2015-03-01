@@ -30,7 +30,7 @@ class PluginLoader;
  * @brief The LoaderPlugin class
  * A vlyc2 plugin that can load other plugins.
  */
-class LoaderPlugin : public virtual Plugin
+class VLYC_EXPORT LoaderPlugin : public virtual Plugin
 {
 public:
     /// Get the PluginLoader instance for fileName. Return nullptr if unapplicable.
@@ -45,7 +45,7 @@ public:
  * Used to load vlyc2 plugins.
  * For every loaded plugin, one of these exists.
  */
-class PluginLoader
+class VLYC_EXPORT PluginLoader
 {
 public:
     virtual ~PluginLoader();
@@ -68,7 +68,7 @@ public:
  * Static plugin loader.
  * Useful for providing static/builtin plugins.
  */
-class BuiltinPluginLoader : public PluginLoader
+class VLYC_EXPORT BuiltinPluginLoader : public PluginLoader
 {
     LoaderPlugin *mp_loader_plugin;
     QString m_file_name;

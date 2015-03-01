@@ -177,7 +177,8 @@ void VlycPlayer::createMedia()
         m_current_media = __lv_get_media()(mp_current_node->__lvideo(), ml_current_quality_id_list[m_current_quality_index]);
     else if (m_current_item_type == T_DIRECT)
     {
-        m_current_media = VlcMedia(mp_current_node->property2<QUrl>("mrl"));
+		QUrl mrl = mp_current_node->property2<QUrl>("mrl");
+		m_current_media = VlcMedia(mrl);
         if (mp_current_node->hasProperty("options"))
             for (auto opt : mp_current_node->property2<QStringList>("options"))
             {

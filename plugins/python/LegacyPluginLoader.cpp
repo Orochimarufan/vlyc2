@@ -2,8 +2,8 @@
 
 #include <QtCore/QDir>
 
-#include <PythonQtConversion.h>
-#include <PythonQtImporter.h>
+#include <PythonQt/PythonQtConversion.h>
+#include <PythonQt/PythonQtImporter.h>
 
 #include "wrap/WrapLegacySitePlugin.h"
 

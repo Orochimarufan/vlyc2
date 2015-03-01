@@ -21,12 +21,14 @@
 #include <QtNetwork/QNetworkRequest>
 #include <QtNetwork/QNetworkReply>
 
+#include "VlycConfig.h"
+
 class VlycApp;
 
 namespace Vlyc
 {
 
-class PluginInterface
+class VLYC_EXPORT PluginInterface
 {
     friend class ::VlycApp;
     VlycApp *mp_private;

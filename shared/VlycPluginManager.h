@@ -36,7 +36,7 @@ inline T *plugin_cast(Plugin *p)
 class PluginManagerPrivate;
 class PluginInterface;
 
-class PluginManager : public QObject
+class VLYC_EXPORT PluginManager : public QObject
 {
     PluginManagerPrivate *d_ptr;
     Q_DECLARE_PRIVATE(PluginManager)

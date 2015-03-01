@@ -24,6 +24,7 @@
 #include <QtCore/QVariant>
 #include <QtCore/QHash>
 
+#include "VlycConfig.h"
 #include "Result.h"
 
 
@@ -38,7 +39,7 @@ namespace Result {
  *  the object the method was called on, not necessarily the one it was defined on.
  * This only makes a difference for .setProperty and .setMethod calls though.
  */
-class Object : public Result
+class VLYC_EXPORT Object : public Result
 {
 public:
     using Ptr = Pointer<Object>;
@@ -172,7 +173,7 @@ protected:
 
 using ObjectPtr = Pointer<Object>;
 
-class MethodNotFoundError : std::exception
+class VLYC_EXPORT MethodNotFoundError : std::exception
 {
     QString m_name;
     ObjectPtr m_object;

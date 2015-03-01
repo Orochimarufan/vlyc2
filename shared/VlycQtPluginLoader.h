@@ -25,7 +25,7 @@
 
 namespace Vlyc {
 
-class QtPluginLoader : public QPluginLoader, public PluginLoader
+class VLYC_EXPORT QtPluginLoader : public QPluginLoader, public PluginLoader
 {
     LoaderPlugin *mp_loader_plugin;
     QJsonObject meta_data;
@@ -44,7 +44,7 @@ public:
     bool unload();
 };
 
-class QtLoaderPlugin : public LoaderPlugin
+class VLYC_EXPORT QtLoaderPlugin : public LoaderPlugin
 {
     BuiltinPluginLoader *selfLoader;
     QRegularExpression cpp_plugin_match;

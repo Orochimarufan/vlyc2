@@ -263,16 +263,14 @@ void MainWindow::on_btn_play_clicked()
 
 void MainWindow::on_actionOpenFile_triggered()
 {
-    QString path = QFileDialog::getOpenFileName(this, "Open File", history.lastFileOpenDir());
+    QUrl url = QFileDialog::getOpenFileUrl(this, "Open File", history.lastFileOpenDir());
 
-    if (path.isEmpty())
+    if (url.isEmpty())
         return;
 
-    history.setFileOpenDir(QFileInfo(path).dir().path());
-
-    QUrl url;
-    url.setScheme("file");
-    url.setPath(path);
+	QString p = QFileInfo(url.toLocalFile()).dir().path();
+	qDebug() << "Path:" << p;
+    history.setFileOpenDir(p);
 
     addRecent(url);
 

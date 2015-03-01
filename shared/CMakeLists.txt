@@ -17,60 +17,60 @@
 # *****************************************************************************/
 
 set(HEADERS
-VlycMem/Pointer.h
-VlycMem/Object.h
+    VlycMem/Pointer.h
+    VlycMem/Object.h
 
-VlycAsync/PromiseEvent.h
+    VlycAsync/PromiseEvent.h
 
-VlycPlugin.h
-VlycToolPlugin.h
-VlycUrlHandlerPlugin.h
-VlycLoaderPlugin.h
-VlycQtPluginLoader.h
-VlycPluginManager.h
-VlycPluginInterface.h
+    VlycPlugin.h
+    VlycToolPlugin.h
+    VlycUrlHandlerPlugin.h
+    VlycLoaderPlugin.h
+    VlycQtPluginLoader.h
+    VlycPluginManager.h
+    VlycPluginInterface.h
 
-legacy/plugin.h
-legacy/siteplugin.h
-legacy/video.h
-legacy/videoimpl.h
-legacy/VlycLegacySitePlugin.h
+    legacy/plugin.h
+    legacy/siteplugin.h
+    legacy/video.h
+    legacy/videoimpl.h
+    legacy/VlycLegacySitePlugin.h
 
-VlycResult/Result.h
-VlycResult/Url.h
+    VlycResult/Result.h
+    VlycResult/Url.h
 
-VlycResult/Object.h
-VlycResult/ObjectList.h
-VlycResult/Media.h
-VlycResult/Menu.h
+    VlycResult/Object.h
+    VlycResult/ObjectList.h
+    VlycResult/Media.h
+    VlycResult/Menu.h
 
-VlycResult/Promise.h
+    VlycResult/Promise.h
 
-VlycUtil/VariantArgs.h
+    VlycUtil/VariantArgs.h
 )
 
 set(PRIVATE_HEADERS
-VlycPluginManagerPrivate.h
+    VlycPluginManagerPrivate.h
 )
 
 set(SOURCES
-VlycMem/Object.cpp
+    VlycMem/Object.cpp
 
-VlycAsync/PromiseEvent.cpp
+    VlycAsync/PromiseEvent.cpp
 
-VlycPlugin.cpp
-VlycLoaderPlugin.cpp
-VlycQtPluginLoader.cpp
-VlycPluginManager.cpp
-VlycPluginManagerPrivate.cpp
-VlycPluginInterface.cpp
+    VlycPlugin.cpp
+    VlycLoaderPlugin.cpp
+    VlycQtPluginLoader.cpp
+    VlycPluginManager.cpp
+    VlycPluginManagerPrivate.cpp
+    VlycPluginInterface.cpp
 
-legacy/video.cpp
-legacy/VlycLegacySitePlugin.cpp
+    legacy/video.cpp
+    legacy/VlycLegacySitePlugin.cpp
 
-VlycResult/Object.cpp
-
-VlycResult/Promise.cpp
+    VlycResult/Object.cpp
+    VlycResult/Result.cpp
+    VlycResult/Promise.cpp
 )
 
 add_definitions(-DLIBVLYC2_LIBRARY)

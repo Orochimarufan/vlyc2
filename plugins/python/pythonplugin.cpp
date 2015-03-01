@@ -1,6 +1,7 @@
 #include "pythonplugin.h"
 #include "LegacyPluginLoader.h"
-#include "console/PythonQtScriptingConsole.h"
+
+#include <PythonQt/gui/PythonQtScriptingConsole.h>
 
 #include <QtCore/QFileInfo>
 #include <QtWidgets/QAction>

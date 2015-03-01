@@ -21,6 +21,8 @@
 #include <QtPlugin>
 #include <QJsonObject>
 
+#include "VlycConfig.h"
+
 namespace Vlyc {
 
 class PluginInterface;
@@ -35,7 +37,7 @@ typedef PluginManager PluginManagerInterface;
  * Any new members will be appended.
  * Removals will be replaced by placeholders.
  */
-struct InitEvent
+struct VLYC_EXPORT InitEvent
 {
     PluginManagerInterface *plugin_manager;
     QJsonObject *metadata;
@@ -47,7 +49,7 @@ struct InitEvent
  * @brief The Plugin class
  * Base class for all vlyc2 plugins.
  */
-class Plugin
+class VLYC_EXPORT Plugin
 {
 public:
     Plugin();

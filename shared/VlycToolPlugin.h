@@ -28,7 +28,7 @@ namespace Vlyc {
  * @brief The ToolPlugin class
  * A vlyc2 plugin that adds an entry to the tool menu
  */
-class ToolPlugin : public virtual Plugin
+class VLYC_EXPORT ToolPlugin : public virtual Plugin
 {
 public:
     /// Get the tool menu entry

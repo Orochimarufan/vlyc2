@@ -39,7 +39,7 @@ SET(VLYC_HEADERS
 
 	util/cmdparser.h
 	util/cmdparser_p.h
-        util/History.h
+	util/History.h
 
 	gui/mainwindow.h
 	gui/fullscreencontroller.h
@@ -64,7 +64,7 @@ SET(VLYC_SOURCES
 	vlyc.cpp
 
 	util/cmdparser.cpp
-        util/History.cpp
+	util/History.cpp
 
 	gui/mainwindow.cpp
 	gui/fullscreencontroller.cpp
@@ -109,6 +109,12 @@ ENDIF()
 
 # Add executable
 ADD_EXECUTABLE(vlyc2 ${VLYC_SOURCES} ${VLYC_HEADERS} ${VLYC_UI} ${VLYC_QRC} ${VLYC_BROWSER})
+
+# Hack for now!
+set_target_properties(vlyc2 PROPERTIES ENABLE_EXPORTS ON)
+IF(WIN32)
+	set_target_properties(vlyc2 PROPERTIES LINK_FLAGS "-Wl,--export-all-symbols,--out-implib,src\\libvlyc2.dll.a")
+ENDIF()
 
 # Link
 QT5_USE_MODULES(vlyc2 Core Gui Widgets Network WebKit WebKitWidgets)

@@ -23,7 +23,7 @@
 
 namespace Vlyc {
 
-class PluginManagerPrivate
+class VLYC_HIDDEN PluginManagerPrivate
 {
     //PluginManager *q_ptr;
     //Q_DECLARE_PUBLIC(PluginManager)

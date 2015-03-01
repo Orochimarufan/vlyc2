@@ -91,7 +91,10 @@ void PluginManager::loadPluginsFrom(const QString &directory, bool try_twice)
                     ++loadedCnt;
             }
             else
+            {
                 d->m_failed_plugins << loader;
+                qWarning() << "Failed to load plugin from " << filePath << ": " << loader->errorString();
+            }
 
             break;
         }

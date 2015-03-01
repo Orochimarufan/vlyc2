@@ -86,6 +86,34 @@ def QNetworkReplyToReply(qnreply):
 class URLError(urllib.error.URLError):
     pass
 
+class ReplyHeadersProxy:
+    def __init__(self, qnreply):
+        print("headers for %s: %s" % (qnreply, self))
+        self._qnreply = qnreply
+    
+    def __contains__(self, hdr):
+        return self._qnreply.hasRawHeader(hdr.encode("utf-8"))
+    
+    def keys(self):
+        return tuple(ba.toBytes().decode("utf-8") for ba in self._qnreply.rawHeaderList())
+    
+    def __getitem__(self, key):
+        if key in self:
+            return self._qnreply.rawHeader(key).toBytes().decode("utf-8")
+        else:
+            raise KeyError(key)
+    
+    def get(self, key, fallback='__THISISADEFAULTPLACEHOLDER_'):
+        print("header %s for %s" % (key, self))
+        if key in self:
+            print("    found: %r" % self._qnreply.rawHeader(key.encode("utf-8")))
+            return self._qnreply.rawHeader(key.encode("utf-8")).toBytes().decode("utf-8")
+        elif fallback == '__THISISADEFAULTPLACEHOLDER_':
+            raise KeyError(key)
+        else:
+            return fallback
+
+
 class ReplyCommon(urllib.response.addinfourl):
     """
     Common Reply Base-Class
@@ -127,8 +155,9 @@ class ReplyCommon(urllib.response.addinfourl):
     @property
     def headers(self):
         """ The HTTP Headers """
-        self._check_closed
-        return {x: self._qnreply.rawHeader(x) for x in self._qnreply.rawHeaderList()}
+        self._check_closed()
+        return ReplyHeadersProxy(self._qnreply)
+        #return {x: self._qnreply.rawHeader(x) for x in self._qnreply.rawHeaderList()}
 
     @property
     def url(self):

@@ -20,6 +20,7 @@
 
 #include <atomic>
 
+#include "VlycConfig.h"
 #include "Pointer.h"
 
 namespace Vlyc {
@@ -30,7 +31,7 @@ namespace Memory {
  * A base object class to inherit from.
  * does reference counting.
  */
-class Object
+class VLYC_EXPORT Object
 {
     mutable std::atomic_uint refcount;
 
@@ -44,8 +45,8 @@ public:
     virtual ~Object();
 };
 
-void incref(Object *);
-void decref(Object *);
+void VLYC_EXPORT incref(Object *);
+void VLYC_EXPORT decref(Object *);
 
 typedef Pointer<Object> ObjectPtr;
 

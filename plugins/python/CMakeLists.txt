@@ -25,17 +25,18 @@ include(../prepare.cmake)
 ######## Plugin ########
 ## this is where custom stuff goes!
 # Find PythonQt
-find_package(PythonQt5_3_QtAll REQUIRED)
+# FIXME Don't hardcode version. Needs modification in PythonQt build
+find_package(Qt5Python34_QtAll REQUIRED)
 
-include_directories(${PythonQt_INCLUDE_DIRS} ${PythonQt_QtAll_INCLUDE_DIRS})
-LIST(APPEND PLUGIN_LIBS ${PythonQt_QtAll_LIBRARIES})
-
-LIST(APPEND PLUGIN_QT ${PythonQt_QtAll_QT})
+LIST(APPEND PLUGIN_LIBS ${PythonQt_QtAll})
 
 # Find Python
-find_package(Python ${PythonQt_Python} REQUIRED EXACT)
+find_package(Python ${PythonQt_Python} REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 LIST(APPEND PLUGIN_LIBS ${PYTHON_LIBRARIES})
+
+# HACK
+LIST(APPEND PLUGIN_LIBS vlyc2)
 
 # Sources
 LIST(APPEND PLUGIN_HEADERS
@@ -46,7 +47,6 @@ PluginLoader.h
 LegacyPluginLoader.h
 wrap/WrapPlugin.h
 wrap/WrapLegacySitePlugin.h
-console/PythonQtScriptingConsole.h
 )
 
 LIST(APPEND PLUGIN_SOURCES
@@ -57,15 +57,9 @@ PluginLoader.cpp
 LegacyPluginLoader.cpp
 wrap/WrapPlugin.cpp
 wrap/WrapLegacySitePlugin.cpp
-console/PythonQtScriptingConsole.cpp
 )
 
 ######## Build ########
-# Qt
-FOREACH(module ${PLUGIN_QT})
-	find_package(Qt5${module} REQUIRED)
-ENDFOREACH(module)
-
 # Qt stuff
 qt5_add_resources(RES pythonplugin.qrc)
 LIST(APPEND PLUGIN_SOURCES ${RES})

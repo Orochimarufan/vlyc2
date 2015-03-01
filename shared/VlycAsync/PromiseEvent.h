@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "VlycConfig.h"
+
 #include <QtCore/QEvent>
 #include <QtCore/QVariant>
 
@@ -32,7 +34,7 @@ namespace Async {
 /**
  * @brief Events sent to the promise listener
  */
-class PromiseEvent : public QEvent
+class VLYC_EXPORT PromiseEvent : public QEvent
 {
 public:
     static QEvent::Type const TYPE;

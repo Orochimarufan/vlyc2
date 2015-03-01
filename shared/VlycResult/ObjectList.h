@@ -20,22 +20,20 @@
 
 #include <QtCore/QVector>
 
+#include "VlycConfig.h"
 #include "Object.h"
 
 
 namespace Vlyc {
 namespace Result {
 
-class ObjectList : public Object, public QVector<ResultPtr>
+class VLYC_EXPORT ObjectList : public Object, public QVector<ResultPtr>
 {
 public:
-    ObjectList() {setProperty("type", "objectlist");}
-    ObjectList(std::initializer_list<std::pair<QString, QVariant>> il):
-        Object(il) {setProperty("type", "objectlist");}
-    ObjectList(std::initializer_list<ResultPtr> il):
-        QVector<ResultPtr>(il) {setProperty("type", "objectlist");}
-    ObjectList(std::initializer_list<std::pair<QString, QVariant>> il, std::initializer_list<ResultPtr> il2):
-        Object(il), QVector<ResultPtr>(il2) {setProperty("type", "objectlist");}
+    ObjectList();
+    ObjectList(std::initializer_list<std::pair<QString, QVariant>> il);
+    ObjectList(std::initializer_list<ResultPtr> il);
+    ObjectList(std::initializer_list<std::pair<QString, QVariant>> il, std::initializer_list<ResultPtr> il2);
 };
 
 } // namespace Result

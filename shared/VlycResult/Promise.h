@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "VlycConfig.h"
 #include "Result.h"
 
 #include <QtCore/QRunnable>
@@ -33,7 +34,7 @@ namespace Result {
  * Promises a result that has to be calculated first.
  * Promises may or may not be executed in a separate thread!
  */
-class Promise : public Result, public QRunnable
+class VLYC_EXPORT Promise : public Result, public QRunnable
 {
 public:
     enum class State {
@@ -113,7 +114,7 @@ public: ~Promise();
 };
 
 
-class LambdaPromise : public Promise
+class VLYC_EXPORT LambdaPromise : public Promise
 {
 public:
     class Proxy
