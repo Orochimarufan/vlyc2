@@ -31,7 +31,7 @@ find_package(Qt5Python34_QtAll REQUIRED)
 LIST(APPEND PLUGIN_LIBS ${PythonQt_QtAll})
 
 # Find Python
-find_package(Python ${PythonQt_Python} REQUIRED)
+find_package(PythonLibs ${PythonQt_Python} REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 LIST(APPEND PLUGIN_LIBS ${PYTHON_LIBRARIES})
 
