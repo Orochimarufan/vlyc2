@@ -17,20 +17,20 @@ class PythonPlugin : public QObject, public LoaderPlugin, public ToolPlugin
     VLYC_PLUGIN_HEAD(me.sodimm.oro.vlyc.Python)
 
     PythonPlugin();
-    virtual void init(InitEvent &init);
+    void init(InitEvent &init) override;
 
     // ----------------------------------------------------------------------------
     // LoaderPlugin
     /// Get the PluginLoader instance for fileName. Return nullptr if unapplicable.
-    virtual PluginLoader *loaderFor(const QString &fileName);
+    PluginLoader *loaderFor(const QString &fileName) override;
 
     /// A LoaderPlugin may bring builtin plugins.
-    virtual QList<PluginLoader *> builtinPlugins();
+    QList<PluginLoader *> builtinPlugins() override;
 
     // ----------------------------------------------------------------------------
     // ToolPlugin
     /// Get the tool menu entry
-    virtual QAction *toolMenuAction();
+    QAction *toolMenuAction() override;
 
 private:
     VlycPython state;
