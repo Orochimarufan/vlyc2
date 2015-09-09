@@ -5,19 +5,49 @@ import os
 import sys
 import urllib.parse
 import urllib.request
+import http.cookiejar
 
-sys.path.append(os.path.expanduser("~/devel/youtube-dl"))
+sys.path.append(os.path.expanduser("~/Development/youtube-dl"))
 
 from youtube_dl.extractor import gen_extractors, get_info_extractor
 from youtube_dl.utils import ExtractorError
+from youtube_dl.cache import Cache
 
 import vlyc.plugin
 import vlyc.network
 
+instance = None
+
 # We don't want playlists (yet)
 import re
 from youtube_dl.extractor import youtube
-youtube.YoutubeIE.suitable = lambda x,url:(re.match(x._VALID_URL, url)is not None)
+youtube.YoutubeIE._VALID_URL =     _VALID_URL = r"""(?x)^
+                     (
+                         (?:https?://|//)                                    # http(s):// or protocol-independent URL
+                         (?:(?:(?:(?:\w+\.)?[yY][oO][uU][tT][uU][bB][eE](?:-nocookie)?\.com/|
+                            (?:www\.)?deturl\.com/www\.youtube\.com/|
+                            (?:www\.)?pwnyoutube\.com/|
+                            (?:www\.)?yourepeat\.com/|
+                            tube\.majestyc\.net/|
+                            youtube\.googleapis\.com/)                        # the various hostnames, with wildcard subdomains
+                         (?:.*?\#/)?                                          # handle anchor (#/) redirect urls
+                         (?:                                                  # the various things that can precede the ID:
+                             (?:(?:v|embed|e)/(?!videoseries))                # v/ or embed/ or e/
+                             |(?:                                             # or the v= param in all its forms
+                                 (?:(?:watch|movie)(?:_popup)?(?:\.php)?/?)?  # preceding watch(_popup|.php) or nothing (like /?v=xxxx)
+                                 (?:\?|\#!?)                                  # the params delimiter ? or # or #!
+                                 (?:.*?&)?                                    # any other preceding param (like /?s=tuff&v=xxxx)
+                                 v=
+                             )
+                         ))
+                         |youtu\.be/                                          # just youtu.be/xxxx
+                         |(?:www\.)?cleanvideosearch\.com/media/action/yt/watch\?videoId=
+                         )
+                     )?                                                       # all until now is optional -> you can pass the naked ID
+                     ([0-9A-Za-z_-]{11})                                      # here is it! the YouTube video ID
+                     #(?!.*?&list=)                                            # combined list/video URLs are handled by the playlist IE
+                     (?(1).+)?                                                # if we found the ID, everything can follow
+                     $"""
 
 # Blacklist Extractors
 def default_extractors():
@@ -30,14 +60,19 @@ def default_extractors():
 class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
     name = "Youtube-DL"
     author = "Orochimarufan"
-    rev = 1
+    rev = 10
 
     def __init__(self):
         self._ies = dict()
         self.add_default_info_extractors()
         # DASH is broken in Vlc HEAD
-        self.params = {"writesubtitles": True, "writeautomaticsub": True}#, "youtube_add_dash_manifest_as_format": True}
+        self.params = {"writesubtitles": True, "writeautomaticsub": True, "verbose": True, "youtube_include_dash_manifest": False}
         self._current = None
+        self.cookiejar = http.cookiejar.CookieJar() # stub
+        self.cache = Cache(self)
+        
+        global instance
+        instance = self
 
 #### YoutubeDL interface
     # IE Management
@@ -59,13 +94,13 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
 
     # Output
     def to_screen(self, text, skip_eol=False):
-        print(text, end="")
+        print(text)
 
     def to_stdout(self, text, skip_eol=False, respect_quiet=False):
-        print(text, end="")
+        print(text)
 
     def to_stderr(self, text):
-        print(text, end="")
+        print(text)
 
     def to_console_title(self, title):
         pass
@@ -126,6 +161,15 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
             self._url = urllib.parse.unquote(url)
 
         def load(self, done, throw):
+            try:
+                self._load(done, throw)
+            except:
+                import traceback
+                traceback.print_exc()
+                print()
+                raise
+
+        def _load(self, done, throw):
             #throw = self._plugin.begin(self, throw)
             if not throw: return
 
@@ -164,6 +208,9 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
             self.views = result.get("view_count", 0)
             self.likes = result.get("like_count", 0)
             self.dislikes = result.get("dislike_count", 0)
+            
+            #import pprint
+            #pprint.pprint(result)
 
             # Do quality stuff
             if result["extractor_key"] == "Youtube":
@@ -203,7 +250,7 @@ class GenericFormatMapper:
     map = (
         (360, vlyc.plugin.VideoQualityLevel.QA_360),
         (480, vlyc.plugin.VideoQualityLevel.QA_480),
-        (720, vlyc.plugin.VideoQualityLevel.QA_720),
+        (720, vlyc.plugin.VideoQualityLevel.QA_LOWEST + 15),
         (1080, vlyc.plugin.VideoQualityLevel.QA_1080),
         (2000, vlyc.plugin.VideoQualityLevel.QA_HIGHEST),
     )
@@ -219,7 +266,16 @@ class GenericFormatMapper:
             yield from iter_a
 
     @classmethod
-    def process(cls, formats):
+    def process(c, f):
+        try:
+            return c._process(f)
+        except:
+            import traceback
+            traceback.print_exc()
+            raise
+
+    @classmethod
+    def _process(cls, formats):
         """
         Just try to map the youtube-dl formats to vlyc2 ones as cleanly as possible
         """
@@ -234,7 +290,7 @@ class GenericFormatMapper:
                 ),
                 formats
             ),
-            key=lambda f: (f["height"], f["preference"]) if "height" in f else ((1,f["preference"]) if "preference" in f else (1,1))
+            key=lambda f: (f["height"] if "height" in f and f["height"] is not None else 0, f["preference"] if "preference" in f and f["preference"] is not None else 0)
         )
         # Map formats
         avail = list()
@@ -242,10 +298,18 @@ class GenericFormatMapper:
         level = vlyc.plugin.VideoQualityLevel.QA_LOWEST
         levels = list(cls.map)
         for format in formats:
-            while "height" in format and format["height"] > levels[0][0]:
+            while "height" in format and format["height"] is not None and format["height"] > levels[0][0]:
                 level = levels.pop(0)[1]
-            avail.append((level, format["format_note"] if "format_note" in format else format["format"]))
-            lookup[level] = (level, format["format_note"] if "format_note" in format else format["format"], format["url"])
+            if "format_note" in format:
+                name = format["format_note"]
+            elif "format" in format:
+                name = format["format"]
+            elif "height" in format:
+                name = "[%ip]" % format["height"]
+            else:
+                name = "Unknown format"
+            avail.append((level, name))
+            lookup[level] = (level, name, format["url"])
             level += 1
         return lookup, avail
 
@@ -263,7 +327,7 @@ class YoutubeFormatDatabase:
                 avail.append(cls.dash)
                 lookup[cls.dash[0]] = (cls.dash[0], cls.dash[1], format["url"])
             else:
-                itag = int(format["format_id"])
+                itag = int(format["format_id"].strip("nondash-"))
                 if itag in cls.itags:
                     stream = cls.itags[itag]
                     if stream[0] != vlyc.plugin.VideoQualityLevel.QA_INVALID:
@@ -292,7 +356,7 @@ class YoutubeFormatDatabase:
         46: (vlyc.plugin.VideoQualityLevel.QA_1080, "1080p WebM/VP8"),
         #MPEG4/AVC    [H.264|AAC]
         18: (vlyc.plugin.VideoQualityLevel.QA_360 + 2, "360p MPEG4/AVC"),
-        22: (vlyc.plugin.VideoQualityLevel.QA_720 + 1, "720p MPEG4/AVC"),
+        22: (vlyc.plugin.VideoQualityLevel.QA_720 + 10, "720p MPEG4/AVC"),
         37: (vlyc.plugin.VideoQualityLevel.QA_1080 + 1, "1080p MPEG4/AVC"),
         38: (vlyc.plugin.VideoQualityLevel.QA_HIGHEST, "3072p MPEG4/AVC (Original)"),
         #WebM/VP8 3D  [VP8|Vorbis]
@@ -327,6 +391,8 @@ class YoutubeFormatDatabase:
                     add_merged_level(level, desc, video_format_id, audio_format)
                     break
         # GO!
+        try_combine(vlyc.plugin.VideoQualityLevel.QA_480 + 3, "480p DASH/MP4", "135", "141", "140", "139")
+        try_combine(vlyc.plugin.VideoQualityLevel.QA_480 + 2, "480p DASH/VP8", "244", "172", "171", "139")
         try_combine(vlyc.plugin.VideoQualityLevel.QA_1080 + 3, "1080p DASH/MP4", "137", "141", "140", "139")
         try_combine(vlyc.plugin.VideoQualityLevel.QA_1080 + 4, "1440p DASH/MP4", "264", "141", "140", "139")
         try_combine(vlyc.plugin.VideoQualityLevel.QA_HIGHEST + 3, "2160p DASH/MP4", "138", "141", "140", "139")
