@@ -260,12 +260,14 @@ PlaylistNode::iterator &PlaylistNode::iterator::operator+=(unsigned int n)
 {
     for (; n && **this; --n)
         ++*this;
+    return *this;
 }
 
 PlaylistNode::iterator &PlaylistNode::iterator::operator-=(unsigned int n)
 {
     for (; n && **this; --n)
         --*this;
+    return *this;
 }
 
 PlaylistNode *PlaylistNode::iterator::operator *() const
@@ -310,6 +312,7 @@ QVariant PlaylistNode::property(const QString &name)
     ObjectPtr media = mp_result.cast<Object>();
     if (media.isValid())
         return media->getProperty(name);
+    return QVariant();
 }
 
 bool PlaylistNode::hasProperty(const QString &name)
@@ -329,6 +332,7 @@ QVariant PlaylistNode::call(const QString &method, const QVariantList &args)
     ObjectPtr o = mp_result.cast<Object>();
     if (o.isValid())
         return o->call(method, args);
+    return QVariant();
 }
 
 bool PlaylistNode::isPlayable() const

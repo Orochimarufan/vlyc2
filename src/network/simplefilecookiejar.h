@@ -29,6 +29,8 @@ class SimpleFileCookieJar : public QNetworkCookieJar
 
 public:
     explicit SimpleFileCookieJar(QString file=QString(), QObject *parent = 0);
+
+    QString fileName();
     
     void clean();
     void save();

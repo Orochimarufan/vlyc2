@@ -36,6 +36,11 @@ SimpleFileCookieJar::SimpleFileCookieJar(QString file, QObject *parent) :
     qDebug("CookieJar: %s", qPrintable(cookieFile));
 }
 
+QString SimpleFileCookieJar::fileName()
+{
+    return cookieFile;
+}
+
 void SimpleFileCookieJar::clean()
 {
     auto cookies = allCookies();

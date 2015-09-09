@@ -24,6 +24,7 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QJsonDocument>
+#include <QtCore/QLinkedList>
 
 #include <QtVlc/VlcMediaPlayer.h>
 
@@ -46,6 +47,8 @@ QVariant save_progress(Vlyc::Result::ObjectPtr o, QVariantList args)
     int mode = args.value(0, 0).toInt();
 
     QString path = o->property<QString>("vml_path");
+    QVariantMap meta = o->property<QVariantMap>("vml_meta");
+
     QFile f(path);
 
     VlycApp *vlyc = (VlycApp*)qApp->property("vlyc").value<QObject*>();
@@ -63,7 +66,7 @@ QVariant save_progress(Vlyc::Result::ObjectPtr o, QVariantList args)
     qint64 time = mode == 0 ? vlyc->player()->player().time() : 0;
 
     QStringList lines;
-    if (!path.endsWith("/.folder.vml"))
+    if (f.exists())
     {
         f.open(QFile::ReadOnly | QFile::Text);
 
@@ -75,10 +78,18 @@ QVariant save_progress(Vlyc::Result::ObjectPtr o, QVariantList args)
         if (lines.at(0).startsWith("#"))
             lines.takeFirst();
     }
-    else
+    else if (path.endsWith("/.folder.vml"))
+    {
         lines << "*";
+        meta.insert("glob", true);
+        meta.insert("sort", "human");
+    }
+    else
+    {
+        qFatal("File doesnt exist: %s", qPrintable(path));
+        return QVariant();
+    }
 
-    QVariantMap meta = o->property<QVariantMap>("vml_meta");
     meta.insert("pos", pos);
     meta.insert("time", time);
     o->setProperty("vml_meta", meta);
@@ -113,6 +124,167 @@ SimplePlaylistPlugin::SimplePlaylistPlugin()
     //super->setMethod("on_quit", &save_progress);
 }
 
+class SortableString
+{
+    struct piece {
+        bool is_number;
+        QStringRef string;
+        long number;
+        piece *next;
+    };
+
+    static long indexOfFirstDigit(const QString &s, long offset=0)
+    {
+        while (offset < s.size())
+        {
+            QChar c = s.at(offset);
+            if (c >= 0x30 && c <= 0x39)
+                return offset;
+            ++offset;
+        }
+        return -1;
+    }
+
+    static long indexOfFirstNonDigit(const QString &s, long offset=0)
+    {
+        while (offset < s.size())
+        {
+            QChar c = s.at(offset);
+            if (c < 0x30 || c > 0x39)
+                return offset;
+            ++offset;
+        }
+        return -1;
+    }
+
+    QString string;
+    piece first;
+
+public:
+    SortableString(const QString &s):
+        string(s)
+    {
+        long index = 0;
+        bool is_num = true;
+        piece *last = nullptr;
+
+        while (index != -1)
+        {
+            is_num = !is_num;
+
+            long start = index;
+            if (is_num)
+                index = indexOfFirstNonDigit(s, index);
+            else
+                index = indexOfFirstDigit(s, index);
+
+            long length = index != -1 ? index - start : -1;
+            if (length == 0)
+                continue;
+
+            if (!last)
+                last = &first;
+            else
+            {
+                piece *p = new piece;
+                last->next = p;
+                last = p;
+            }
+
+            last->next = nullptr;
+            last->is_number = is_num;
+
+            if (is_num)
+                last->number = string.midRef(start, length).toLong();
+            else
+                last->string = string.midRef(start, length);
+        }
+    }
+
+    SortableString(SortableString &&o) :
+        string(o.string)
+    {
+        first.is_number = o.first.is_number;
+        first.number = o.first.number;
+        first.string = o.first.string;
+        first.next = o.first.next;
+        o.first.next = nullptr;
+    }
+
+    ~SortableString()
+    {
+        piece *p = first.next;
+        piece *d;
+        while ((d = p))
+        {
+            p = p->next;
+            delete d;
+        }
+    }
+
+    int compare(const SortableString &o) const
+    {
+        const piece *ours = &first;
+        const piece *theirs = &o.first;
+        int v;
+
+        while (ours && theirs)
+        {
+            if (ours->is_number != theirs->is_number)
+                return ours->is_number ? -1 : 1;
+            if (ours->is_number)
+            {
+                if (ours->number < theirs->number)
+                    return -1;
+                else if (ours->number > theirs->number)
+                    return 1;
+            }
+            else
+            {
+                v = QStringRef::compare(ours->string, theirs->string);
+                if (v)
+                    return v;
+            }
+
+            ours = ours->next;
+            theirs = theirs->next;
+        }
+
+        if (!ours && !theirs)
+            return 0;
+        else if (!ours)
+            return -1;
+        else if (!theirs)
+            return 1;
+        throw "None of them is NULL?";
+    }
+
+    bool operator ==(const SortableString &o) const
+    {
+        return !compare(o);
+    }
+
+    bool operator !=(const SortableString &o) const
+    {
+        return compare(o);
+    }
+
+    bool operator <(const SortableString &o) const
+    {
+        return compare(o) < 0;
+    }
+
+    bool operator >(const SortableString &o) const
+    {
+        return compare(o) > 0;
+    }
+
+    QString getString() const
+    {
+        return string;
+    }
+};
+
 Vlyc::Result::ResultPtr SimplePlaylistPlugin::handleUrl(const QUrl &url)
 {
     if (url.scheme() == "file")
@@ -126,20 +298,68 @@ Vlyc::Result::ResultPtr SimplePlaylistPlugin::handleUrl(const QUrl &url)
         if (f.isDir())
         {
             QDir dir(f.absoluteFilePath());
+            QFileInfo file(dir, ".folder.vml");
+            QFile fp(file.absoluteFilePath());
+            fp.open(QFile::ReadOnly);
 
-            QStringList children = dir.entryList(QDir::Files | QDir::Readable, QDir::Name);
-            for (QString child : children)
-                urls << "file://" + dir.absoluteFilePath(child);
+            meta = QJsonDocument::fromJson(fp.readLine().mid(1)).object();
 
-            QFileInfo metaFile(dir, ".folder.vml");
-            QFile mf(metaFile.absoluteFilePath());
-            mf.open(QFile::ReadOnly);
+            QString line;
+            QStringList lines;
+            while (!(line = fp.readLine()).isEmpty())
+                lines << line.trimmed();
 
-            meta = QJsonDocument::fromJson(mf.readLine().mid(1)).object();
+            if (meta.value("glob").toBool(false) || lines.empty() || lines.front().contains('*'))
+            {
+                QStringList files;
+                QString sort = meta.value("sort").toString("human");
+                if (sort == "human")
+                {
+                    std::list<SortableString> sorter;
+                    QStringList entries = dir.entryList(lines, QDir::Files | QDir::Readable);
+                    sorter.emplace_back(entries.takeFirst());
+                    auto it = sorter.begin();
+                    for (QString &entry : entries)
+                    {
+                        SortableString s(entry);
+                        if (it == sorter.end() || *it > s)
+                            do if (it-- == sorter.begin() || *it < s)
+                            {
+                                it = sorter.insert(++it, std::move(s));
+                                break;
+                            }
+                            while (it == sorter.end() || *it > s);
+                        else
+                            do if (++it == sorter.end() || *it > s)
+                            {
+                                it = sorter.insert(it, std::move(s));
+                                break;
+                            }
+                            while (*it < s);
+                    }
+                    for (SortableString &entry : sorter)
+                        files << entry.getString();
+                }
+                else // if (sort == "name")
+                    files = dir.entryList(lines, QDir::Files | QDir::Readable, QDir::Name);
+                for (QString file : files)
+                    urls << "file://" + dir.absoluteFilePath(file);
+            }
+            else
+                for (const QString &line : lines)
+                {
+                    QFileInfo fi(dir, line);
+                    if (!fi.isFile())
+                        continue;
+                    QUrl x;
+                    x.setScheme("file");
+                    x.setPath(fi.absoluteFilePath());
+                    urls << x.toString();
+                }
 
-            mf.close();
+            fp.close();
 
-            vml_path = metaFile.absoluteFilePath();
+            vml_path = file.absoluteFilePath();
         }
 
         else if (f.fileName().endsWith(".vml"))

@@ -74,7 +74,7 @@ template<typename RetType, typename CookieType, typename... ArgTypes, typename..
 static inline RetType* XcbCall(
         CookieType (*func)(xcb_connection_t*, ArgTypes...),
         RetType *(reply_func)(xcb_connection_t*, CookieType, xcb_generic_error_t**),
-        ArgTypes2... args...)
+        ArgTypes2... args)
 {
     xcb_connection_t *conn = XCB::getConnection();
     CookieType cookie = func(conn, args...);
@@ -86,7 +86,7 @@ static inline RetType* XcbCall(
 template<typename... ArgTypes, typename... ArgTypes2>
 static inline unsigned int XcbCallVoid(
         xcb_void_cookie_t (*func)(xcb_connection_t*, ArgTypes...),
-        ArgTypes2... args...)
+        ArgTypes2... args)
 {
     xcb_connection_t *conn = XCB::getConnection();
     return func(conn, args...).sequence;

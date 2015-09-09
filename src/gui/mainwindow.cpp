@@ -240,6 +240,11 @@ void MainWindow::connectUiMisc()
 
     shortcut_n = new QShortcut(QKeySequence("N"), ui->video);
     connect(shortcut_n, &QShortcut::activated, mp_self->player(), &VlycPlayer::next);
+
+    connect(new QShortcut(QKeySequence("P"), ui->video), &QShortcut::activated, mp_self->player(), &VlycPlayer::prev);
+    connect(new QShortcut(QKeySequence("O"), ui->video), &QShortcut::activated, [this](){m_player.setTime(90000);});
+    connect(new QShortcut(QKeySequence("I"), ui->video), &QShortcut::activated, [this](){m_player.setTime(m_player.time() + 80000);});
+    connect(new QShortcut(QKeySequence("F"), ui->video), &QShortcut::activated, [this](){m_player.setTime(m_player.time());});
 }
 
 void MainWindow::on_btn_play_clicked()
@@ -348,6 +353,12 @@ void MainWindow::onLibraryContextMenu(const QPoint &point)
     if (ui->treeView->selectionModel()->selectedRows().length() < 2)
     {
         PlaylistNode *node = mp_self->player()->model().getNodeFromIndex(ui->treeView->indexAt(point));
+
+        if (node->hasFailed())
+        {
+            QAction *a = menu.addAction("Retry");
+            connect(a, &QAction::triggered, [node, this] () {});
+        }
 
         if (node->hasProperty("library_context_menu"))
         {

@@ -77,7 +77,7 @@ private:
 };
 
 #define VLYC_PLUGIN_HEAD(ID) public:\
-    virtual QString id() const { return QStringLiteral(#ID); }
+    QString id() const override { return QStringLiteral(#ID); }
 
 }
 

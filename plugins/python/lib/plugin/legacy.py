@@ -18,7 +18,7 @@
 #- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #----------------------------------------------------------------------
 
-from . import _state
+from .. import _state
 import inspect
 import abc
 

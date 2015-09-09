@@ -433,14 +433,18 @@ inline static QString handleException()
 
     PyObject *tp, *exc, *tb, *exc_info;
     PyErr_Fetch(&tp, &exc, &tb);
-    exc_info = PyTuple_Pack(3, tp, exc, tb);
+    //exc_info = PyTuple_Pack(3, tp, exc, tb);
 
     PyObject *traceback = NULL, *format_exception = NULL, *message_p = NULL;
     traceback = PyImport_ImportModule("traceback");
-    if (traceback != NULL)
-        format_exception = PyObject_GetAttrString(traceback, "format_exception");
-    if (format_exception != NULL && exc_info != NULL)
-        message_p = PyObject_CallObject(format_exception, exc_info);
+    //if (traceback != NULL)
+    //    format_exception = PyObject_GetAttrString(traceback, "format_exception");
+    //if (format_exception != NULL && exc_info != NULL)
+    //    message_p = PyObject_CallObject(format_exception, exc_info);
+    if (traceback)
+        format_exception = PyObject_GetAttrString(traceback, "format_exc");
+    if (format_exception)
+        message_p = PyObject_CallObject(format_exception, NULL);
 
     Py_XDECREF(format_exception);
     Py_XDECREF(traceback);

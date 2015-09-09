@@ -35,8 +35,8 @@ class VLYC_EXPORT Object
 {
     mutable std::atomic_uint refcount;
 
-    friend void ::Vlyc::Memory::incref(Object *);
-    friend void ::Vlyc::Memory::decref(Object *);
+    friend void incref(Object *);
+    friend void decref(Object *);
 
 protected:
     Object();

@@ -21,6 +21,7 @@
 
 #include <QObject>
 #include <QUrl>
+#include <QVariant>
 
 #include <VlycResult/Result.h>
 
@@ -40,12 +41,13 @@ class VlycApp : public QObject
 {
     Q_OBJECT
 public:
-    explicit VlycApp(QObject *parent = 0);
+    explicit VlycApp(const QVariantHash &args, QObject *parent = 0);
 
     MainWindow *window() const;
     Vlyc::PluginManager *plugins() const;
     QNetworkAccessManager *network() const;
     VlycPlayer *player() const;
+    const QVariantHash &args() const;
 
     virtual ~VlycApp();
 
@@ -57,6 +59,8 @@ public slots:
     void play(const QUrl &url);
 
 private:
+    QVariantHash m_args;
+
     Vlyc::PluginManager *mp_plugins;
     NetworkAccessManager *mp_network;
     VlycPlayer *mp_player;

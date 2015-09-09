@@ -6,6 +6,7 @@
 #include <PythonQt/PythonQtImporter.h>
 
 #include "wrap/WrapLegacySitePlugin.h"
+#include "pythonutil.h"
 
 namespace Vlyc {
 namespace Python {
@@ -52,7 +53,7 @@ bool LegacyPluginLoader::load()
     PyObject *mod_name = PythonQtConv::QStringToPyObject(QStringLiteral("VLYC_PLUGIN_LE_%1_%2").arg(pluginCnt++).arg(m_file.baseName()));
 
     // Create Module
-    PyObject *plugin = PyImport_AddModuleObject(mod_name);
+    PyObject *plugin = PyImport_AddModuleObject(mod_name); // borrowed ref
 
     // Initialize Module
     QString source = m_file.absoluteFilePath();
@@ -61,7 +62,7 @@ bool LegacyPluginLoader::load()
     {
         PyObject *package_path = PyTuple_New(1);
         PyTuple_SET_ITEM(package_path, 0, PythonQtConv::QStringToPyObject(source));
-        PyModule_AddObject(plugin, "__path__", package_path);
+        PyModule_AddObject(plugin, "__path__", package_path); // steal package_path ref
 
         source = QDir(source).absoluteFilePath("__init__.py");
     }
@@ -70,37 +71,57 @@ bool LegacyPluginLoader::load()
 
     // Prepare Environment
     PyObject *func = create_register_func(this);
-    PyObject *stdi = PyModule_GetDict(mp_state->state());
+    PyObject *stdi = PyModule_GetDict(mp_state->state()); // borrowed ref
     PyDict_SetItemString(stdi, "register_site", func);
+    Py_DECREF(func);
 
     PyObject *dict = PyModule_GetDict(plugin);
-    PyDict_SetItemString(dict, "__builtins__", PyImport_ImportModule("builtins"));
+    PyObject *builtins = PyImport_ImportModule("builtins");
+    PyDict_SetItemString(dict, "__builtins__", builtins);
+    Py_DECREF(builtins);
 
     // Load File
     PyObject *code = PythonQtImport::getCodeFromPyc(source);
 
-    // Evaluate code
-    PyObject *result = PyEval_EvalCode(code, dict, dict);
-
-    // Clean Up
-    Py_XDECREF(result);
-    Py_DECREF(code);
-
-    PyDict_DelItemString(stdi, "register_site");
-    Py_DECREF(func);
-
-    if (PyErr_Occurred())
+    if (code)
     {
-        PyErr_Print();
-        PyDict_DelItem(PyImport_GetModuleDict(), mod_name);
-        Py_DECREF(mod_name);
-        PyErr_Clear();
-        return false;
+        // Evaluate code
+        PyObject *result = PyEval_EvalCode(code, dict, dict);
+
+        // Clean Up
+        Py_XDECREF(result);
+        Py_DECREF(code);
+
+        PyDict_DelItemString(stdi, "register_site");
+
+        if (!PyErr_Occurred())
+        {
+            Py_DECREF(mod_name);
+            return true;
+        }
     }
 
+    // Error Handling:
+    if (PyErr_Occurred())
+    {
+        m_errorString = format_exc();
+        if (m_errorString.isEmpty())
+            m_errorString = "Unknown Exception occured.";
+        else
+        {
+            std::cerr << "Exception occured while loading legacy python plugin "
+                      << qPrintable(m_file.baseName()) << ":\n"
+                      << qPrintable(m_errorString);
+            std::cerr.flush();
+        }
+    }
+    else
+        m_errorString =  "Unknown Error occured";
+    // Clean up
+    PyDict_DelItem(PyImport_GetModuleDict(), mod_name);
     Py_DECREF(mod_name);
-
-    return true;
+    PyErr_Clear();
+    return false;
 }
 
 bool LegacyPluginLoader::isLoaded()

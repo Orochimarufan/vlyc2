@@ -116,6 +116,8 @@ static const quint32 T_BROKEN = 0;
 static const quint32 T_LEGACY = 1;
 static const quint32 T_DIRECT = 2;
 
+int VLYC_FILE_SUB_ENABLE = 1;
+
 // Set a new item
 void VlycPlayer::setItem(PlaylistNode *item)
 {
@@ -130,9 +132,12 @@ void VlycPlayer::setItem(PlaylistNode *item)
         ml_current_quality_id_list = std::get<1>(qualities);
 
         // find best quality [DIRTY HACK!!!!]
+        m_current_quality_index = -1;
         if (m_last_quality_select != (int)VideoQualityLevel::QA_INVALID)
             for (int i = ml_current_quality_id_list.length() - 1; i >= 0 && ml_current_quality_id_list[i] < (m_last_quality_select + 15); --i)
                 m_current_quality_index = i;
+        if (m_current_quality_index == -1)
+            m_current_quality_index = 0;
 
         ml_current_subs_list = item->__lvideo()->availableSubtitleLanguages();
         ml_current_subs_list.prepend("No Subtitles");
@@ -213,6 +218,8 @@ void VlycPlayer::onStateChanged(VlcState::Type state)
             ml_current_subs_list << spu[i];
             ml_current_quality_id_list << i;
         }
+        if (!VLYC_FILE_SUB_ENABLE)
+            m_player_video.setSpu(-1);
         m_current_subs_index = ml_current_quality_id_list.indexOf(m_player_video.spu());
         emit subsListChanged(ml_current_subs_list, m_current_subs_index);
     }

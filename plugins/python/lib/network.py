@@ -88,7 +88,7 @@ class URLError(urllib.error.URLError):
 
 class ReplyHeadersProxy:
     def __init__(self, qnreply):
-        print("headers for %s: %s" % (qnreply, self))
+        #print("headers for %s: %s" % (qnreply, self))
         self._qnreply = qnreply
     
     def __contains__(self, hdr):
@@ -104,9 +104,9 @@ class ReplyHeadersProxy:
             raise KeyError(key)
     
     def get(self, key, fallback='__THISISADEFAULTPLACEHOLDER_'):
-        print("header %s for %s" % (key, self))
+        #print("header %s for %s" % (key, self))
         if key in self:
-            print("    found: %r" % self._qnreply.rawHeader(key.encode("utf-8")))
+            #print("    found: %r" % self._qnreply.rawHeader(key.encode("utf-8")))
             return self._qnreply.rawHeader(key.encode("utf-8")).toBytes().decode("utf-8")
         elif fallback == '__THISISADEFAULTPLACEHOLDER_':
             raise KeyError(key)

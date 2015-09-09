@@ -16,28 +16,32 @@
 # * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # *****************************************************************************/
 
+# Initialize CMake
 cmake_minimum_required(VERSION 2.8.10)
 
-IF(POLICY CMP0020)
-	CMAKE_POLICY(SET CMP0020 NEW)
+IF(POLICY CMP0020) # 2.8.11: Link qtmain (Windows)
+    CMAKE_POLICY(SET CMP0020 NEW)
 ENDIF()
 
 IF(POLICY CMP0028) # 3.0: Double-colon targets
-	CMAKE_POLICY(SET CMP0028 NEW)
+    CMAKE_POLICY(SET CMP0028 NEW)
 ENDIF()
 
-IF(POLICY CMP0043)
+IF(POLICY CMP0043) # 3.0: COMPILE_DEFINITIONS_<Config> deprecation
     CMAKE_POLICY(SET CMP0043 NEW)
 ENDIF()
 
 IF(NOT CMAKE_BUILD_TYPE)
-	SET(CMAKE_BUILD_TYPE Release)
+    SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
 SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
 
 ######## Qt ########
 find_package(Qt5Core REQUIRED)
+
+SET(CMAKE_AUTOMOC ON)
+SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 ######## VLYC ########
 project(VLYC)
@@ -47,24 +51,20 @@ SET(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 
-######## Set CMake options ########
-SET(CMAKE_AUTOMOC ON)
-SET(CMAKE_INCLUDE_CURRENT_DIR ON)
-
 ######## Set compiler flags ########
 IF(APPLE)
-	# assume clang, add C++1y/C++14 stuff
+        # assume clang, add C++1y/C++14 stuff
 	message(STATUS "Using APPLE CMAKE_CXX_FLAGS")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -stdlib=libc++")
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -stdlib=libc++")
 ELSEIF(UNIX)
-	# assume GCC, add C++1y/C++14 stuff
+        # assume GCC, add C++1y/C++14 stuff
 	MESSAGE(STATUS "Using UNIX CMAKE_CXX_FLAGS")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
 	# Need extra -Xlinker -export-dynamic for python C extensions.
-	#SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic")
+        #SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic")
 ELSEIF(MINGW)
 	MESSAGE(STATUS "Using MINGW CMAKE_CXX_FLAGS")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++1y")
 ENDIF()
 
 ### include plugin defs ###
@@ -76,5 +76,5 @@ add_subdirectory(shared)
 ######## Main App ########
 add_subdirectory(src)
 
-######## plugins ########
+######## Plugins ########
 add_subdirectory(plugins)

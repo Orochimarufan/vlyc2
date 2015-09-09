@@ -27,7 +27,7 @@ namespace Result {
 // Properties
 bool Object::hasProperty(const QString &name) const
 {
-    return properties.contains(name) || parent.isValid() && parent->hasProperty(name);
+    return properties.contains(name) || (parent.isValid() && parent->hasProperty(name));
 }
 
 QVariant Object::getProperty(const QString &name) const
@@ -53,7 +53,7 @@ QVariant Object::getProperty(const QString &name, const QVariant &default_) cons
 // Methods
 bool Object::hasMethod(const QString &name) const
 {
-    return methods.contains(name) || parent.isValid() && parent->hasMethod(name);
+    return methods.contains(name) || (parent.isValid() && parent->hasMethod(name));
 }
 
 QVariant Object::call(const QString &method, const QVariantList &arguments)

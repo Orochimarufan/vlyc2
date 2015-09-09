@@ -27,6 +27,8 @@
 
 #include <VlcInstance.h>
 
+extern int VLYC_FILE_SUB_ENABLE;
+
 
 int main(int argc, char** argv)
 {
@@ -50,6 +52,14 @@ int main(int argc, char** argv)
     parser.newSwitch("help", false);
     parser.addFlag("help", 'h');
     parser.addDocumentation("help", "Show this help");
+
+    parser.newOption("cookiejar");
+    parser.addFlag("cookiejar", 'j');
+    parser.addDocumentation("cookiejar", "Use an alternative cookie jar. '-' to disable persistent cookies");
+
+    parser.newSwitch("nosubs");
+    parser.addFlag("nosubs", 'S');
+    parser.addDocumentation("nosubs", "Don't automatically enable subtitles included in local files");
 
     QHash<QString,QVariant> args = parser.parse(app.arguments());
 
@@ -90,11 +100,15 @@ int main(int argc, char** argv)
         }
     }
 
+    if (args["nosubs"].toBool())
+        VLYC_FILE_SUB_ENABLE = 0;
+
     VlcInstance::initGlobalInstance(libvlc_args);
 
-    VlycApp vlyc;
+    VlycApp vlyc(args);
 
     app.setProperty("vlyc", QVariant::fromValue((QObject*)&vlyc));
+    app.setProperty("mainwindow", QVariant::fromValue((QWidget*)vlyc.window()));
 
     if (!args["proxy"].toString().isNull())
     {

@@ -21,8 +21,8 @@
 #include "networkaccessmanager.h"
 
 #include <QtCore/QSettings>
-
-#include <QtGui/QDesktopServices>
+#include <QtCore/QStandardPaths>
+#include <QtCore/QDir>
 
 #include <QtNetwork/QAuthenticator>
 #include <QtNetwork/QNetworkDiskCache>
@@ -31,10 +31,24 @@
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QSslError>
 
+#include "../vlyc.h"
+
+static QString get_jar_name(QObject *app_)
+{
+    VlycApp *app = static_cast<VlycApp *>(app_);
+    QVariant cj = app->args()["cookiejar"];
+    if (!cj.isValid())
+        return QString();
+    else if (cj.toString() == "-")
+        return "";
+    else
+        return QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)).absoluteFilePath(QStringLiteral("cookies.txt.%1").arg(cj.toString()));
+}
+
 NetworkAccessManager::NetworkAccessManager(QObject *parent) :
     QNetworkAccessManager(parent),
     mi_finished(0), mi_fromCache(0), mi_pipelined(0), mi_secure(0), mi_downloadBuffer(0),
-    cookies()
+    cookies(get_jar_name(parent))
 {
     connect(this, &QNetworkAccessManager::finished, this, &NetworkAccessManager::requestFinished);
 
@@ -45,8 +59,11 @@ NetworkAccessManager::NetworkAccessManager(QObject *parent) :
     diskCache->setCacheDirectory(location);
     setCache(diskCache);
 
-    cookies.load();
-    setCookieJar(&cookies);
+    if (cookies.fileName() != "")
+    {
+        cookies.load();
+        setCookieJar(&cookies);
+    }
 }
 
 NetworkAccessManager::~NetworkAccessManager()

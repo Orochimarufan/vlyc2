@@ -41,8 +41,9 @@
 #   define LIBRARY_EXT ".so"
 #endif
 
-VlycApp::VlycApp(QObject *parent) :
+VlycApp::VlycApp(const QVariantHash &args, QObject *parent) :
     QObject(parent),
+    m_args(args),
     mp_plugins(new Vlyc::PluginManager()),
     mp_network(new NetworkAccessManager(this)),
     mp_player(new VlycPlayer(this)),
@@ -64,6 +65,11 @@ VlycApp::~VlycApp()
     delete mp_plugins;
     delete mp_network;
     delete mp_player;
+}
+
+const QVariantHash &VlycApp::args() const
+{
+    return m_args;
 }
 
 MainWindow *VlycApp::window() const
