@@ -1,6 +1,6 @@
 #/*****************************************************************************
 # * vlyc2 - A Desktop YouTube client
-# * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+# * Copyright (C) 2013-2014 Taeyeon Mori <orochimarufan.x3@gmail.com>
 # *
 # * This program is free software: you can redistribute it and/or modify
 # * it under the terms of the GNU General Public License as published by
@@ -16,19 +16,23 @@
 # * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # *****************************************************************************/
 
-#IF(IS_DIRECTORY test)
-	#add_subdirectory(test)
-	#add_subdirectory(test2)
-#ENDIF()
+# plugin name
+SET(PLUGIN_NAME sleep)
+INCLUDE(../prepare.cmake)
 
-# V2 Plugins
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+######## Plugin ########
+## this is where custom stuff goes!
 
-add_subdirectory(direct)
-add_subdirectory(python)
-#add_subdirectory(python2)
-add_subdirectory(browser)
-add_subdirectory(test2)
-add_subdirectory(simpleplaylist)
-add_subdirectory(sleep)
+# Sources
+LIST(APPEND PLUGIN_HEADERS
+    SleepPlugin.h
+)
+
+LIST(APPEND PLUGIN_SOURCES
+    SleepPlugin.cpp
+)
+
+LIST(APPEND PLUGIN_QT Widgets)
+
+INCLUDE(../build.cmake)
+
