@@ -375,6 +375,7 @@ class YoutubeFormatDatabase:
 
     @staticmethod
     def dash_formats(formats, avail, lookup):
+        return
         # HAAAAX!
         format_map = {a["format_id"]:a for a in formats}
         def add_merged_level(level, desc, main_format_id, *format_ids):
