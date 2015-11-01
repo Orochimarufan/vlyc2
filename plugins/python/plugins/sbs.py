@@ -1,13 +1,9 @@
 #!/usr/bin/python3
 
 # SBS Live stream.
-# NOTE: your libvlc/ffmpeg needs to be linked against librtmp
 
 import vlyc.plugin
-import re
 import io
-import hashlib
-import datetime
 import random
 import base64
 import Crypto.Cipher.DES
@@ -21,11 +17,12 @@ def rtmp_escape(s):
 	return s.replace("\\", "\\5c").replace(" ", "\\20")
 
 
+
 # Stuff
 class SBSOnAirPlugin(vlyc.plugin.SitePlugin):
 	name="SBS OnAir"
 	author="Orochimarufan"
-	rev=1
+	rev=2
 
 	def forUrl(self, url):
 		if url.scheme() == "sbs":
@@ -36,14 +33,18 @@ class SBSOnAirPlugin(vlyc.plugin.SitePlugin):
 
 
 class Video(vlyc.plugin.Video):
-		playerrev_regexp = re.compile(br'flash\\/(.+)\\/StandardVideoPlayer.swf')
-
+		# SBS NeTVOnAir
+		version = "1.5.0"
+		
 		def __init__(self, plugin, video_id):
 			super(Video, self).__init__(video_id.upper())
 			self.plugin = plugin
+		
+		def log(self, msg, *a):
+			print("SBS [%s] %s" % (self.videoId, msg % a))
 
 		# Auth Key
-		# Class.Crypt.decrypt(param1: String) : String
+		# Class.Crypt.decrypt(String) : String
 		@staticmethod
 		def decrypt(data):
 			# Static Key
@@ -64,50 +65,75 @@ class Video(vlyc.plugin.Video):
 			# return as string
 			return text.decode("utf-8")
 
+		# Class.LivePlayer.Start() : void
+		# Class.LivePlayer.authkeyLoadComplete(Event) : void
 		def getAuthKey(self):
+			self.log("Get AuthKey")
 			url = "http://api.sbs.co.kr/vod/_v1/Onair_Media_Auth_Security.jsp?playerType=flash&channelPath=%s&streamName=%s&rnd=%i" \
 				% (self.streamPath, self.stream, random.getrandbits(8))
 			return self.decrypt(vlyc.network.retrieve(url)).split("?")[-1]
 
 		# Config
-		def setSource(self, url):
+		# Controls.LivePlayer.SetSource(url: string, start: bool) : void
+		def _setSource(self, url):
+			self.source = url
 			parts = url.split("/")
 			self.host = "rtmp://" + parts[2]
 			self.streamPath = parts[3]
 			self.stream = parts[4]
 
+		# Class.LiveChannelInitializer.*
 		def getConfig(self):
+			self.log("Get Config")
 			url = "http://sbsplayer.sbs.co.kr/OnAir/env/%s.xml?ControlSetting=YYYYYYY" % self.videoId
 			self.config = etree.parse(io.BytesIO(vlyc.network.retrieve(url)))
 			self.title = self.config.find(".//ChannelName").text
-			self.setSource(self.config.find(".//SourceURL").text)
+			self._setSource(self.config.find(".//SourceURL").text)
+			#self.captionurl = self.config.find(".//CaptionSourceURL").text
+			self.log("Config: %s @ %s", self.title, self.source)
 
 		# Load
-		def load(self, done, throw):
+		# Controls.LivePlayer.Play() : void
+		def _load(self, done, throw):
 			self.author = "에스비에스"
 
 			self.getConfig()
-			self.auth_key = self.getAuthKey()
+			self.authKey = self.getAuthKey()
+			self.log("AuthKey: %s", self.authKey)
 
-			self.app = self.streamPath + "?" + self.auth_key
+			self.app = self.streamPath + "?" + self.authKey
 
 			self.availableQualities.append((vlyc.plugin.VideoQualityLevel.QA_LOWEST, "Default"))
+			
+			# ffmpeg with librtmp
+			#self.rtmp_opts = {
+			#	"swfUrl": "http://vod.sbs.co.kr/onair/NeTVOnAir_%s.swf?dd=9" % self.version.replace(".", "_"),
+			#	"tcUrl": self.host + "/" + self.app,
+			#	"playpath": self.stream,
+			#	"live": "1",
+			#	"flashVer": "LIN 19,0,0,226",
+			#	"app": self.app,
+			#	"pageUrl": "http://vod.sbs.co.kr/onair/onair_index.jsp?Channel=%s&div=pc_onair" % self.videoId,
+			#}
+			#self.rtmp_url = " ".join([self.source] + ["%s=%s" % (k, rtmp_escape(v)) for k, v in self.rtmp_opts.items()])
+			
+			# Should probably work generically (TM)
+			self.rtmp_url = "%s/%s/%s" % (self.host, self.app, self.stream)
+			
+			self.log("URI: %s", self.rtmp_url)
 
 			done()
+		
+		def load(self, done, throw):
+			try:
+				return self._load(done, throw)
+			except:
+				import traceback
+				print(traceback.format_exc())
+				throw("exc")
 
 		def getMedia(self, quality, media, throw):
-			RTMP_OPTS = {
-				"swfUrl": "http://vod.sbs.co.kr/onair/NeTVOnAir_1_1_0_0.swf",
-				"tcUrl": self.host + "/" + self.app,
-				"playpath": self.stream,
-				"live": "1",
-				#"flashVer": "LNX 11,9,900,170",
-				"app": self.app,
-				"pageUrl": "http://vod.sbs.co.kr/onair/onair_index.jsp?Channel=%s" % self.videoId,
-			}
-			rtmp_url = " ".join([self.host + "/" + self.app] + ["%s=%s" % (k, rtmp_escape(v)) for k, v in RTMP_OPTS.items()])
-			print("RTMP: %s"% rtmp_url)
-			media(quality, "Default", rtmp_url)
+			media(quality, "Default", self.rtmp_url)
 
 		def getSubtitles(self, language, subtitles, throw):
 			throw("ERROR!")
