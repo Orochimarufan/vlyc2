@@ -388,7 +388,7 @@ PyObject *WrapLegacyVideo::f_subtitles_func(PyObject *_self, PyObject *args)
 
     emit self->subtitles(VideoSubtitles{VideoPtr(self), QString(language), QString(type), PythonQtConv::PyObjToQVariant(data)});
 
-    PyMem_Free(data);
+    Py_XDECREF(data);
 
     Py_RETURN_NONE;
 }
@@ -396,7 +396,7 @@ PyMethodDef WrapLegacyVideo::f_subtitles {
     "subtitles",
     (PyCFunction) &WrapLegacyVideo::f_subtitles_func,
     METH_VARARGS,
-    "The Video method subtitles subtitles(str language, str type, bool isUrl, str|bytes data) callback."
+    "The Video method subtitles subtitles(str language, str type, str|bytes data) callback."
 };
 
 // use of the PyCFunction stuff
@@ -477,13 +477,13 @@ void WrapLegacyVideo::load()
         Py_INCREF(cb_done);
         Py_INCREF(cb_error);
         args = PyTuple_Pack(2, cb_done, cb_error);
+
+        PY result = PyObject_CallObject(load, args);
+
+        Py_XDECREF(result);
+        Py_XDECREF(args);
+        Py_XDECREF(load);
     }
-
-    PY result = PyObject_CallObject(load, args);
-
-    Py_XDECREF(result);
-    Py_XDECREF(args);
-    Py_XDECREF(load);
 
     if (PyErr_Occurred())
         emitError(handleException());
@@ -499,13 +499,13 @@ void WrapLegacyVideo::getMedia(const VideoQualityLevel &q)
         Py_INCREF(cb_media);
         Py_INCREF(cb_error);
         args = PyTuple_Pack(3, PyLong_FromLong((int)q), cb_media, cb_error);
+
+        PY result = PyObject_CallObject(getMedia, args);
+
+        Py_XDECREF(result);
+        Py_XDECREF(args);
+        Py_XDECREF(getMedia);
     }
-
-    PY result = PyObject_CallObject(getMedia, args);
-
-    Py_XDECREF(result);
-    Py_XDECREF(args);
-    Py_XDECREF(getMedia);
 
     if (PyErr_Occurred())
         emitError(handleException());
@@ -521,13 +521,13 @@ void WrapLegacyVideo::getSubtitles(const QString &language)
         Py_INCREF(cb_subtitles);
         Py_INCREF(cb_error);
         args = PyTuple_Pack(3, PythonQtConv::QStringToPyObject(language), cb_subtitles, cb_error);
+
+        PY result = PyObject_CallObject(getSubtitles, args);
+
+        Py_XDECREF(result);
+        Py_XDECREF(args);
+        Py_XDECREF(getSubtitles);
     }
-
-    PY result = PyObject_CallObject(getSubtitles, args);
-
-    Py_XDECREF(result);
-    Py_XDECREF(args);
-    Py_XDECREF(getSubtitles);
 
     if (PyErr_Occurred())
         emitError(handleException());
