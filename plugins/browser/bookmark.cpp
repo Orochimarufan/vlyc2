@@ -18,6 +18,9 @@
 
 #include "bookmark.h"
 
+#include <QtCore/QMimeData>
+#include <QtCore/QSet>
+
 
 BookmarkModel::BookmarkModel(const BookmarkList &bookmarks) :
     m_bookmarks(bookmarks)
@@ -174,5 +177,117 @@ bool BookmarkModel::removeRows(int row, int count, const QModelIndex &parent)
     for (int i=count; i; --i)
         m_bookmarks.removeAt(row);
     emit endRemoveRows();
+    return true;
+}
+
+// Drag
+Qt::DropActions BookmarkModel::supportedDropActions() const
+{
+    return Qt::MoveAction | Qt::CopyAction;
+}
+
+#define DRAG_MIME "application/vnd.model.selection/vlyc2.bookmarks"
+
+QStringList BookmarkModel::mimeTypes() const
+{
+    return QStringList{DRAG_MIME};
+}
+
+QMimeData *BookmarkModel::mimeData(const QModelIndexList &indices) const
+{
+    auto data = new QMimeData();
+    QByteArray encodedData;
+    QDataStream stream(&encodedData, QIODevice::WriteOnly);
+
+    size_t nrows = indices.size();
+    stream.writeRawData((char*)&nrows, sizeof(nrows));
+
+    size_t buf;
+    for (auto index : indices)
+    {
+        buf = index.row();
+        stream.writeRawData((char*)&buf, sizeof(buf));
+    }
+
+    data->setData(DRAG_MIME, encodedData);
+    return data;
+}
+
+bool BookmarkModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
+{
+    if (action == Qt::IgnoreAction)
+        return true;
+
+    if (!data->hasFormat(DRAG_MIME))
+        return false;
+
+    // Unpack Selection from MIME data
+    QList<size_t> rows;
+    {
+        QByteArray rawData = data->data(DRAG_MIME);
+        QDataStream stream(&rawData, QIODevice::ReadOnly);
+
+        size_t nrows;
+        stream.readRawData((char*)&nrows, sizeof(nrows));
+
+        QSet<size_t> rowset;
+        rowset.reserve(nrows);
+        size_t buf;
+
+        for (size_t i=nrows; i; --i)
+        {
+            stream.readRawData((char*)&buf, sizeof(buf));
+            rowset << buf;
+        }
+
+        rows = rowset.toList();
+    }
+
+    // We want it sorted
+    qSort(rows);
+
+    // Qt passes -1 when dragged outside boundaries
+    if (row < 0 || row > m_bookmarks.size())
+        row = m_bookmarks.size();
+
+    // First, we always copy all rows to the destination
+    beginInsertRows(QModelIndex(), row, row + rows.size() - 1);
+
+    int off = 0;
+    size_t dst = row;
+    for (auto src : rows)
+    {
+        m_bookmarks.insert(dst, m_bookmarks[src + off]);
+        if (dst <= src) // since we insert before the read point, the read needs to be offset
+            ++off;
+        ++dst;
+    }
+
+    endInsertRows();
+
+    // Now we remove the original ones if a move was requested
+    if (action == Qt::MoveAction)
+    {
+        size_t cur, count;
+        size_t first = rows[0];
+        size_t last = first;
+        size_t next = 1;
+
+        while (next <= rows.size())
+        {
+            while (next < rows.size() && (cur = rows[next]) == last + 1)
+            {
+                last = cur;
+                ++next;
+            }
+
+            count = last - first + 1;
+            removeRows(first + off, count);
+            off -= count;
+            first = last = cur;
+            ++next;
+        }
+    }
+
     return true;
 }

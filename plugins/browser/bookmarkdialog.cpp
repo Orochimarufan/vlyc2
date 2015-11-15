@@ -51,6 +51,8 @@ void BookmarksDialog::on_btn_rem_clicked()
 
     qSort(sel);
 
+    int off = 0;
+    size_t count;
     size_t first = sel[0].row();
     size_t last = first;
     size_t next = 1;
@@ -64,7 +66,9 @@ void BookmarksDialog::on_btn_rem_clicked()
             ++next;
         }
 
-        mp_bookmarks->removeRows(first, last - first + 1);
+        count = last - first + 1;
+        mp_bookmarks->removeRows(first + off, count);
+        off -= count;
         first = last = cur;
         ++next;
     }

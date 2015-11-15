@@ -110,6 +110,15 @@ public:
 
     bool removeRows(int row, int count, const QModelIndex &parent=QModelIndex()) override;
 
+    // Drag-Reorder
+    Qt::DropActions supportedDropActions() const override;
+
+    QStringList mimeTypes() const override;
+
+    QMimeData *mimeData(const QModelIndexList &indices) const override;
+
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) override;
+
 Q_SIGNALS:
     void bookmarksChanged();
 };
