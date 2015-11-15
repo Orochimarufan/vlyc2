@@ -22,10 +22,19 @@
 #include "browserwindow.h"
 #include "webview.h"
 #include "LinkContextMenu.h"
+#include "bookmarkdialog.h"
 
 #include <QListIterator>
 #include <QEvent>
 #include <QSettings>
+
+#include <QJsonDocument>
+#include <QJsonValue>
+#include <QJsonArray>
+#include <QJsonObject>
+
+#include <QPixmap>
+#include <QBuffer>
 
 // construct/destruct
 Browser::Browser(QObject *parent) :
@@ -34,6 +43,9 @@ Browser::Browser(QObject *parent) :
     ms_title_postfix("Browser")
 {
     loadState();
+
+    // TODO: less frequent.
+    connect(&m_bookmarks, &BookmarkModel::bookmarksChanged, this, &Browser::saveState);
 }
 
 Browser::~Browser()
@@ -80,6 +92,19 @@ QUrl Browser::homeUrl() const
 void Browser::setHomeUrl(const QUrl &homeUrl)
 {
     m_home_url = homeUrl;
+    saveState();
+}
+
+BookmarkModel *Browser::bookmarks()
+{
+    return &m_bookmarks;
+}
+
+void Browser::manageBookmarks()
+{
+    auto dlg = new BookmarksDialog(&m_bookmarks, currentWindow());
+    dlg->setAttribute(Qt::WA_DeleteOnClose);
+    dlg->show();
 }
 
 // new Window
@@ -145,14 +170,60 @@ void Browser::saveState()
 {
     QSettings config;
     config.beginGroup("Browser");
+
+    // Homepage
     config.setValue("Home", m_home_url.toString());
+
+    // Bookmarks
+    QJsonArray bookmarks;
+    for (const Bookmark &b : m_bookmarks.bookmarks())
+    {
+        QByteArray pixmap;
+        {
+            QBuffer buf(&pixmap);
+            b.icon.pixmap(50, 50).save(&buf, "JPG");
+        }
+        bookmarks << QJsonObject({
+                                     {"icon", QString(pixmap.toBase64())},
+                                     {"name", b.name},
+                                     {"url", b.url.toString()},
+                                 });
+    }
+    config.setValue("Bookmarks", QJsonDocument(bookmarks).toJson(QJsonDocument::Compact));
 }
 
 void Browser::loadState()
 {
     QSettings config;
     config.beginGroup("Browser");
+
+    // Homepage
     m_home_url = QUrl(config.value("Home", "about:blank").toString());
+
+    // Bookmarks
+    QJsonDocument bd = QJsonDocument::fromJson(config.value("Bookmarks", "[]").toByteArray());
+    if (bd.isArray())
+    {
+        BookmarkList bookmarks;
+        for (QJsonValue v : bd.array())
+            if (v.isObject())
+            {
+                QJsonObject j = v.toObject();
+                Bookmark bmk;
+                if (j["icon"].isString())
+                {
+                    QPixmap pix;
+                    pix.loadFromData(QByteArray::fromBase64(j["icon"].toString().toLatin1()));
+                    bmk.icon.addPixmap(pix);
+                }
+                if (j["name"].isString())
+                    bmk.name = j["name"].toString();
+                if (j["url"].isString())
+                    bmk.url = j["url"].toString();
+                bookmarks << bmk;
+            }
+        m_bookmarks.replace(bookmarks);
+    }
 }
 
 void Browser::linkContextMenu(LinkContextMenu *menu)

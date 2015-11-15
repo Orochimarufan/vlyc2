@@ -36,6 +36,9 @@ LIST(APPEND PLUGIN_HEADERS
 	LinkContextMenu.h
 	browser.h
 
+        bookmark.h
+        bookmarkdialog.h
+
 	browserwindow.h
 	navigationbar.h
 
@@ -51,6 +54,9 @@ LIST(APPEND PLUGIN_SOURCES
 	LinkContextMenu.cpp
 	browser.cpp
 
+        bookmark.cpp
+        bookmarkdialog.cpp
+
 	browserwindow.cpp
 	navigationbar.cpp
 
@@ -59,6 +65,10 @@ LIST(APPEND PLUGIN_SOURCES
 
 	webpage.cpp
 	webview.cpp
+)
+
+LIST(APPEND PLUGIN_FORMS
+        bookmarkdialog.ui
 )
 
 LIST(APPEND PLUGIN_QT WebKitWidgets)

@@ -54,6 +54,9 @@ private slots:
     void _updateWindowTitle(const QString &title = QString());
     void _updateWindowIcon(const QIcon &icon = QIcon());
     void _setAsHome();
+    void _openBookmark();
+    void _createBookmark();
+    void _buildBookmarks();
 
 private:
     void setupMenu();
@@ -62,4 +65,5 @@ private:
     Browser *mp_browser;
     TabWidget *mp_body;
     NavigationBar *mp_navi;
+    QToolBar *mp_bookmarkbar;
 };

@@ -23,6 +23,10 @@
 #include <QtCore/QObject>
 #include <QtCore/QUrl>
 
+#include <QtGui/QIcon>
+
+#include "bookmark.h"
+
 class QNetworkAccessManager;
 //class HistoryManager;
 //class BookmarkManager;
@@ -60,14 +64,21 @@ public:
     QUrl homeUrl() const;
     void setHomeUrl(const QUrl &homeUrl);
 
-protected:
-    bool eventFilter(QObject *, QEvent *);
+    BookmarkModel *bookmarks();
 
+public Q_SLOTS:
+    void manageBookmarks();
+
+protected Q_SLOTS:
     void saveState();
     void loadState();
+
+protected:
+    bool eventFilter(QObject *, QEvent *);
 
     QList<BrowserWindow *> ml_windows;
     BrowserWindow *mp_window;
     QString ms_title_postfix;
     QUrl m_home_url;
+    BookmarkModel m_bookmarks;
 };

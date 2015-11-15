@@ -26,6 +26,7 @@
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QInputDialog>
 #include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QToolBar>
 
 #include "tabwidget.h"
 #include "webview.h"
@@ -37,7 +38,8 @@
 #endif
 
 BrowserWindow::BrowserWindow(Browser *browser, QWidget *parent) :
-    QMainWindow(parent), mp_browser(browser), mp_body(new TabWidget(browser))
+    QMainWindow(parent), mp_browser(browser), mp_body(new TabWidget(browser)),
+    mp_bookmarkbar(new QToolBar())
 {
 #ifdef Q_OS_LINUX
     if (qApp->platformName() == "xcb")
@@ -56,16 +58,38 @@ BrowserWindow::BrowserWindow(Browser *browser, QWidget *parent) :
     auto central = new QWidget(this);
     auto layout = new QVBoxLayout(central);
     layout->addWidget(mp_navi);
+    layout->addWidget(mp_bookmarkbar);
     layout->addWidget(mp_body);
     setCentralWidget(central);
 
     connect(mp_body, SIGNAL(activeIconChanged(QIcon)), SLOT(_updateWindowIcon(QIcon)));
     connect(mp_body, SIGNAL(activeTitleChanged(QString)), SLOT(_updateWindowTitle(QString)));
     connect(mp_body, SIGNAL(activeUrlChanged(QUrl)), mp_navi, SLOT(urlChanged(QUrl)));
+
+    _buildBookmarks();
+    connect(mp_browser->bookmarks(), &BookmarkModel::bookmarksChanged, this, &BrowserWindow::_buildBookmarks);
 }
 
 BrowserWindow::~BrowserWindow()
 {
+}
+
+void BrowserWindow::_buildBookmarks()
+{
+    mp_bookmarkbar->clear();
+    for (const Bookmark &bmk : browser()->bookmarks()->bookmarks())
+    {
+        auto act = mp_bookmarkbar->addAction(bmk.icon, bmk.name);
+        connect(act, &QAction::triggered, this, &BrowserWindow::_openBookmark);
+        act->setData(bmk.url);
+    }
+}
+
+void BrowserWindow::_openBookmark()
+{
+    QAction *trigger = qobject_cast<QAction*>(sender());
+    if (trigger)
+        currentTab()->setUrl(trigger->data().toUrl());
 }
 
 void BrowserWindow::setupMenu()
@@ -73,15 +97,26 @@ void BrowserWindow::setupMenu()
     auto menubar = new QMenuBar(this);
 
     auto menu = menubar->addMenu("&File");
-    auto action = menu->addAction("Open URL");
-    connect(action, SIGNAL(triggered()), SLOT(_openUrl()));
+    auto action = menu->addAction("&Open URL");
+    connect(action, &QAction::triggered, this, &BrowserWindow::_openUrl);
+
     menu->addSeparator();
-    action = menu->addAction("Close");
-    connect(action, SIGNAL(triggered()), SLOT(close()));
+
+    action = menu->addAction("&Close");
+    connect(action, &QAction::triggered, this, &BrowserWindow::close);
+
+
+    menu = menubar->addMenu("&Edit");
+    action = menu->addAction("Manage &Bookmarks");
+    connect(action, &QAction::triggered, mp_browser, &Browser::manageBookmarks);
+
 
     menu = menubar->addMenu("&Page");
-    action = menu->addAction("Set as Home");
-    connect(action, SIGNAL(triggered()), SLOT(_setAsHome()));
+    action = menu->addAction("Set as &Home");
+    connect(action, &QAction::triggered, this, &BrowserWindow::_setAsHome);
+
+    action = menu->addAction("Create &Bookmark");
+    connect(action, &QAction::triggered, this, &BrowserWindow::_createBookmark);
 
     setMenuBar(menubar);
 }
@@ -125,6 +160,15 @@ void BrowserWindow::_openUrl()
 void BrowserWindow::_setAsHome()
 {
     mp_browser->setHomeUrl(currentTab()->url());
+}
+
+void BrowserWindow::_createBookmark()
+{
+    Bookmark bmk;
+    bmk.icon = currentTab()->icon();
+    bmk.name = currentTab()->title();
+    bmk.url = currentTab()->url();
+    mp_browser->bookmarks()->add(bmk);
 }
 
 // new tab
