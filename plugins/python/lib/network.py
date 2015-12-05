@@ -2,6 +2,7 @@
 # Vlyc2 Network stuff
 
 import urllib.error
+import tempfile
 
 from PythonQt import QtCore
 from PythonQt import QtNetwork
@@ -52,7 +53,7 @@ def RequestToQNetworkRequest(request):
     else:
         # From Urllib Request
         qnrequest = QtNetwork.QNetworkRequest(QtCore.QUrl(request.full_url))
-    
+
         # Headers
         for name, value in request.header_items():
             if not isinstance(name, bytes):
@@ -86,23 +87,24 @@ def QNetworkReplyToReply(qnreply):
 class URLError(urllib.error.URLError):
     pass
 
+
 class ReplyHeadersProxy:
     def __init__(self, qnreply):
         #print("headers for %s: %s" % (qnreply, self))
         self._qnreply = qnreply
-    
+
     def __contains__(self, hdr):
         return self._qnreply.hasRawHeader(hdr.encode("utf-8"))
-    
+
     def keys(self):
         return tuple(ba.toBytes().decode("utf-8") for ba in self._qnreply.rawHeaderList())
-    
+
     def __getitem__(self, key):
         if key in self:
             return self._qnreply.rawHeader(key).toBytes().decode("utf-8")
         else:
             raise KeyError(key)
-    
+
     def get(self, key, fallback='__THISISADEFAULTPLACEHOLDER_'):
         #print("header %s for %s" % (key, self))
         if key in self:
@@ -114,7 +116,7 @@ class ReplyHeadersProxy:
             return fallback
 
 
-class ReplyCommon(urllib.response.addinfourl):
+class ReplyCommon:
     """
     Common Reply Base-Class
     Should be compatible with HTTPError and HTTPResponse
@@ -135,6 +137,14 @@ class ReplyCommon(urllib.response.addinfourl):
         else:
             return '<%s for "%s" at 0x%X>' % (self.__class__.__name__, self.geturl(), id(self))
 
+    def __enter__(self):
+        if self.isclosed():
+            raise ValueError("I/O operation on closed file")
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
     # Properties
     @property
     def fp(self):
@@ -148,19 +158,33 @@ class ReplyCommon(urllib.response.addinfourl):
     def code(self):
         """ The HTTP status code """
         self._check_closed()
-        return self._qnreply.attribute(QtNetwork.QNetworkRequest.HttpStatusCodeAttribute).toInt()
+        return self._qnreply.attribute(QtNetwork.QNetworkRequest.HttpStatusCodeAttribute)
 
     status = code
+
+    def getcode(self):
+        """ The HTTP status code """
+        self._check_closed()
+        return self._qnreply.attribute(QtNetwork.QNetworkRequest.HttpStatusCodeAttribute)
 
     @property
     def headers(self):
         """ The HTTP Headers """
         self._check_closed()
         return ReplyHeadersProxy(self._qnreply)
-        #return {x: self._qnreply.rawHeader(x) for x in self._qnreply.rawHeaderList()}
+
+    def info(self):
+        """ The HTTP Headers """
+        self._check_closed()
+        return ReplyHeadersProxy(self._qnreply)
 
     @property
     def url(self):
+        """ The original URL """
+        self._check_closed()
+        return str(self._qnreply.request().url())
+
+    def geturl(self):
         """ The original URL """
         self._check_closed()
         return str(self._qnreply.request().url())
@@ -173,9 +197,6 @@ class ReplyCommon(urllib.response.addinfourl):
     msg = reason
 
     # Getters
-    def getcode(self):
-        return self.code
-
     def getheaders(self):
         self._check_closed()
         return [(x, self._qnreply.rawHeader(x)) for x in self._qnreply.rawHeaderList()]
@@ -183,9 +204,6 @@ class ReplyCommon(urllib.response.addinfourl):
     def getheader(self, hdr):
         self._check_closed()
         return self._qnreply.rawHeader(hdr)
-
-    def geturl(self):
-        return self.url
 
     def readable(self):
         self._check_closed()
@@ -217,7 +235,7 @@ class ReplyCommon(urllib.response.addinfourl):
     def _check_closed(self):
         if self.isclosed():
             raise io.UnsupportedOperation("Trying to operate on closed file")
-    
+
     # Read from reply
     def read(self, size=None):
         """ Read """
@@ -247,11 +265,39 @@ class ReplyCommon(urllib.response.addinfourl):
         raise io.UnsupportedOperation("Not Implemented")
 
 
-class HTTPError(urllib.error.HTTPError, URLError, ReplyCommon):
-    __init__ = ReplyCommon.__init__
+# HACK: We cannot inherit from urllib HTTPError in newer versions of python
+_base_HTTPError = urllib.error.HTTPError
+if hasattr(tempfile, "_TemporaryFileWrapper"):
+    # God damn it...
+    if tempfile._TemporaryFileWrapper in urllib.error.HTTPError.__mro__:
+        _real_HTTPError = urllib.error.HTTPError
 
-    hdrs = property(ReplyCommon.info)
-    filename = property(ReplyCommon.geturl)
+        class _HTTPError_Meta(type):
+            def __subclasscheck__(cls, sc):
+                return cls in sc.__mro__ or sc is HTTPError
+
+            def __instancecheck__(cls, inst):
+                return cls.__subclasscheck__(type(inst))
+
+        class _HTTPError(_real_HTTPError, metaclass=_HTTPError_Meta):
+            pass
+
+        urllib.error.HTTPError = _HTTPError
+        _base_HTTPError = object
+
+
+class HTTPError(ReplyCommon, URLError, _base_HTTPError):
+    file = None
+
+    hdrs = ReplyCommon.headers
+    filename = ReplyCommon.url
+
+    def __str__(self):
+        return "HTTP Error: %s: %s" % (self.code, self.reason)
+
+    @property
+    def msg(self):
+        return "See http://doc.qt.io/qt-5/qnetworkreply.html#NetworkError-enum (%i)" % self._qnreply.error()
 
 
 class Reply(ReplyCommon):
