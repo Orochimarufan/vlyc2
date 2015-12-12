@@ -16,6 +16,10 @@ from youtube_dl.cache import Cache
 import vlyc.plugin
 import vlyc.network
 
+import youtube_dl
+youtube_dl.plugin = sys.modules[__name__]
+
+last_exc = None
 instance = None
 
 # We don't want playlists (yet)
@@ -176,9 +180,11 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
             # Ask YoutubeDL
             try:
                 result = self._ie.extract(self._url)
-            except ExtractorError as e:
-                return throw(str(e))
+            #except ExtractorError as e:
+            #    return throw(str(e))
             except Exception:
+                global last_exc
+                last_exc = sys.exc_info()
                 import traceback
                 return throw(traceback.format_exc())
 

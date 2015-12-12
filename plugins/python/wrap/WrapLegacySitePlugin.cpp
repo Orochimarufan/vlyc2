@@ -303,6 +303,8 @@ PyObject *WrapLegacyVideo::f_error_func(PyObject *_self, PyObject *args)
     QString msg = PythonQtConv::PyObjGetString(message);
     Py_DECREF(message);
 
+    msg.truncate(4096);
+
     qDebug("error: %s", qPrintable(msg));
     self->emitError(msg);
 
@@ -464,6 +466,7 @@ inline static QString handleException()
     PyErr_Clear();
 
     puts(qPrintable(message));
+    message.truncate(4096);
     return message;
 }
 
