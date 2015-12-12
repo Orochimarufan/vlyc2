@@ -84,6 +84,7 @@ class Video(metaclass=abc.ABCMeta):
 		self.favorites = 0
 		self.availableQualities = []
 		self.availableSubtitleLanguages = []
+		self.childrenUrls = []
 
 	@abc.abstractmethod
 	def load(self, done, throw):

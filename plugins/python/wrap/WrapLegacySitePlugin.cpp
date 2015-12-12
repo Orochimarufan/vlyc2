@@ -592,6 +592,19 @@ QList<VideoQuality> WrapLegacyVideo::availableQualities() const
     return list;
 }
 
+QStringList WrapLegacyVideo::getChildrenUrls() const
+{
+    PyObject *o = PyObject_GetAttrString(mo_video, "childrenUrls");
+    if (PyErr_Occurred())
+    {
+        PythonQt::self()->handleError();
+        return QStringList();
+    }
+
+    bool ok;
+    return PythonQtConv::PyObjToStringList(o, true, ok);
+}
+
 
 } // namespace Wrap
 } // namespace Python

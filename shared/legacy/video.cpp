@@ -16,7 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
+#include <video.h>
 #include <videoimpl.h>
+
+// HAX
+QStringList Video::getChildrenUrls() const
+{
+    return QStringList();
+}
 
 // VideoQuality
 bool VideoQuality::operator <(const VideoQuality &o) const

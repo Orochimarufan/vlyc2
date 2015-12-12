@@ -164,6 +164,9 @@ public:
     /// Wether users may download this video.
     virtual bool mayBeDownloaded() const = 0;
 
+    /// (Optional) Get urls for children (AKA The Shoehorning of Playlists)
+    virtual QStringList getChildrenUrls() const;
+
 
     /// The last error message.
     virtual QString getError() const = 0;

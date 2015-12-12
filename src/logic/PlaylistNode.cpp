@@ -79,6 +79,22 @@ void PlaylistNode::initFromResult(bool from_constructor)
 
         o->setProperty("__vlyc_playlist_node", QVariant::fromValue((void*)this));
     }
+    else
+    {
+        auto lv = mp_result.cast<LegacyVideoResult>();
+        if (lv.isValid())
+        {
+            QStringList urls = lv->video()->getChildrenUrls();
+            if (!urls.empty())
+            {
+                if (!from_constructor) mp_model->beginInsertNode(this, 0, urls.length() - 1);
+                m_children.reserve(urls.length());
+                for (const QString &url : urls)
+                    m_children.push_back(new PlaylistNode (this, new Vlyc::Result::Url(QUrl(url))));
+                if (!from_constructor) mp_model->endInsertNode();
+            }
+        }
+    }
 
     mp_model->nodeWasCreated(this);
 }
@@ -337,8 +353,9 @@ QVariant PlaylistNode::call(const QString &method, const QVariantList &args)
 
 bool PlaylistNode::isPlayable() const
 {
-    if (mp_result.is<LegacyVideoResult>())
-        return true;
+    auto lv = mp_result.cast<LegacyVideoResult>();
+    if (lv.isValid())
+        return lv->video()->availableQualities().size() >= 1;
 
     auto o = mp_result.cast<Object>();
     return o.isValid() && o->type() == "file";
@@ -421,6 +438,10 @@ QString PlaylistNode::failReason() const
 
 bool PlaylistNode::isList() const
 {
+    auto lv = mp_result.cast<LegacyVideoResult>();
+    if (lv.isValid())
+        return !lv->video()->getChildrenUrls().empty();
+
     auto o = mp_result.cast<Object>();
     return o.isValid() && (o->type() == "objectlist" || o->type() == "urllist");
 }

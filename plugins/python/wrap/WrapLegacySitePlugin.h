@@ -89,6 +89,8 @@ public:
 
     virtual ~WrapLegacyVideo();
 
+    virtual QStringList getChildrenUrls() const;
+
 public Q_SLOTS:
     virtual void load();
     virtual void getMedia(const VideoQualityLevel &q);

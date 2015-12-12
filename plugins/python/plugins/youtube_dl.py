@@ -54,17 +54,21 @@ youtube.YoutubeIE._VALID_URL =     _VALID_URL = r"""(?x)^
                      $"""
 
 # Blacklist Extractors
+key_whitelist = ["YoutubePlaylist"]
+key_blacklist = ["Generic", "Crunchyroll"]
+
 def default_extractors():
     for ie in gen_extractors():
         key = ie.ie_key()
-        if not(key == "Generic" or key.endswith("Channel") or key.endswith("Playlist") or key.endswith("User")) and "crunchyroll" not in key.lower():
+        if key in key_whitelist or (key not in key_blacklist and
+                not(key.endswith("Channel") or key.endswith("Playlist") or key.endswith("User"))):
             yield ie
 
 
 class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
     name = "Youtube-DL"
     author = "Orochimarufan"
-    rev = 10
+    rev = 12
 
     def __init__(self):
         self._ies = dict()
@@ -193,7 +197,8 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
 
             if isinstance(result, list):
                 result = {
-                        "_type": "compat_list",
+                        "_type": "playlist",
+                        "title": "Legacy Youtube-DL Playlist",
                         "entries": result,
                         }
 
@@ -204,7 +209,13 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
 
             self._data = result
 
-            if result.get("_type", "video") != "video":
+            type = result.get("_type", "video")
+            if type == "playlist": # Shoehorned! (TM)
+                self.title = result["title"]
+                self.childrenUrls = list(map(self._plugin.figure_out_url_result, result["entries"]))
+                return done()
+
+            if type != "video":
                 return throw("Cannot handle '%s' result yet. Only video results supported" % result["_type"])
 
             # Populate attributes
@@ -251,6 +262,21 @@ class YoutubeDLPlugin(vlyc.plugin.SitePlugin):
             except Exception as e:
                 throw(str(e))
 
+    def figure_out_url_result(self, url):
+        if isinstance(url, str):
+            return url
+        if "webpage_url" in url:
+            return url["webpage_url"]
+        if "url" in url:
+            if url["url"].startswith("http"):
+                return url["url"]
+            elif "ie_key" in url:
+                ie = url["ie_key"]
+                if ie == "Youtube":
+                    return "http://youtube.com/watch?v=" + url["url"]
+            return url["url"]
+        raise ValueError("Cannot convert %s to URL" % url)
+        
 
 class GenericFormatMapper:
     map = (
