@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2013-2016 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef FULLSCREENCONTROLLER_H
-#define FULLSCREENCONTROLLER_H
+#pragma once
 
 #include <QFrame>
 
@@ -37,62 +36,49 @@ class FullScreenController : public QFrame
 public:
     explicit FullScreenController(VideoWidget *videoWidget);
     ~FullScreenController();
-    int targetScreen();
-    bool isFullScreen();
+
+    bool isEnabled();
+    bool isFullWidth();
 
 public slots:
-    void setFullScreen(bool fs);
+    void setEnabled(bool fs);
     void setFullWidth(bool fw);
-    bool toggleFullWidth();
     void mouseChanged(int mouse_x, int mouse_y);
 
 private slots:
     void showController();
     void restoreController();
-    void updateFullWidthGeometry(const QRect &screen_resolution);
+    void updateFullWidthGeometry(const QRect &bounds);
 
     void saveState();
     void loadState();
 
     void on_btn_togglewide_clicked();
 
-private:
-    QPoint computeCenter(const QRect &screen_resolution);
-
 protected:
-    //void customEvent(QEvent *);
     void mouseMoveEvent(QMouseEvent *);
     void mousePressEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
     void enterEvent(QEvent *);
     void leaveEvent(QEvent *);
-    void keyPressEvent(QKeyEvent *);
     
 private:
     Ui::FullScreenController *ui;
     VideoWidget *mp_video;
+
+    bool mb_enabled;
+
+    bool mb_is_wide;
+    QSize m_size;
+
+    QTimer m_hide_timer;
 
     int mi_mouse_last_x;
     int mi_mouse_last_y;
     bool mb_mouse_over;
     int mi_mouse_last_move_x;
     int mi_mouse_last_move_y;
-    bool mb_fullscreen;
-    int mi_screen_number;
-    QTimer m_hide_timer;
-    bool mb_is_wide;
-    QSize m_size;
+
     QPoint m_previous_position;
-    QRect m_previous_resolution;
-
-public:
-    //int HideEvent = QEvent::registerEventType();
-    //int ShowEvent = QEvent::registerEventType();
-    //int ToggleEvent = QEvent::registerEventType();
-    //int PlanHideEvent = QEvent::registerEventType();
-
-signals:
-    void keyPressed(QKeyEvent *);
+    QRect m_previous_bounds;
 };
-
-#endif // FULLSCREENCONTROLLER_H

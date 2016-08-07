@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2013-2016 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,79 +30,80 @@
 FullScreenController::FullScreenController(VideoWidget *video) :
     QFrame(video), mp_video(video),
     mi_mouse_last_x(-1), mi_mouse_last_y(-1), mb_mouse_over(false),
-    mi_mouse_last_move_x(-1), mi_mouse_last_move_y(-1), mb_fullscreen(false),
-    mi_screen_number(-1), mb_is_wide(false)
+    mi_mouse_last_move_x(-1), mi_mouse_last_move_y(-1),
+    mb_enabled(false), mb_is_wide(false)
 {
     ui = new Ui::FullScreenController();
     ui->setupUi(this);
 
-    setWindowFlags(Qt::ToolTip);
+    setAutoFillBackground(true);
     m_size = minimumSize();
 
     m_hide_timer.setInterval(5000);
     m_hide_timer.setSingleShot(true);
-    connect(&m_hide_timer, SIGNAL(timeout()), SLOT(hide()));
+    connect(&m_hide_timer, &QTimer::timeout, this, &QWidget::hide);
 
     loadState();
+    hide();
 }
 
-void FullScreenController::setFullScreen(bool fs)
+void FullScreenController::setEnabled(bool fs)
 {
-    mb_fullscreen = fs;
+    mb_enabled = fs;
     if (fs)
-        connect(mp_video, SIGNAL(mouseMoved(int,int)), SLOT(mouseChanged(int,int)));
+        connect(mp_video, &VideoWidget::mouseMoved, this, &FullScreenController::mouseChanged);
     else
     {
         hide();
-        disconnect(mp_video, SIGNAL(mouseMoved(int,int)), this, SLOT(mouseChanged(int,int)));
+        disconnect(mp_video, &VideoWidget::mouseMoved, this, &FullScreenController::mouseChanged);
     }
 }
 
-int FullScreenController::targetScreen()
+bool FullScreenController::isEnabled()
 {
-    if (mi_screen_number == -1 || mi_screen_number > QApplication::desktop()->screenCount())
-        return QApplication::desktop()->screenNumber(mp_video);
-    return mi_screen_number;
+    return mb_enabled;
+}
+
+// ----------------------------------------------------------------------------
+// Geometry
+// ----------------------------------------------------------------------------
+static QPoint placeAtCenterBottom(const QSize &size, const QRect &bounds)
+{
+    return QPoint(bounds.x() + (bounds.width() / 2) - (size.width() / 2),
+                  bounds.y() + bounds.height() - size.height());
+}
+
+static QPoint placeInBounds(const QRect &geometry, const QRect &bounds)
+{
+    return QPoint(qMin(bounds.x() + bounds.width() - geometry.width(), qMax(bounds.x(), geometry.x())),
+                  qMin(bounds.y() + bounds.height() - geometry.height(), qMax(bounds.y(), geometry.y())));
 }
 
 void FullScreenController::restoreController()
 {
-    int target_screen = targetScreen();
-    QRect current_resolution = QApplication::desktop()->screenGeometry(target_screen);
+    QRect bounds = parentWidget()->rect();
     if (!mb_is_wide)
     {
         setMinimumWidth(m_size.width());
         adjustSize();
 
-        if (m_previous_resolution == current_resolution &&
-                current_resolution.contains(m_previous_position))
+        if (m_previous_bounds == bounds &&
+                bounds.contains(m_previous_position))
             move(m_previous_position);
         else
         {
-            move(computeCenter(current_resolution));
-            m_previous_resolution = current_resolution;
+            move(placeAtCenterBottom(size(), bounds));
+            m_previous_bounds = bounds;
             m_previous_position = pos();
         }
     } else
-        updateFullWidthGeometry(current_resolution);
+        updateFullWidthGeometry(bounds);
 }
 
-QPoint FullScreenController::computeCenter(const QRect &screen_resolution)
+void FullScreenController::updateFullWidthGeometry(const QRect &bounds)
 {
-    return QPoint(screen_resolution.x() + (screen_resolution.width() / 2) - (width() / 2),
-                        screen_resolution.y() + screen_resolution.height() - height());
-}
-
-void FullScreenController::showController()
-{
-    restoreController();
-    show();
-}
-
-void FullScreenController::updateFullWidthGeometry(const QRect &screen_resolution)
-{
-    setMinimumWidth(screen_resolution.width());
-    setGeometry(screen_resolution.x(), screen_resolution.y() + screen_resolution.height() - height(), screen_resolution.width(), height());
+    setMinimumWidth(bounds.width());
+    setGeometry(bounds.x(), bounds.y() + bounds.height() - height(), bounds.width(), height());
     adjustSize();
 }
 
@@ -112,41 +113,25 @@ void FullScreenController::setFullWidth(bool fw)
     restoreController();
 }
 
-bool FullScreenController::toggleFullWidth()
+bool FullScreenController::isFullWidth()
 {
-    setFullWidth(!mb_is_wide);
     return mb_is_wide;
 }
 
-/*void FullScreenController::customEvent(QEvent *e)
+void FullScreenController::showController()
 {
-    switch(e->type()) {
-    case ToggleEvent:
-        if (mb_fullscreen)
-            if (isHidden())
-            {
-                m_hide_timer.stop();
-                showController();
-            }
-            else
-                hide();
-        break;
-    case ShowEvent:
-        if (mb_fullscreen)
-            showController();
-        break;
-    case PlanHideEvent:
-        if (!mb_mouse_over)
-            m_hide_timer.start();
-        break;
-    case HideEvent:
-        hide();
-        break;
-    }
-}*/
+    restoreController();
+    show();
+}
 
+// ----------------------------------------------------------------------------
+// Events
+// ----------------------------------------------------------------------------
 void FullScreenController::mouseMoveEvent(QMouseEvent *e)
 {
+    // Move position of compact UI
+    if (mb_is_wide)
+        return;
     if (e->buttons() == Qt::LeftButton)
     {
         if (mi_mouse_last_x == -1 || mi_mouse_last_y == -1)
@@ -155,15 +140,18 @@ void FullScreenController::mouseMoveEvent(QMouseEvent *e)
         int i_move_x = e->globalX() - mi_mouse_last_x;
         int i_move_y = e->globalY() - mi_mouse_last_y;
 
-        move(x() + i_move_x, y() + i_move_y);
+        move(placeInBounds(geometry().adjusted(i_move_x, i_move_y, i_move_x, i_move_y), m_previous_bounds));
 
         mi_mouse_last_x = e->globalX();
         mi_mouse_last_y = e->globalY();
+
+        e->accept();
     }
 }
 
 void FullScreenController::mousePressEvent(QMouseEvent *e)
 {
+    // Move position of compact UI
     if (mb_is_wide)
         return;
     mi_mouse_last_x = e->globalX();
@@ -173,6 +161,7 @@ void FullScreenController::mousePressEvent(QMouseEvent *e)
 
 void FullScreenController::mouseReleaseEvent(QMouseEvent *e)
 {
+    // Move position of compact UI
     if (mb_is_wide)
         return;
     mi_mouse_last_x = -1;
@@ -184,6 +173,7 @@ void FullScreenController::mouseReleaseEvent(QMouseEvent *e)
 
 void FullScreenController::enterEvent(QEvent *e)
 {
+    // Don't hide while Mouse over UI
     mb_mouse_over = true;
     m_hide_timer.stop();
     e->accept();
@@ -191,18 +181,15 @@ void FullScreenController::enterEvent(QEvent *e)
 
 void FullScreenController::leaveEvent(QEvent *e)
 {
+    // Hide after Mouse leaves UI
     mb_mouse_over = false;
     m_hide_timer.start();
     e->accept();
 }
 
-void FullScreenController::keyPressEvent(QKeyEvent *e)
-{
-    emit keyPressed(e);
-}
-
 void FullScreenController::mouseChanged(int mouse_x, int mouse_y)
 {
+    // Show UI when mouse is moved on video
     if (mi_mouse_last_move_x == -1 || mi_mouse_last_move_y == -1 ||
             qAbs(mi_mouse_last_move_x - mouse_x) > 2 ||
             qAbs(mi_mouse_last_move_y - mouse_y) > 2)
@@ -214,28 +201,16 @@ void FullScreenController::mouseChanged(int mouse_x, int mouse_y)
     }
 }
 
-bool FullScreenController::isFullScreen()
-{
-    return mb_fullscreen;
-}
-
-/*bool FullScreenController::eventFilter(QObject *o, QEvent *e)
-{
-    if (mb_fullscreen && e->type() == QEvent::MouseMove)
-    {
-        QMouseEvent *m = static_cast<QMouseEvent *>(e);
-        mouseChanged(m->globalX(), m->globalY());
-    }
-    return false;
-}*/
-
+// ----------------------------------------------------------------------------
+// Keep state
+// ----------------------------------------------------------------------------
 void FullScreenController::saveState()
 {
     QSettings config;
     config.beginGroup("FullScreen");
     config.setValue("controllerPosition", pos());
     config.setValue("controllerIsWide", mb_is_wide);
-    config.setValue("lastScreenResolution", m_previous_resolution);
+    config.setValue("lastScreenResolution", m_previous_bounds);
 }
 
 void FullScreenController::loadState()
@@ -244,7 +219,7 @@ void FullScreenController::loadState()
     config.beginGroup("FullScreen");
     m_previous_position = config.value("controllerPosition").toPoint();
     mb_is_wide = config.value("controllerIsWide", false).toBool();
-    m_previous_resolution = config.value("lastScreenResolution").toRect();
+    m_previous_bounds = config.value("lastScreenResolution").toRect();
 }
 
 FullScreenController::~FullScreenController()
@@ -252,11 +227,15 @@ FullScreenController::~FullScreenController()
     saveState();
 }
 
+// ----------------------------------------------------------------------------
+// UI
+// ----------------------------------------------------------------------------
 void FullScreenController::on_btn_togglewide_clicked()
 {
+    // Cycle through Compact -> Centered Compact -> Wide -> Compact
     if (!mb_is_wide)
     {
-        QPoint centerPosition = computeCenter(QApplication::desktop()->screenGeometry(parentWidget()));
+        QPoint centerPosition = placeAtCenterBottom(size(), parentWidget()->rect());
         if (centerPosition == pos())
             setFullWidth(true);
         else

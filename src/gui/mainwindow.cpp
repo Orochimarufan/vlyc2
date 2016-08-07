@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2013-2016 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -223,7 +223,7 @@ void MainWindow::connectUiMisc()
     connect(fsc->ui->position, &SeekSlider::sliderDragged, &m_player, &VlcMediaPlayer::setPosition);
     connect(fsc->ui->volume, &SoundWidget::volumeChanged, &m_player_audio, &VlcMediaPlayerAudio::setVolume);
     connect(fsc->ui->volume, &SoundWidget::muteChanged, &m_player_audio, &VlcMediaPlayerAudio::setMuted);
-    connect(fsc->ui->btn_defullscreen, &QAbstractButton::clicked, [=] () {setFullScreen(false);});
+    connect(fsc->ui->btn_defullscreen, &QAbstractButton::clicked, [=] () {setWindowMode(WindowMode::Normal);});
 
     // Shortcuts
     shortcut_Space = new QShortcut(QKeySequence(" "), ui->video);
@@ -232,11 +232,14 @@ void MainWindow::connectUiMisc()
     shortcut_F11 = new QShortcut(QKeySequence("F11"), ui->video);
     connect(shortcut_F11, &QShortcut::activated, this, &MainWindow::toggleFullScreen);
 
+    shortcut_F10 = new QShortcut(QKeySequence("F10"), ui->video);
+    connect(shortcut_F10, &QShortcut::activated, this, &MainWindow::toggleFrameless);
+
     shortcut_AltReturn = new QShortcut(QKeySequence("Alt + Return"), ui->video);
     connect(shortcut_AltReturn, &QShortcut::activated, this, &MainWindow::toggleFullScreen);
 
     shortcut_Esc = new QShortcut(QKeySequence("Esc"), ui->video);
-    connect(shortcut_Esc, &QShortcut::activated, [=] () {setFullScreen(false);});
+    connect(shortcut_Esc, &QShortcut::activated, [=] () {setWindowMode(WindowMode::Normal);});
 
     shortcut_n = new QShortcut(QKeySequence("N"), ui->video);
     connect(shortcut_n, &QShortcut::activated, mp_self->player(), &VlycPlayer::next);
@@ -428,25 +431,15 @@ void MainWindow::on_btn_repeat_clicked()
 // ----------------------------------------------------------------------------
 // Fullscreen
 // ----------------------------------------------------------------------------
-void MainWindow::setFullScreenVideo(bool fs)
-{
-    // Reparenting breaks stuff for some reason.
-    // therefore we modify the MainWindow to
-    // only show the video part and fullscreen that.
-    if (fs) {
+void MainWindow::setShowControls(bool controls) {
+    if (!controls) {
         // always fullscreen the video page
         if (ui->btn_library->isChecked())
             on_btn_library_clicked(false);
-        //ui->video->setParent(NULL, Qt::Window);
-        //ui->video->showFullScreen();
-        showFullScreen();
         ui->menubar->setVisible(false);
         ui->statusbar->setVisible(false);
         ui->controls->setVisible(false);
     } else {
-        //ui->video->setParent(ui->centralwidget, 0);
-        //ui->verticalLayout->insertWidget(0, ui->video);
-        showNormal();
         ui->menubar->setVisible(true);
         ui->statusbar->setVisible(true);
         ui->controls->setVisible(true);
@@ -456,19 +449,47 @@ void MainWindow::setFullScreenVideo(bool fs)
     }
 }
 
-void MainWindow::setFullScreen(bool fs)
+void MainWindow::setWindowMode(WindowMode mode)
 {
-    if (fs != fsc->mb_fullscreen)
+    if (m_window_mode != mode)
     {
-        fsc->setFullScreen(fs);
-        setFullScreenVideo(fs);
+        // Reparenting breaks stuff for some reason.
+        // therefore we modify the MainWindow to
+        // only show the video part and fullscreen that.
+        bool alt_controls = mode != WindowMode::Normal;
+        fsc->setEnabled(alt_controls);
+        setShowControls(!alt_controls);
+
+        if (mode == WindowMode::Frameless)
+            setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
+        else
+            setWindowFlags(windowFlags() & ~Qt::FramelessWindowHint);
+
+        if (mode == WindowMode::Fullscreen)
+            showFullScreen();
+        else
+            showNormal();
+
+        m_window_mode = mode;
     }
 }
 
 bool MainWindow::toggleFullScreen()
 {
-    setFullScreen(!fsc->mb_fullscreen);
-    return fsc->mb_fullscreen;
+    if (m_window_mode != WindowMode::Fullscreen)
+        setWindowMode(WindowMode::Fullscreen);
+    else
+        setWindowMode(WindowMode::Normal);
+    return m_window_mode == WindowMode::Fullscreen;
+}
+
+bool MainWindow::toggleFrameless()
+{
+    if (m_window_mode != WindowMode::Frameless)
+        setWindowMode(WindowMode::Frameless);
+    else
+        setWindowMode(WindowMode::Normal);
+    return m_window_mode == WindowMode::Frameless;
 }
 
 // ----------------------------------------------------------------------------
@@ -484,7 +505,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
     QMainWindow::resizeEvent(e);
-    if (~windowState() & Qt::WindowMaximized && !fsc->mb_fullscreen)
+    if (~windowState() & Qt::WindowMaximized && m_window_mode != WindowMode::Fullscreen)
         m_geometry = geometry();
 }
 

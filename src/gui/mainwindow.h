@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2013-2016 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once
 
 #include <QMainWindow>
 
@@ -55,9 +54,18 @@ public:
 
     void addPluginActions();
 
+    enum WindowMode {
+        Normal,
+        Fullscreen,
+        Frameless,
+    };
+
+    WindowMode getWindowMode();
+    void setWindowMode(WindowMode mode);
+
 public slots:
-    void setFullScreen(bool fs);
     bool toggleFullScreen();
+    bool toggleFrameless();
 
 private slots:
     void updateQualityList(QList<QString> qa, int current);
@@ -67,7 +75,7 @@ private slots:
     void updateState(const VlcState::Type &);
     void updateMedia(libvlc_media_t *media);
 
-    void setFullScreenVideo(bool fs);
+    void setShowControls(bool controls);
 
     void saveState();
     void loadState();
@@ -118,13 +126,13 @@ private:
     QShortcut *shortcut_Space;
     QShortcut *shortcut_Esc;
     QShortcut *shortcut_F11;
+    QShortcut *shortcut_F10;
     QShortcut *shortcut_AltReturn;
     QShortcut *shortcut_n;
 
     QRect m_geometry;
+    WindowMode m_window_mode;
 
     History history;
     int m_repeat_mode;
 };
-
-#endif // MAINWINDOW_H

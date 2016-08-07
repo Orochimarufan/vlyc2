@@ -1,6 +1,6 @@
 /*****************************************************************************
  * vlyc2 - A Desktop YouTube client
- * Copyright (C) 2013 Orochimarufan <orochimarufan.x3@gmail.com>
+ * Copyright (C) 2013-2016 Taeyeon Mori <orochimarufan.x3@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,17 +24,20 @@
 VideoWidget::VideoWidget(QWidget *parent) :
     QWidget(parent)
 {
-    QHBoxLayout *xlayout = new QHBoxLayout(this);
-    xlayout->setContentsMargins(0,0,0,0);
     QWidget *xstable = new QWidget();
-    xlayout->addWidget(xstable);
-    mp_stable = NULL;
-    mp_layout = new QHBoxLayout(xstable);
-    mp_layout->setContentsMargins(0,0,0,0);
     QPalette plt = palette();
     plt.setColor(QPalette::Window, Qt::black);
-    setPalette(plt);
-    setAutoFillBackground(true);
+    xstable->setPalette(plt);
+    xstable->setAutoFillBackground(true);
+
+    QHBoxLayout *xlayout = new QHBoxLayout(this);
+    xlayout->setContentsMargins(0,0,0,0);
+    xlayout->addWidget(xstable);
+
+    mp_layout = new QHBoxLayout(xstable);
+    mp_layout->setContentsMargins(0,0,0,0);
+
+    mp_stable = NULL;
 }
 
 WId VideoWidget::request(bool b_keep_size, unsigned int i_width, unsigned int i_height)
