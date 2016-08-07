@@ -17,7 +17,7 @@
 # *****************************************************************************/
 
 # Initialize CMake
-cmake_minimum_required(VERSION 2.8.10)
+cmake_minimum_required(VERSION 3.1)
 
 IF(POLICY CMP0020) # 2.8.11: Link qtmain (Windows)
     CMAKE_POLICY(SET CMP0020 NEW)
@@ -52,20 +52,11 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 
 ######## Set compiler flags ########
-IF(APPLE)
-        # assume clang, add C++1y/C++14 stuff
-	message(STATUS "Using APPLE CMAKE_CXX_FLAGS")
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -stdlib=libc++")
-ELSEIF(UNIX)
-        # assume GCC, add C++1y/C++14 stuff
-	MESSAGE(STATUS "Using UNIX CMAKE_CXX_FLAGS")
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
+SET(CMAKE_CXX_STANDARD 14)
+#IF(UNIX)
 	# Need extra -Xlinker -export-dynamic for python C extensions.
         #SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic")
-ELSEIF(MINGW)
-	MESSAGE(STATUS "Using MINGW CMAKE_CXX_FLAGS")
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++1y")
-ENDIF()
+#ENDIF()
 
 ### include plugin defs ###
 include_directories(${PROJECT_SOURCE_DIR}/shared ${PROJECT_SOURCE_DIR}/shared/legacy)

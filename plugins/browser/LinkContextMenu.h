@@ -47,13 +47,15 @@ public:
     void addAction(const Action &action);
     void addAction(const QWebPage::WebAction &action);
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 6, 0)
     template <typename T>
-    void addAction(const QString &text, T action)
+    QAction *addAction(const QString &text, T action)
     {
-        QAction *a = new QAction(text, this);
+        QAction *a = addAction(text);
         connect(a, &QAction::triggered, action);
-        addAction(a);
+        return a;
     }
+#endif
 
     QUrl url() const;
     WebView *tab() const;
