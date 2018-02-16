@@ -26,7 +26,7 @@ include(../prepare.cmake)
 ## this is where custom stuff goes!
 # Find PythonQt
 # FIXME Don't hardcode version. Needs modification in PythonQt build
-find_package(Qt5Python35_QtAll REQUIRED)
+find_package(Qt5Python36_QtAll REQUIRED)
 
 LIST(APPEND PLUGIN_LIBS ${PythonQt_QtAll})
 

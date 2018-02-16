@@ -17,18 +17,10 @@
 # *****************************************************************************/
 
 # Initialize CMake
-cmake_minimum_required(VERSION 2.8.10)
+cmake_minimum_required(VERSION 3.1)
 
-IF(POLICY CMP0020) # 2.8.11: Link qtmain (Windows)
-    CMAKE_POLICY(SET CMP0020 NEW)
-ENDIF()
-
-IF(POLICY CMP0028) # 3.0: Double-colon targets
-    CMAKE_POLICY(SET CMP0028 NEW)
-ENDIF()
-
-IF(POLICY CMP0043) # 3.0: COMPILE_DEFINITIONS_<Config> deprecation
-    CMAKE_POLICY(SET CMP0043 NEW)
+IF(POLICY CMP0071) # Automoc stuff
+    CMAKE_POLICY(SET CMP0071 OLD)
 ENDIF()
 
 IF(NOT CMAKE_BUILD_TYPE)
@@ -52,19 +44,13 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 
 ######## Set compiler flags ########
+SET(CMAKE_CXX_STANDARD 14)
+
 IF(APPLE)
-        # assume clang, add C++1y/C++14 stuff
-	message(STATUS "Using APPLE CMAKE_CXX_FLAGS")
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -stdlib=libc++")
-ELSEIF(UNIX)
-        # assume GCC, add C++1y/C++14 stuff
-	MESSAGE(STATUS "Using UNIX CMAKE_CXX_FLAGS")
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
-	# Need extra -Xlinker -export-dynamic for python C extensions.
-        #SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic")
-ELSEIF(MINGW)
-	MESSAGE(STATUS "Using MINGW CMAKE_CXX_FLAGS")
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++1y")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+#ELSEIF(UNIX)
+    # Need extra -Xlinker -export-dynamic for python C extensions.     
+    #SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export-dynamic")
 ENDIF()
 
 ### include plugin defs ###
@@ -78,3 +64,4 @@ add_subdirectory(src)
 
 ######## Plugins ########
 add_subdirectory(plugins)
+
